@@ -138,7 +138,7 @@ export const modelService = {
   hairColor: model.additionalDetails?.hairColor,
   skinTone: model.additionalDetails?.skinTone,
 
-  instagramUrl: model.socialLinks?.instagram,
+  instagramUrl: model.socialLinks?.instagram || null,
 
   biography: model.biography,
   starting_price: model.startingPrice
