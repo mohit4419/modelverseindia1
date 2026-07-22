@@ -111,6 +111,8 @@ export const modelService = {
 
     if (isSupabaseAvailable && supabase) {
       try {
+        console.log("MODEL SENT TO SUPABASE");
+console.log(removeUndefined(model));
         const { error } = await supabase
           .from('models')
           .upsert(removeUndefined(model));
