@@ -111,12 +111,58 @@ export const modelService = {
 
     if (isSupabaseAvailable && supabase) {
       try {
-        console.log("MODEL SENT TO SUPABASE");
-console.log(removeUndefined(model));
-        const { error } = await supabase
-          .from('models')
-          .upsert(removeUndefined(model));
-        if (error) throw error;
+        const dbModel = {
+  id: model.id,
+  userId: model.userId,
+  name: model.name,
+  gender: model.gender,
+  age: model.age,
+  height: model.height ? Number(model.height) : null,
+  city: model.city,
+  state: model.state,
+
+  phone: model.phone,
+  email: model.email,
+  languages: model.languages,
+  experience: model.experience,
+  videoUrl: model.videoUrl,
+  availabilityStatus: model.availabilityStatus,
+
+  measurements: model.measurements,
+  chest: model.measurements?.bust,
+  waist: model.measurements?.waist,
+  hips: model.measurements?.hips,
+
+  shoeSize: model.additionalDetails?.shoeSize,
+  eyeColor: model.additionalDetails?.eyeColor,
+  hairColor: model.additionalDetails?.hairColor,
+  skinTone: model.additionalDetails?.skinTone,
+
+  instagramUrl: model.socialLinks?.instagram,
+
+  biography: model.biography,
+  starting_price: model.startingPrice
+  ? Number(model.startingPrice)
+  : null,
+  rating: model.rating ?? null,
+reviews_count: model.reviewsCount ?? null,
+  
+
+  
+
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
+
+const { error } = await supabase
+  .from("models")
+  .upsert(removeUndefined(dbModel));
+
+if (error) {
+  console.error(error);
+  throw error;
+}
+        
         console.log(`Successfully upserted model details for ${model.id} in Supabase`);
       } catch (e) {
         console.warn('Supabase saveModel failed, falling back to local storage and memory:', e);
