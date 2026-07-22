@@ -1,0 +1,71 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Dark background gradient -->
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e1f22"/>
+      <stop offset="100%" stop-color="#0c0d0e"/>
+    </radialGradient>
+
+    <!-- Silver/White Metallic Gradient -->
+    <linearGradient id="silver-grad" x1="27" y1="26" x2="54" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#e4e4e7"/>
+      <stop offset="100%" stop-color="#a1a1aa"/>
+    </linearGradient>
+    
+    <!-- Gold Metallic Gradient -->
+    <linearGradient id="gold-grad" x1="49" y1="26" x2="73" y2="73" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffe066"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Camera Lens Gold Rim Gradient -->
+    <linearGradient id="lens-gold-rim" x1="41" y1="22" x2="59" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#854d0e"/>
+    </linearGradient>
+
+    <!-- Camera Lens Glass Gradient -->
+    <radialGradient id="lens-glass" cx="48" cy="29" r="6.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#52525b"/>
+      <stop offset="50%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </radialGradient>
+    
+    <!-- Dropshadow filter for 3D depth -->
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="1" dy="2" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Background -->
+  <rect width="100" height="100" rx="22" fill="url(#bg-grad)"/>
+
+  <!-- Left Silver Wing of M -->
+  <path d="M 27 26 L 34 31 L 34 50 L 54 47 L 34 67 L 27 72 Z" fill="url(#silver-grad)" filter="url(#shadow)"/>
+  <!-- Left Wing 3D Highlight Fold -->
+  <path d="M 27 26 L 34 31 L 34 50 Z" fill="#ffffff" opacity="0.15"/>
+  <path d="M 34 67 L 27 72 L 34 50 Z" fill="#000000" opacity="0.1"/>
+
+  <!-- Right Gold Wing of M -->
+  <path d="M 49 41 L 73 26 L 73 39 L 65 58 L 65 73 L 54 47 Z" fill="url(#gold-grad)" filter="url(#shadow)"/>
+  <!-- Right Wing 3D Highlights and Shadows -->
+  <path d="M 49 41 L 73 26 L 65 58 Z" fill="#ffffff" opacity="0.15"/>
+  <path d="M 65 73 L 54 47 L 65 58 Z" fill="#000000" opacity="0.15"/>
+
+  <!-- Camera Lens at the Center top -->
+  <g filter="url(#shadow)">
+    <!-- Gold Outer Rim -->
+    <circle cx="50" cy="31" r="9" fill="url(#lens-gold-rim)"/>
+    <!-- Dark Inner Border -->
+    <circle cx="50" cy="31" r="7.5" fill="#18181b"/>
+    <!-- Glass Lens -->
+    <circle cx="50" cy="31" r="6.5" fill="url(#lens-glass)"/>
+    <!-- Lens Highlight -->
+    <circle cx="48" cy="29" r="1.8" fill="#ffffff" opacity="0.5"/>
+    <circle cx="47" cy="28" r="0.6" fill="#ffffff" opacity="0.7"/>
+  </g>
+</svg>
