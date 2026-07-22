@@ -706,7 +706,8 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
     };
 
     const newModel: Model = {
-      id: initialModel ? initialModel.id : `model_${Date.now()}`,
+      id: initialModel ? initialModel.id :
+      crypto.randomUUID(),
       userId,
       name,
       gender: (gender === 'male' || gender === 'female' || gender === 'non-binary') ? gender : 'female',
