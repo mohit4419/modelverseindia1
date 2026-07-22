@@ -463,5 +463,98 @@
       "agencyStatus": "freelance",
       "langs": "English, Hindi"
     }
+  },
+  {
+    "id": "model_1784727092779",
+    "userId": "2fff1c06-9590-40a4-a46e-f7e02f3e0288",
+    "name": "reshma kumari",
+    "gender": "female",
+    "age": 24,
+    "height": "5'8\"",
+    "city": "delhi",
+    "state": "delhi",
+    "languages": [
+      "English",
+      "Hindi"
+    ],
+    "experience": "2-5 years",
+    "category": "Fashion Models",
+    "portfolio": [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600",
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600"
+    ],
+    "availabilityStatus": "Available",
+    "selfieVerified": true,
+    "selfieUrl": "Selfie_check_verified_ID_match.jpg",
+    "approved": false,
+    "rejected": false,
+    "govIdUrl": "Gov_ID_front_verified_UIDAI.jpg",
+    "startingPrice": 25000,
+    "rating": 5,
+    "reviewsCount": 0,
+    "biography": "hu6r how i wonder what you are",
+    "phone": "8383913654",
+    "email": "nqwwshop225@gmail.com",
+    "socialLinks": {
+      "instagram": "",
+      "twitter": "",
+      "portfolio": ""
+    },
+    "measurements": {
+      "bust": "34\"",
+      "waist": "26\"",
+      "hips": "36\""
+    },
+    "agencyInfo": {
+      "name": "Independent",
+      "contactName": "Self Managed"
+    },
+    "additionalDetails": {
+      "weight": "55 kg",
+      "nationality": "Indian",
+      "maritalStatus": "Single",
+      "education": "",
+      "permanentAddress": "",
+      "currentAddress": "",
+      "subCategory": "Runway, Editorial",
+      "professionalTraining": "No",
+      "actingModelingSchool": "",
+      "willingToTravelIndia": "Yes",
+      "willingToTravelInt": "Yes",
+      "hasPassport": "Yes",
+      "openForOutstation": "Yes",
+      "preferredLocations": "Mumbai, Delhi, Bangalore",
+      "shootTypesOpen": "Runway, Editorial, Commercial Prints, TVC",
+      "clothingComfort": "Casual wear, Ethnic wear, Couture designs",
+      "youtube": "",
+      "portfolioWebsite": "",
+      "facebook": "",
+      "brandsWorkedWith": "",
+      "notableShows": "",
+      "filmographyCommercials": "",
+      "availabilityNotice": "Immediate",
+      "preferredShootDays": "Both Weekdays & Weekends",
+      "maxHoursPerDay": "8",
+      "uniqueSellingPoints": "",
+      "specialTalents": "",
+      "specializedGenres": "Runway & Editorial",
+      "ethnicWearComfort": "Yes",
+      "bodyPartModeling": "",
+      "experienceMatrix": {
+        "runway": "Intermediate",
+        "editorial": "Intermediate",
+        "tvc": "Beginner",
+        "ugc": "Beginner"
+      },
+      "minimumBookingDuration": "Full Day",
+      "accommodationCoverage": "Covered by brand",
+      "agreedToTerms": true,
+      "accuracyDeclaration": true,
+      "digitalSignature": "reshma",
+      "submissionDate": "2026-07-22",
+      "agencyStatus": "freelance",
+      "langs": "English, Hindi"
+    }
   }
 ]
