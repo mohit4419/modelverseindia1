@@ -53,10 +53,17 @@ export const modelService = {
     let dbModels: Model[] = [];
     if (isSupabaseAvailable && supabase) {
       try {
-        const { data, error } = await supabase.from('models').select('*');
-        if (!error && data) {
-          dbModels = data as Model[];
-        }
+       const { data, error } = await supabase.from('models').select('*');
+
+if (!error && data) {
+  dbModels = (data ?? []).map((m: any) => ({
+    ...m,
+    portfolio: m.portfolio ?? [],
+    languages: m.languages ?? [],
+    measurements: m.measurements ?? {},
+    socialLinks: m.socialLinks ?? {},
+  }));
+}
       } catch (e) {
         console.error('Supabase models fetch failed, using fallback', e);
       }

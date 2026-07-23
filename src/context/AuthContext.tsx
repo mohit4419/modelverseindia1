@@ -170,13 +170,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const handleAuthSuccess = (user: any, role: UserRole) => {
-    setAuthenticatedState(true);
-    handleSetGuestMode(false);
-    setUserEmail(user.email);
-    setCurrentUserName(user.name);
-    setClientId(user.id);
-    setCurrentRole(role);
+  const sessionUser = {
+    id: user.id,
+    email: user.email,
+    name: user.name || user.displayName || "Admin",
+    role,
+    phone: user.phone || "",
+    status: "active",
+    createdAt: new Date().toISOString(),
   };
+
+  dbService.setCurrentSessionUser(sessionUser);
+
+  setAuthenticatedState(true);
+  handleSetGuestMode(false);
+  setUserEmail(sessionUser.email);
+  setCurrentUserName(sessionUser.name);
+  setClientId(sessionUser.id);
+  setCurrentRole(role);
+};
 
   const handleChangePasswordClick = async () => {
     setAuthTabHint('forgot');

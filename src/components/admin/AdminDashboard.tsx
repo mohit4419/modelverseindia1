@@ -21,6 +21,7 @@ interface AdminDashboardProps {
   onImpersonateUser?: (user: any) => void;
 }
 
+
 export default function AdminDashboard({
   models,
   bookings,
@@ -32,6 +33,7 @@ export default function AdminDashboard({
   onBatchApproveModels,
   onImpersonateUser
 }: AdminDashboardProps) {
+  
   
   const [activeTab, setActiveTab] = useState<'talent' | 'payments' | 'bookings' | 'users' | 'audit_log' | 'payouts' | 'database'>('talent');
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
@@ -771,7 +773,12 @@ export default function AdminDashboard({
                       )}
                     </td>
                     <td className="p-4 flex items-center space-x-3">
-                      <img src={model.portfolio[0]} alt={model.name} referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover border border-white/10" />
+                     <img
+  src={model.portfolio?.[0] || "https://placehold.co/80x80?text=Model"}
+  alt={model.name}
+  referrerPolicy="no-referrer"
+  className="h-8 w-8 rounded-full object-cover border border-white/10"
+/>
                       <div>
                         <strong className="block text-xs font-extrabold text-white">{model.name}</strong>
                         <span className="text-zinc-400">{model.city}, {model.state} • {model.age} yrs</span>
@@ -797,7 +804,9 @@ export default function AdminDashboard({
                       })()}
                     </td>
                     <td className="p-4 text-zinc-300">{model.category}</td>
-                    <td className="p-4 font-bold text-[#FF6F00]">₹{model.startingPrice.toLocaleString()}/day</td>
+                    <td className="p-4 font-bold text-[#FF6F00]">
+  ₹{Number(model.startingPrice ?? 0).toLocaleString()}/day
+</td>
                     <td className="p-4">
                       <div className="flex flex-col space-y-1">
                         <span className="inline-flex items-center text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md font-mono w-max">

@@ -12,10 +12,15 @@ export async function getUsers(): Promise<User[]> {
   let dbUsers: User[] = [];
   if (isSupabaseAvailable && supabase) {
     try {
-      const { data, error } = await supabase.from('profiles').select('*');
-      if (!error && data) {
-        dbUsers = data as User[];
-      }
+     const { data, error } = await supabase
+  .from("profiles")
+  .select("*");
+
+if (error) {
+  console.error("Profiles Error:", error);
+} else {
+  dbUsers = data ?? [];
+}
     } catch (e) {
       console.error('Supabase users fetch failed', e);
     }

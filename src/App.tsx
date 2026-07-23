@@ -441,7 +441,7 @@ function AppContent() {
               <div className="flex flex-col sm:flex-row gap-6">
                 <div className="w-full sm:w-1/2 h-64 rounded-2xl overflow-hidden border border-white/10 relative shrink-0">
                   <img
-                    src={eliteModelForModal.portfolio[0]}
+                    src={eliteModelForModal.portfolio?.[0]}
                     alt={eliteModelForModal.name}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"

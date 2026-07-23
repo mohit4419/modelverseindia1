@@ -89,7 +89,7 @@ export default function BookingWizard({
     onSubmitBooking({
       modelId: model.id,
       modelName: model.name,
-      modelImage: model.portfolio[0],
+      modelImage: model.portfolio?.[0],
       projectDetails: {
         brandName,
         companyName,

@@ -309,7 +309,7 @@ export default function ChatWindow({
         <div className="flex items-center space-x-3">
           <div className="relative">
             <img
-              src={model.portfolio[0]}
+              src={model.portfolio?.[0]}
               alt={model.name}
               referrerPolicy="no-referrer"
               className="h-10 w-10 rounded-full object-cover border border-white/10"
@@ -439,7 +439,7 @@ export default function ChatWindow({
                   >
                     {!isMe && (
                       <img
-                        src={model.portfolio[0]}
+                        src={model.portfolio?.[0]}
                         alt={model.name}
                         referrerPolicy="no-referrer"
                         className="h-6 w-6 rounded-full object-cover border border-white/10"
@@ -482,7 +482,7 @@ export default function ChatWindow({
             {isTyping && (
               <div className="flex items-center space-x-2 max-w-[75%]">
                 <img
-                  src={model.portfolio[0]}
+                  src={model.portfolio?.[0]}
                   alt={model.name}
                   referrerPolicy="no-referrer"
                   className="h-6 w-6 rounded-full object-cover border border-white/10"

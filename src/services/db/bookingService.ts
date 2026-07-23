@@ -39,10 +39,13 @@ export const bookingService = {
     let dbBookings: Booking[] = [];
     if (isSupabaseAvailable && supabase) {
       try {
-        const { data, error } = await supabase.from('bookings').select('*');
-        if (!error && data) {
-          dbBookings = data as Booking[];
-        }
+       const { data, error } = await supabase.from('bookings').select('*');
+
+if (error) {
+  console.error("Bookings Error:", error);
+} else {
+  dbBookings = data ?? [];
+}
       } catch (e) {
         console.error('Supabase bookings fetch failed', e);
       }
