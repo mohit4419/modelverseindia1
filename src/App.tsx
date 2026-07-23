@@ -45,6 +45,7 @@ import BookingPage from './pages/BookingPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
+import CastingRatesPage from './components/booking/CastingRatesPage';
 
 function AppContent() {
   const {
@@ -126,6 +127,19 @@ function AppContent() {
 
   // Route switcher based on currentTab state
   const renderCurrentPage = () => {
+    // Public tabs allowed for unauthenticated visitors
+    const publicTabs = [
+      'home', 'models', 'pricing', 'casting-rates', 'unlock-premium', 
+      'premium-unlock', 'subscription', 'payments', 'rates', 
+      'ai-studio', 'creative-studio', 'ai-creative-studio', 'ai-lab', 'studio', 
+      'blog', 'about', 'contact', 'disclaimer', 'google-terms', 'google-privacy', 
+      'affiliate-disclosure', 'become-model'
+    ];
+
+    if (!isAuthenticated && !publicTabs.includes(currentTab) && currentTab !== 'auth') {
+      return <AuthView onAuthSuccess={handleAuthSuccess} onCancel={() => setCurrentTab('home')} initialRole="client" initialTab="login" initialEmail="" onGuestMode={() => handleSetGuestMode(true)} />;
+    }
+
     switch (currentTab) {
       case 'home':
         return <HomePage />;
@@ -137,7 +151,11 @@ function AppContent() {
       case 'admin':
         return <AdminPage />;
       case 'creative-studio':
-        return <AICreativeStudio userEmail={userEmail || ''} />;
+      case 'ai-studio':
+      case 'ai-creative-studio':
+      case 'ai-lab':
+      case 'studio':
+        return <AICreativeStudio userEmail={userEmail || ''} triggerToast={triggerToast} />;
       case 'blog':
         return <BlogSection currentRole={currentRole} userEmail={userEmail} />;
       case 'about':
@@ -147,6 +165,14 @@ function AppContent() {
       case 'google-privacy':
       case 'affiliate-disclosure':
         return <AboutContact type={currentTab} />;
+      
+      case 'pricing':
+      case 'casting-rates':
+      case 'unlock-premium':
+      case 'premium-unlock':
+      case 'subscription':
+      case 'payments':
+        return <CastingRatesPage />;
       
       case 'become-model':
         if (!isAuthenticated) {
@@ -273,7 +299,11 @@ function AppContent() {
         setCurrentRole={(role) => handleAuthSuccess({ id: clientId, email: userEmail, role, name: currentUserName } as any, role)}
         isAuthenticated={isAuthenticated}
         setAuthenticated={(val) => {
-          if (!val) handleLogout();
+          if (!val) {
+            handleLogout();
+          } else {
+            setCurrentTab('auth');
+          }
         }}
         userEmail={userEmail || ''}
         darkMode={darkMode}
@@ -289,7 +319,15 @@ function AppContent() {
       </main>
 
       {/* FOOTER BAR */}
-      <footer className="border-t border-white/5 bg-[#090909] py-16 px-4 sm:px-6 lg:px-8 mt-auto text-left">
+      <footer 
+        className="border-t border-white/5 bg-[#090909] py-16 px-4 sm:px-6 lg:px-8 mt-auto text-left"
+        onClickCapture={(e) => {
+          if (!isAuthenticated) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
         <div className="mx-auto max-w-7xl space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-center text-xs text-zinc-400 space-y-4 md:space-y-0 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start space-y-1">
@@ -418,7 +456,7 @@ function AppContent() {
       </footer>
 
       {/* GLOBAL MODALS AND OVERLAYS */}
-      {showEliteModal && eliteModelForModal && (
+      {isAuthenticated && showEliteModal && eliteModelForModal && (
         <div id="elite-talent-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="relative w-full max-w-lg rounded-3xl border border-zinc-800 bg-[#121212] text-white shadow-2xl overflow-hidden text-left flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-white/5 p-5 bg-[#0a0a0a]">

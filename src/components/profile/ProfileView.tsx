@@ -1010,7 +1010,7 @@ export default function ProfileView({
                 <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-black font-mono">Day Cast Rate</span>
                 <p className="text-2xl font-black text-neutral-900 mt-1">
                   ₹{model.startingPrice.toLocaleString('en-IN')}{' '}
-                  <span className="text-xs font-normal text-neutral-505">/ day</span>
+                  <span className="text-xs font-normal text-neutral-500">/ day</span>
                 </p>
               </div>
               <span className="text-[10px] font-bold text-orange-850 bg-orange-100/50 rounded-full px-3.5 py-1 border border-orange-200">
@@ -1028,16 +1028,12 @@ export default function ProfileView({
                     onStartChat(model.userId);
                   }
                 }}
-                className={`flex-1 flex items-center justify-center space-x-1 rounded-full border py-3 text-xs font-bold transition active:scale-98 cursor-pointer shadow-sm ${
-                  isLocked
-                    ? 'border-red-200 bg-red-50/50 hover:bg-red-50 text-red-700'
-                    : 'border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800'
-                }`}
+                className="flex-1 flex items-center justify-center space-x-1 rounded-full border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 py-3 text-xs font-bold transition active:scale-98 cursor-pointer shadow-sm"
               >
                 {isLocked ? (
                   <>
                     <Lock className="h-3 w-3.5 text-red-500 mr-1 animate-pulse shrink-0" />
-                    <span>Chat Locked (Unlock Specs)</span>
+                    <span>Chat Locked (Pay ₹399)</span>
                   </>
                 ) : (
                   <span>Chat with Model</span>
@@ -1045,20 +1041,48 @@ export default function ProfileView({
               </button>
               <button
                 id="profile-book-btn"
-                onClick={() => onBookNow(model.id)}
-                className="flex-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 text-xs font-black shadow-md transition hover:brightness-110 active:scale-98 cursor-pointer"
+                onClick={() => {
+                  if (isLocked) {
+                    onUnlockClick(model.id);
+                  } else {
+                    onBookNow(model.id);
+                  }
+                }}
+                className="flex-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 text-xs font-black shadow-md transition hover:brightness-110 active:scale-98 cursor-pointer flex items-center justify-center"
               >
-                Book Now
+                {isLocked ? (
+                  <>
+                    <Lock className="h-3.5 w-3.5 text-white/90 mr-1 shrink-0" />
+                    <span>Book Now (Pay ₹399)</span>
+                  </>
+                ) : (
+                  'Book Now'
+                )}
               </button>
             </div>
 
             <button
               id="profile-download-comp-card-btn"
-              onClick={handleGenerateCompCardPdf}
+              onClick={() => {
+                if (isLocked) {
+                  onUnlockClick(model.id);
+                } else {
+                  handleGenerateCompCardPdf();
+                }
+              }}
               className="w-full flex items-center justify-center space-x-2 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 py-3 text-xs font-bold transition active:scale-98 cursor-pointer shadow-xs mt-2"
             >
-              <Download className="h-3.5 w-3.5 text-purple-600" />
-              <span>Download Comp Card</span>
+              {isLocked ? (
+                <>
+                  <Lock className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                  <span>Download Comp Card (Pay ₹399)</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                  <span>Download Comp Card</span>
+                </>
+              )}
             </button>
           </div>
 

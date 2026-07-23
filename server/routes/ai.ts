@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { generateAiImage, editAiImage } from '../services/image.service';
 import { triggerVideoGeneration, checkVideoStatus, getVideoUri, getRandomMockVideo } from '../services/video.service';
-import { searchGrounding, mapsGrounding, generateCampaignBrief, enhanceBiography } from '../services/gemini.service';
+import { searchGrounding, mapsGrounding, generateCampaignBrief, enhanceBiography, generateFashionKnowledge } from '../services/gemini.service';
 import { ai, geminiApiKey } from '../config/gemini';
 
 const router = Router();
@@ -133,6 +133,18 @@ router.post('/ai/bio-enhancer', async (req: Request, res: Response) => {
     return res.json({ success: true, response: responseText });
   } catch (err: any) {
     console.error('Bio enhancer route failed:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Fashion Knowledge Assistant & Diagram Generator
+router.post('/ai/fashion-assistant', async (req: Request, res: Response) => {
+  const { prompt } = req.body;
+  try {
+    const responseText = await generateFashionKnowledge(prompt || 'Explain fashion runway lighting and pose diagram');
+    return res.json({ success: true, response: responseText });
+  } catch (err: any) {
+    console.error('Fashion assistant route failed:', err);
     return res.status(500).json({ success: false, error: err.message });
   }
 });

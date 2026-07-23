@@ -30,6 +30,7 @@ import dashboardRoutesV2 from './routes/dashboard.routes';
 import analyticsRoutesV2 from './routes/analytics.routes';
 import subscriptionsRoutesV2 from './routes/subscriptions.routes';
 import reportsRoutesV2 from './routes/reports.routes';
+import blogsRoutesV2 from './routes/blogs.routes';
 
 const app = express();
 
@@ -69,6 +70,7 @@ app.use('/api/v2', dashboardRoutesV2);
 app.use('/api/v2', analyticsRoutesV2);
 app.use('/api/v2', subscriptionsRoutesV2);
 app.use('/api/v2', reportsRoutesV2);
+app.use('/api/v2', blogsRoutesV2);
 
 // Mount v1/legacy routers and /api fallback
 app.use('/api', authRoutesV2);
@@ -89,6 +91,7 @@ app.use('/api', dashboardRoutesV2);
 app.use('/api', analyticsRoutesV2);
 app.use('/api', subscriptionsRoutesV2);
 app.use('/api', reportsRoutesV2);
+app.use('/api', blogsRoutesV2);
 
 app.use('/api', authRouter);
 app.use('/api', paymentRouter);

@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Model, UserRole } from '../types';
 import { dbService } from '../services/db';
+import { accessControlService } from '../services/accessControl.service';
 import { Toast, ToastType } from '../components/common/ToastNotification';
 import { getCityCoordinates, calculateHaversineDistance } from '../utils/location';
 import { useAuth } from './AuthContext';
@@ -169,7 +170,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
     });
 
-    setUnlockedProfiles(dbService.getUnlockedProfiles());
+    const updateUnlocked = () => {
+      setUnlockedProfiles(accessControlService.getUnlockedModels(clientId));
+    };
+
+    updateUnlocked();
+    window.addEventListener('storage', updateUnlocked);
     
     const storedFavs = localStorage.getItem('mvi_favs');
     if (storedFavs) {

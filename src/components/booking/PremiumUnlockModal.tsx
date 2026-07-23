@@ -10,6 +10,7 @@ import Confetti from 'react-confetti';
 import { motion } from 'motion/react';
 import { Model, PREMIUM_UNLOCK_AMOUNT } from '../../types';
 import { usePayments } from '../../context/PaymentContext';
+import { accessControlService } from '../../services/accessControl.service';
 
 interface PremiumUnlockModalProps {
   model: Model;
@@ -36,7 +37,7 @@ export default function PremiumUnlockModal({
   userName = 'Guest User',
   userEmail = 'guest@modelverse.in'
 }: PremiumUnlockModalProps) {
-  const { createSession } = usePayments();
+  const { createSession, verifyPayment } = usePayments();
   const [paymentStep, setPaymentStep] = useState<PaymentStep>('details' as PaymentStep);
   const [gateway, setGateway] = useState<PaymentGateway>('Razorpay');
   const [utr, setUtr] = useState('');
@@ -112,17 +113,41 @@ export default function PremiumUnlockModal({
           description: planType === 'enterprise' ? 'Enterprise Agency License' : `Test Transaction - ${model.name}`,
           image: "https://example.com/your_logo",
           order_id: data.id,
-          handler: function (res: any) {
-            try {
-              alert(res.razorpay_payment_id);
-              alert(res.razorpay_order_id);
-              alert(res.razorpay_signature);
-            } catch (e) {
-              console.warn("Alert blocked or failed in sandbox iframe environment", e);
-            }
+          handler: async function (res: any) {
             const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = res;
-            const origin = window.location.origin;
-            window.location.href = `${origin}/?payment_success=true&gateway=Razorpay&session_id=${razorpay_order_id}&plan_type=${planType}&user_id=${userId || ''}&amount=${targetAmount}&model_id=${model.id}&model_name=${encodeURIComponent(model.name)}&razorpay_payment_id=${razorpay_payment_id}&razorpay_order_id=${razorpay_order_id}&razorpay_signature=${razorpay_signature}`;
+            
+            // Record payment unlock in access control service
+            accessControlService.recordPaymentUnlock({
+              userId,
+              modelId: model.id,
+              planType: planType as any,
+              amount: targetAmount,
+              paymentId: razorpay_payment_id,
+              orderId: razorpay_order_id,
+              gateway: 'Razorpay'
+            });
+
+            try {
+              await verifyPayment({
+                gateway: 'Razorpay',
+                sessionId: razorpay_order_id,
+                planType,
+                amount: targetAmount,
+                modelId: model.id,
+                modelName: model.name,
+                razorpay_payment_id,
+                razorpay_order_id,
+                razorpay_signature,
+                userId,
+                userName,
+                userEmail
+              });
+            } catch (err) {
+              console.warn('Backend payment verification log note:', err);
+            }
+
+            setPaymentStep('success');
+            onSuccessUnlock();
           },
           prefill: { // We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
             name: userName || 'Premium Client', // your customer's name
@@ -184,8 +209,17 @@ export default function PremiumUnlockModal({
     
     // Simulate real bank/escrow ledger callback audits
     setTimeout(() => {
+      accessControlService.recordPaymentUnlock({
+        userId,
+        modelId: model.id,
+        planType: planType as any,
+        amount: planType === 'enterprise' ? 4999 : PREMIUM_UNLOCK_AMOUNT,
+        paymentId: `upi_${utr}`,
+        gateway: 'UPI'
+      });
       setVerifyingUpi(false);
       setPaymentStep('success');
+      onSuccessUnlock();
     }, 2500);
   };
 

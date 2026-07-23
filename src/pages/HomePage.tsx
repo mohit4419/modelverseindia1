@@ -51,15 +51,8 @@ export default function HomePage() {
       className="animate-fadeIn"
       onClickCapture={(e) => {
         if (!isAuthenticated) {
-          const target = e.target as HTMLElement;
-          const interactiveElement = target.closest('button, a, [role="button"], input, select, textarea, [class*="cursor-pointer"], [id^="model-card-"]');
-          if (interactiveElement) {
-            e.preventDefault();
-            e.stopPropagation();
-            triggerToast('Registration Required', 'Guests can only view the homepage. Please register or log in to access other pages, cards, or features.', 'warning');
-            setCurrentTab('auth');
-            setAuthTabHint('signup');
-          }
+          e.preventDefault();
+          e.stopPropagation();
         }
       }}
     >

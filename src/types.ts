@@ -146,6 +146,9 @@ export interface BlogItem {
   imageUrl: string;
   author: string;
   publishedDate: string;
+  authorEmail?: string;
+  authorRole?: string;
+  userId?: string;
 }
 
 export interface AuditLog {
@@ -190,4 +193,4 @@ export interface Post {
 }
 
 // Pricing configuration derived securely from environment variables
-export const PREMIUM_UNLOCK_AMOUNT = Number((import.meta as any).env.VITE_PREMIUM_UNLOCK_AMOUNT || '299');
+export const PREMIUM_UNLOCK_AMOUNT = Number((import.meta as any).env.VITE_PREMIUM_UNLOCK_AMOUNT || '399');

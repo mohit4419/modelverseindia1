@@ -73,7 +73,7 @@ export default function Navbar({
     };
   }, [showProfileCard]);
 
-  const menuItems = [
+  const menuItems = isAuthenticated ? [
     { label: 'Home', id: 'home' },
     ...(currentRole === 'client' ? [
       { label: 'Models Directory', id: 'models' },
@@ -95,6 +95,8 @@ export default function Navbar({
       { label: 'Casting Rates', id: 'pricing' },
       { label: 'Insights Blog', id: 'blog' },
     ] : []),
+  ] : [
+    { label: 'Home', id: 'home' }
   ];
 
   return (

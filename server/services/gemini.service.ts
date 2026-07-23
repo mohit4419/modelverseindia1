@@ -311,3 +311,60 @@ export async function enhanceBiography(bio: string): Promise<string> {
   });
   return response.text?.trim() || '';
 }
+
+/**
+ * Gemini 3.5 Flash: Fashion Industry & Modeling Knowledge Assistant with Diagrams
+ */
+export async function generateFashionKnowledge(question: string): Promise<string> {
+  if (!ai) {
+    return `### Fashion Industry & Modeling Knowledge Guide
+    
+**Question:** ${question}
+
+**1. Overview & Professional Standards**
+In the high-fashion and commercial modeling ecosystem, precision, posing versatility, and comp-card preparation are key.
+
+**2. Visual Diagram / Stage & Posing Workflow**
+\`\`\`
+   [ STAGE BACKDROP / LIGHTING GRID ]
+                │
+                ▼
+       [ RUNWAY WALK LANE ]
+       │ (1) Entrance Pose
+       │ (2) Measured Stride
+       │ (3) Front Stage Turn & Hold (3s)
+       ▼
+  [ PHOTOGRAPHER PIT / CAMERA ANGLE ]
+\`\`\`
+
+**3. Key Industry Guidelines**
+- **Comp Card:** Standard 8.5x5.5 inch layout with headshot on front and 3-4 portfolio variations on back with measurements (B-W-H, height, shoe size).
+- **Casting Rates:** Standard daily casting rates range from ₹399 / $3.99 for entry-level digital UGC to ₹35,000+ for high-fashion runway shows.
+- **Runway Posture:** Maintain elongated spine, relaxed shoulders, eyes fixed 10 feet ahead, and natural weight distribution.`;
+  }
+
+  const systemInstruction = `You are an elite AI Female Fashion & Modeling Advisor at ModelVerse India. You possess extensive expert knowledge about the global and Indian fashion industry, modeling careers, comp-card creation, catwalk techniques, posing angles, casting rates, photography lighting, and designer relations.
+
+Whenever asked a question, provide a thorough, structured response that includes:
+1. Executive Answer & Professional Insight
+2. ASCII / Text Diagram (e.g. runway layout, photography lighting setup, pose structure, or comp card layout)
+3. Step-by-Step Action Plan or Workflow
+4. Industry Standards & Rate Guidance (referencing daily casting rates such as $3.99 / ₹399 individual rate up to enterprise rates)
+
+Always maintain a soft, encouraging, sophisticated, and highly knowledgeable tone.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: question,
+      config: {
+        systemInstruction
+      }
+    });
+    return response.text || 'Fashion guidance generated successfully.';
+  } catch (err: any) {
+    console.error('Fashion knowledge generation failed:', err);
+    return `### Fashion Industry & Modeling Guidance\n\n${question}\n\nMaintain professional poise, accurate biometrical measurements, and clean lighting setups for optimal casting success.`;
+  }
+}
+

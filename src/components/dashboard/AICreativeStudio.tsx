@@ -3,14 +3,37 @@ import {
   Sparkles, Mic, MicOff, Search, Compass, Film, FileText, 
   RefreshCcw, Play, Pause, ChevronRight, Eye, Check, Loader2, 
   MapPin, Send, HelpCircle, User, Download, Upload, Image as ImageIcon,
-  AlertTriangle
+  AlertTriangle, Lock, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import PremiumUnlockModal from '../booking/PremiumUnlockModal';
+import { Model } from '../../types';
 
 interface AICreativeStudioProps {
   userEmail: string;
   triggerToast?: (title: string, message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
 }
+
+const AI_LAB_MODEL: Model = {
+  id: 'ai_creation_lab',
+  userId: 'system',
+  name: 'AI Creation Lab Unlimited Access',
+  gender: 'female',
+  age: 24,
+  height: "5'9\"",
+  city: 'Mumbai',
+  state: 'Maharashtra',
+  languages: ['English', 'Hindi'],
+  experience: 'Unlimited',
+  category: 'AI Creative Suite',
+  portfolio: ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400'],
+  startingPrice: 399,
+  rating: 5.0,
+  reviewsCount: 150,
+  biography: 'Unlimited access to AI Image Lab, Female AI Voice Assistant, and Fashion Industry Knowledge Base.',
+  selfieVerified: true,
+  approved: true
+};
 
 interface Coach {
   id: 'riya' | 'aarav' | 'zack' | 'diya';
@@ -28,13 +51,24 @@ const COACHES: Record<'riya' | 'aarav' | 'zack' | 'diya', Coach> = {
   riya: {
     id: 'riya',
     name: 'Coach Riya',
-    title: 'AI Runway & Casting Vocal Coach',
+    title: 'Female AI Voice Assistant (Runway & Casting)',
     voiceName: 'Kore',
     gender: 'female',
-    vibe: 'Elegant, warm, and highly supportive',
-    description: 'High-fashion casting director focusing on runway poise, speech projection, and contract alignments.',
+    vibe: 'Soft, gentle, elegant, and encouraging female voice',
+    description: 'Expert female fashion advisor with soft voice & tone. She has extensive knowledge about fashion, runway, catwalk, and casting.',
     avatarBg: 'from-pink-500/20 to-purple-500/20 text-pink-400 border-pink-500/30',
-    greeting: 'Welcome to the Live Casting Audition standard room. Speak to voice coach Riya to practice styling answers and receive feedback.'
+    greeting: 'Hello darling! I am Riya, your female AI fashion assistant. I am here to help you gain knowledge about fashion, modeling, catwalk routines, and casting rates. How can I assist you today?'
+  },
+  diya: {
+    id: 'diya',
+    name: 'Mentor Diya',
+    title: 'Female AI Voice Assistant (Fashion Mentor)',
+    voiceName: 'Aoede',
+    gender: 'female',
+    vibe: 'Calm, soft, compassionate, and soothing girl voice',
+    description: 'Empathetic female fashion mentor providing soft guidance on modeling confidence, pose preparation, and contract wisdom.',
+    avatarBg: 'from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/30',
+    greeting: 'Welcome dear. Take a deep breath. I am Diya, your soft-spoken fashion mentor. Feel free to ask me anything about the fashion industry or casting preparation.'
   },
   aarav: {
     id: 'aarav',
@@ -45,7 +79,7 @@ const COACHES: Record<'riya' | 'aarav' | 'zack' | 'diya', Coach> = {
     vibe: 'Deep, professional, and authoritative',
     description: '15+ year runway veteran teaching technical catwalk turns, high-pressure audits, and fierce ramp presence.',
     avatarBg: 'from-blue-500/20 to-indigo-500/20 text-blue-400 border-blue-500/30',
-    greeting: 'Director Aarav is on air. Let’s get technical. Ask me about complex choreographies, Milan catwalk standards, or negotiation.'
+    greeting: 'Director Aarav is on air. Ask me about complex choreographies, Milan catwalk standards, or negotiation.'
   },
   zack: {
     id: 'zack',
@@ -57,22 +91,65 @@ const COACHES: Record<'riya' | 'aarav' | 'zack' | 'diya', Coach> = {
     description: 'Vibrant editorial runway stylist teaching bold creative posing, confidence outbursts, and dramatic rhythm.',
     avatarBg: 'from-orange-500/20 to-amber-500/20 text-orange-400 border-orange-500/30',
     greeting: 'Hey gorgeous! Zack here! Ready to be absolutely fierce and fabulous? Speak up and let’s work that ramp!'
-  },
-  diya: {
-    id: 'diya',
-    name: 'Mentor Diya',
-    title: 'Mindfulness & Model Wellness Mentor',
-    voiceName: 'Aoede',
-    gender: 'female',
-    vibe: 'Calm, soothing, and compassionate',
-    description: 'Empathetic counselor focusing on mental confidence, camera anxiety, and authentic speech projection.',
-    avatarBg: 'from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/30',
-    greeting: 'Hello dear. Take a deep breath. Let’s practice centered speech projection and release any audition stress together.'
   }
 };
 
 export default function AICreativeStudio({ userEmail, triggerToast }: AICreativeStudioProps) {
   const [activeSubTab, setActiveSubTab] = useState<'voice' | 'image' | 'video' | 'grounding' | 'brief' | 'bio'>('voice');
+
+  // Lock State & Payment Modal (First 2 generations free)
+  const [generationCount, setGenerationCount] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('mvi_ai_gen_count');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const [isStudioUnlocked, setIsStudioUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('mvi_ai_studio_unlocked') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const isLocked = generationCount >= 2 && !isStudioUnlocked;
+
+  // Fashion Knowledge Q&A Assistant
+  const [fashionQuestion, setFashionQuestion] = useState('');
+  const [fashionAnswer, setFashionAnswer] = useState<string | null>(null);
+  const [isAskingFashion, setIsAskingFashion] = useState(false);
+
+  const handleAskFashion = async () => {
+    if (!fashionQuestion.trim()) return;
+    if (isLocked) {
+      setShowUnlockModal(true);
+      if (triggerToast) triggerToast('Limit Reached', 'You have used your 2 free generations. Unlock full access for ₹399 ($3.99).', 'warning');
+      return;
+    }
+    setIsAskingFashion(true);
+    setFashionAnswer(null);
+    try {
+      const res = await fetch('/api/ai/fashion-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: fashionQuestion })
+      });
+      const data = await res.json();
+      if (data.success && data.response) {
+        setFashionAnswer(data.response);
+      } else {
+        if (triggerToast) triggerToast('Query Error', 'Could not retrieve fashion answer.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAskingFashion(false);
+    }
+  };
 
   // ==========================================
   // VOICE AUDITION STATE & LOGIC (GEMINI LIVE)
@@ -105,6 +182,11 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
   const animationFrameRef = useRef<number | null>(null);
 
   const startVoiceSession = async () => {
+    if (isLocked) {
+      setShowUnlockModal(true);
+      if (triggerToast) triggerToast('Limit Reached', 'You have used your 2 free generations/interactions. Unlock for ₹399 ($3.99).', 'warning');
+      return;
+    }
     try {
       setVoiceMessages(prev => [...prev, { sender: 'sys', text: `Initializing ${COACHES[selectedCoachId].name}'s Voice Coaching feed...` }]);
       
@@ -331,6 +413,11 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
 
   const triggerImageGeneration = async () => {
     if (!imagePrompt.trim()) return;
+    if (isLocked) {
+      setShowUnlockModal(true);
+      if (triggerToast) triggerToast('Limit Reached', 'First two image generations are free. Unlock full access for ₹399 ($3.99).', 'warning');
+      return;
+    }
     setIsGeneratingImg(true);
     setGeneratedImgUrl(null);
     try {
@@ -344,6 +431,9 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
         setGeneratedImgUrl(data.url);
         setGeneratedImgBase64(data.base64);
         setImagePrompt('');
+        const newCount = generationCount + 1;
+        setGenerationCount(newCount);
+        localStorage.setItem('mvi_ai_gen_count', newCount.toString());
         if (triggerToast) triggerToast('Image Generated', 'Your AI creative model photo has been generated successfully!', 'success');
       } else {
         if (triggerToast) {
@@ -366,6 +456,11 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
 
   const triggerImageEdit = async () => {
     if (!editPrompt.trim() || !editorSourceImg) return;
+    if (isLocked) {
+      setShowUnlockModal(true);
+      if (triggerToast) triggerToast('Limit Reached', 'First two image generations are free. Unlock full access for ₹399 ($3.99).', 'warning');
+      return;
+    }
     setIsEditingImg(true);
     try {
       const res = await fetch('/api/ai/image-edit', {
@@ -382,6 +477,9 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
         setGeneratedImgBase64(data.base64);
         setEditorSourceImg(null); // convert to output container
         setEditPrompt('');
+        const newCount = generationCount + 1;
+        setGenerationCount(newCount);
+        localStorage.setItem('mvi_ai_gen_count', newCount.toString());
         if (triggerToast) triggerToast('Image Edited', 'Your AI model edit has been completed successfully!', 'success');
       } else {
         if (triggerToast) {
@@ -620,6 +718,31 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
           Leverage pristine model layers to create luxury composite cards, practice vocal castings with Live AI coaches, locate production studios, and plan high-fashion campaign briefs.
         </p>
       </div>
+
+      {/* LOCKED ACCESS BANNER IF 2 FREE GENERATIONS USED */}
+      {isLocked && (
+        <div className="mb-8 rounded-3xl bg-gradient-to-r from-purple-950 via-neutral-900 to-pink-950 border-2 border-purple-500/40 p-6 text-white text-center shadow-2xl relative overflow-hidden animate-fadeIn">
+          <div className="absolute top-3 right-3 rounded-full bg-purple-500/20 px-3.5 py-1 text-[10px] font-mono font-black uppercase tracking-wider text-purple-300 border border-purple-500/30">
+            2/2 Free Generations Used
+          </div>
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400 text-purple-300 mb-3 shadow-inner">
+            <Lock className="h-6 w-6 text-pink-400" />
+          </div>
+          <h3 className="text-xl font-black tracking-tight font-sans">AI Creation Lab is Currently Locked</h3>
+          <p className="text-xs text-neutral-300 max-w-lg mx-auto mt-1.5 leading-relaxed font-medium">
+            First two image generations/interactions are free. Unlock unlimited image generation, image modification, female AI voice assistant, and fashion knowledge answers for a casting rate of <strong>₹399 ($3.99)</strong>.
+          </p>
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={() => setShowUnlockModal(true)}
+              className="inline-flex items-center space-x-2 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:to-red-700 text-white px-7 py-3 text-xs font-black uppercase tracking-wider shadow-lg hover:shadow-xl transition active:scale-95 cursor-pointer"
+            >
+              <Sparkles className="h-4 w-4 text-amber-300" />
+              <span>Unlock AI Creation Lab (₹399 / $3.99)</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Grid Layout navigation */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -890,6 +1013,83 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
                         </p>
                       </div>
                     ))}
+                  </div>
+
+                  {/* FASHION KNOWLEDGE & DIAGRAM ASSISTANT */}
+                  <div className="mt-4 border-t border-neutral-100 dark:border-white/10 pt-4 mb-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <MessageSquare className="h-4 w-4 text-pink-500" />
+                      <h3 className="text-xs font-black uppercase font-mono tracking-wider text-neutral-800 dark:text-neutral-200">
+                        Fashion Assistant Knowledge & Diagram Generator
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-2 font-medium">
+                      Ask your soft-spoken female AI assistant any question about fashion, runway catwalks, comp cards, pose angles, or casting rates.
+                    </p>
+
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={fashionQuestion}
+                        onChange={(e) => setFashionQuestion(e.target.value)}
+                        placeholder='e.g. "Draw a diagram of a runway layout and catwalk steps"'
+                        className="flex-1 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 focus:outline-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleAskFashion();
+                        }}
+                      />
+                      <button
+                        onClick={handleAskFashion}
+                        disabled={isAskingFashion || !fashionQuestion.trim()}
+                        className="px-4 py-2.5 bg-pink-600 hover:bg-pink-700 disabled:bg-neutral-300 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer shrink-0"
+                      >
+                        {isAskingFashion ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Thinking...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-3.5 w-3.5" />
+                            <span>Ask Assistant</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Pre-set fashion questions */}
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setFashionQuestion("Draw a diagram of a runway layout and catwalk steps")}
+                        className="text-[10px] bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-2.5 py-1 rounded-full font-medium transition cursor-pointer"
+                      >
+                        📐 Runway Catwalk Diagram
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFashionQuestion("What are standard model comp card measurements and layouts?")}
+                        className="text-[10px] bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-2.5 py-1 rounded-full font-medium transition cursor-pointer"
+                      >
+                        📋 Comp Card Specs
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFashionQuestion("Explain daily casting rates in India ($3.99 / ₹399 individual to ₹4,499 enterprise)")}
+                        className="text-[10px] bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-2.5 py-1 rounded-full font-medium transition cursor-pointer"
+                      >
+                        💰 Casting Rates Guide
+                      </button>
+                    </div>
+
+                    {/* Answer Area */}
+                    {fashionAnswer && (
+                      <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-white/10 text-xs text-neutral-800 dark:text-neutral-200 font-medium leading-relaxed overflow-x-auto max-h-[300px] overflow-y-auto">
+                        <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap font-sans">
+                          {fashionAnswer}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
