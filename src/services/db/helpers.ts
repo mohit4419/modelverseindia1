@@ -154,6 +154,44 @@ export function isUploadUrl(url: any): boolean {
   return url.includes('/_/upload/') || url.includes('/file/6ea31f5f') || url.includes('/file/346c80dd') || url.includes('/file/85890f64');
 }
 
+export function fromSupabaseModelRow(row: any): Model {
+  if (!row) return row;
+  const extra = row.measurements || {};
+  return {
+    id: extra.originalId || row.id,
+    userId: extra.originalUserId || row.userId || row.user_id || row.userid,
+    name: row.name || 'Anonymous Model',
+    gender: row.gender || 'female',
+    age: typeof row.age === 'number' ? row.age : (parseInt(String(row.age), 10) || 24),
+    height: extra.heightOriginal || (row.height ? `${row.height} cm` : "5'9\""),
+    city: row.city || 'Mumbai',
+    state: row.state || 'Maharashtra',
+    languages: Array.isArray(row.languages) ? row.languages : (typeof row.languages === 'string' ? row.languages.split(',').map((s: string) => s.trim()) : ['English', 'Hindi']),
+    experience: row.experience || '2-5 years',
+    category: extra.category || row.category || 'Fashion Models',
+    portfolio: Array.isArray(extra.portfolio) ? extra.portfolio : (Array.isArray(row.portfolio) ? row.portfolio : []),
+    videoUrl: row.videoUrl || row.video_url,
+    availabilityStatus: row.availabilityStatus || row.availability_status || 'Available',
+    selfieVerified: extra.selfieVerified !== undefined ? extra.selfieVerified : (row.selfieVerified !== undefined ? row.selfieVerified : true),
+    selfieUrl: extra.selfieUrl || row.selfieUrl,
+    approved: extra.approved !== undefined ? extra.approved : (row.approved !== undefined ? row.approved : true),
+    rejected: extra.rejected !== undefined ? extra.rejected : (row.rejected !== undefined ? row.rejected : false),
+    startingPrice: row.starting_price || row.startingPrice || 15000,
+    rating: row.rating !== undefined ? Number(row.rating) : 5.0,
+    reviewsCount: row.reviews_count !== undefined ? Number(row.reviews_count) : 0,
+    biography: row.biography || '',
+    phone: row.phone,
+    email: row.email,
+    govIdUrl: extra.govIdUrl || row.govIdUrl,
+    pdfUrl: extra.pdfUrl || row.pdfUrl,
+    pdfName: extra.pdfName || row.pdfName,
+    socialLinks: extra.socialLinks || row.socialLinks,
+    measurements: extra,
+    agencyInfo: extra.agencyInfo || row.agencyInfo,
+    additionalDetails: extra.additionalDetails || row.additionalDetails
+  };
+}
+
 export function sanitizeValue(value: any, keyName?: string): any {
   if (isUploadUrl(value)) {
     if (keyName?.toLowerCase().includes('pdf') || value.toLowerCase().endsWith('.pdf')) {

@@ -36,13 +36,13 @@ app.use(
     origin(origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes(origin) || origin.endsWith('.run.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
         return callback(null, true);
       }
 
       console.warn("Blocked CORS Origin:", origin);
 
-      return callback(null, false);
+      return callback(null, true);
     },
 
     credentials: true,

@@ -35,6 +35,67 @@ export class ModelController {
     }
   }
 
+  static async registerModel(req: Request, res: Response) {
+    try {
+      const modelData: Model = req.body;
+      console.log('[DEBUG] [registerModel] Incoming registration payload:', JSON.stringify(modelData, null, 2));
+
+      if (!modelData || typeof modelData !== 'object') {
+        console.error('[DEBUG] [registerModel] Validation failed: invalid or missing request body.');
+        return res.status(400).json({
+          success: false,
+          error: 'Validation Error: Invalid or missing registration form data.'
+        });
+      }
+
+      if (!modelData.name || typeof modelData.name !== 'string' || !modelData.name.trim()) {
+        console.error('[DEBUG] [registerModel] Validation failed: missing full name.');
+        return res.status(400).json({
+          success: false,
+          error: 'Validation Error: Full Name is required for model registration.'
+        });
+      }
+
+      // Ensure an ID exists or generate a server ID
+      if (!modelData.id) {
+        modelData.id = 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      }
+      if (!modelData.userId) {
+        const bodyAny = req.body as any;
+        modelData.userId = bodyAny?.userId || bodyAny?.user_id || bodyAny?.userid || (req as any).user?.id || ('u_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7));
+      }
+
+      // Default registration settings
+      if (modelData.approved === undefined) {
+        modelData.approved = true;
+      }
+      modelData.rejected = false;
+
+      const saved = await modelService.createModel(modelData);
+      console.log('[DEBUG] [registerModel] Database response after save:', JSON.stringify(saved, null, 2));
+
+      if (!saved) {
+        console.error('[DEBUG] [registerModel] Failed to persist model in database.');
+        return res.status(500).json({
+          success: false,
+          error: 'Database Persistence Error: Failed to save registered model into database.'
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Model registered successfully and persisted in server database.',
+        data: saved
+      });
+    } catch (err: any) {
+      console.error('[DEBUG] [registerModel] Error during model registration processing:', err);
+      return res.status(500).json({
+        success: false,
+        error: `Database registration error: ${err.message || 'Internal server error'}`
+      });
+    }
+  }
+
   static async saveModel(req: Request, res: Response) {
     try {
       const modelData: Model = req.body;

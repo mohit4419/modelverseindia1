@@ -706,8 +706,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
     };
 
     const newModel: Model = {
-      id: initialModel ? initialModel.id :
-      crypto.randomUUID(),
+      id: initialModel ? initialModel.id : `model_${Date.now()}`,
       userId,
       name,
       gender: (gender === 'male' || gender === 'female' || gender === 'non-binary') ? gender : 'female',
@@ -756,11 +755,17 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
     };
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      onRegisterSubmit(newModel);
-      setRegistrationSuccess(true);
-      setIsSubmitting(false);
-    }, 1500);
+    (async () => {
+      try {
+        await onRegisterSubmit(newModel);
+        setRegistrationSuccess(true);
+      } catch (err: any) {
+        console.error('Registration submit error:', err);
+        alert(`Failed to save model on server: ${err?.message || 'Server error'}`);
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
   };
 
   // Helper validation status

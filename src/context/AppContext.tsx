@@ -274,7 +274,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Filtered Models Calculation
   const filteredModels = (() => {
     const filtered = models.filter((m) => {
-      if (currentRole !== 'admin' && !m.approved) return false;
+      if (currentRole !== 'admin' && m.approved === false) return false;
       if (currentRole !== 'admin' && currentRole !== 'model' && m.archived) return false;
 
       if (searchQuery) {
@@ -302,12 +302,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (distance > searchRadius) return false;
         }
       } else {
-        if (searchLocation && m.city.toLowerCase() !== searchLocation.toLowerCase()) return false;
+        if (searchLocation && m.city?.toLowerCase() !== searchLocation.toLowerCase()) return false;
       }
       
-      if (searchCategory && m.category.toLowerCase() !== searchCategory.toLowerCase()) return false;
+      if (searchCategory && m.category?.toLowerCase() !== searchCategory.toLowerCase()) return false;
       if (searchGender && m.gender !== searchGender) return false;
-      if (m.age < searchAgeRange[0] || m.age > searchAgeRange[1]) return false;
+      if (m.age && (m.age < searchAgeRange[0] || m.age > searchAgeRange[1])) return false;
       
       if (searchHeightClass) {
         let heightCm = 170;

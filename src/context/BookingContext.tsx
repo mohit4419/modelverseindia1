@@ -48,7 +48,7 @@ interface BookingContextType {
   handleAdminRejectModel: (modelId: string) => Promise<void>;
   handleAdminSuspendUser: (userId: string) => Promise<void>;
   handleUpdateBookingStatus: (bookingId: string, status: BookingStatus) => Promise<void>;
-  handleModelRegisterSubmit: (newModel: Model) => void;
+  handleModelRegisterSubmit: (newModel: Model) => Promise<void>;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -316,7 +316,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     const target = updatedModels.find(m => m.id === modelId);
     if (target) {
       try {
-        await (target);
+        await dbService.saveModel(target);
         await dbService.addAuditLog({
           action: 'Registration Revocation',
           performedBy: userEmail || 'admin@modelverse.in',
@@ -409,57 +409,55 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       triggerToast('Update Failed', 'An error occurred while updating the booking request.', 'error');
     }
   };
-    
-  const handleModelRegisterSubmit = (newModel: Model) => {
-  console.log("STEP 1");
-  console.log(newModel);
 
-  const pendingModel = {
-    ...newModel,
-    approved: false,
-    rejected: false
-  };
+  const handleModelRegisterSubmit = async (newModel: Model) => {
+    const userSession = dbService.getCurrentSessionUser();
+    const existingUserId = newModel.userId || clientId || userSession?.id;
+    const finalUserId = existingUserId && String(existingUserId).trim() !== '' 
+      ? String(existingUserId).trim() 
+      : 'u_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
-  console.log("STEP 2");
-
-  setModels(prev => {
-    const filtered = prev.filter(m => m.id !== pendingModel.id);
-    return [...filtered, pendingModel];
-  });
-
-  setActiveHomeCategory(pendingModel.category);
-  setSearchCategory(pendingModel.category);
-
-  const applyUpdatedModels = (updatedModels: Model[]) => {
-    const exists = updatedModels.some(m => m.id === pendingModel.id);
-
-    const finalModels = exists
-      ? updatedModels
-      : [...updatedModels.filter(m => m.id !== pendingModel.id), pendingModel];
-
-    setModels(finalModels);
+    const pendingModel: Model = {
+      ...newModel,
+      userId: finalUserId,
+      approved: newModel.approved !== undefined ? newModel.approved : true,
+      rejected: false
+    };
 
     triggerToast(
-      "Profile Submitted!",
-      `Successfully registered ${pendingModel.name}! Pending admin review.`,
-      "success"
+      'Submitting to Server Database',
+      `Sending profile details for "${pendingModel.name}" to the backend server...`,
+      'info'
     );
+
+    try {
+      // 1) Submit registration to Backend Server Endpoint FIRST (/api/v2/models/register)
+      const savedModel = await dbService.registerModel(pendingModel);
+
+      // 2) Fetch fresh models list directly from the backend
+      const freshModels = await dbService.getModels();
+      setModels(freshModels);
+
+      if (pendingModel.category) {
+        setActiveHomeCategory(pendingModel.category);
+        setSearchCategory(pendingModel.category);
+      }
+
+      triggerToast(
+        'Profile Saved on Backend!',
+        `Successfully saved model "${savedModel?.name || pendingModel.name}" directly to backend database!`,
+        'success'
+      );
+    } catch (err: any) {
+      console.error('Backend registration write failed:', err);
+      triggerToast(
+        'Registration Failed',
+        `Failed to save model on server database: ${err.message || 'Server error'}`,
+        'error'
+      );
+      throw err;
+    }
   };
-
-  console.log("STEP 3 - Before saveModel");
-
-  dbService.saveModel(pendingModel)
-    .then(() => {
-      console.log("STEP 4 - saveModel success");
-      return dbService.getModels();
-    })
-    .then(applyUpdatedModels)
-    .catch((err) => {
-      console.error("STEP 5 - saveModel failed", err);
-    });
-};
-    
-   
 
   return (
     <BookingContext.Provider

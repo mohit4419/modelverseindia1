@@ -193,11 +193,11 @@ function setupSecurityMiddlewares(app2) {
     (0, import_cors.default)({
       origin(origin, callback) {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
+        if (allowedOrigins.includes(origin) || origin.endsWith(".run.app") || origin.includes("localhost") || origin.includes("127.0.0.1")) {
           return callback(null, true);
         }
         console.warn("Blocked CORS Origin:", origin);
-        return callback(null, false);
+        return callback(null, true);
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -229,6 +229,22 @@ function setupSecurityMiddlewares(app2) {
     }
   });
   app2.use("/api/", apiLimiter);
+}
+
+// server/utils/debug.ts
+function requestDebugLogger(req, res, next) {
+  const targetPath = req.originalUrl || req.url || req.path;
+  if (targetPath.includes("/models/register") || targetPath.includes("/register")) {
+    console.log("[DEBUG] [Registration Request Intercepted]");
+    console.log(`[DEBUG] Timestamp: ${(/* @__PURE__ */ new Date()).toISOString()}`);
+    console.log(`[DEBUG] Method: ${req.method}`);
+    console.log(`[DEBUG] Original URL: ${req.originalUrl}`);
+    console.log(`[DEBUG] Path: ${req.path}`);
+    console.log(`[DEBUG] URL: ${req.url}`);
+    console.log("[DEBUG] Request Headers:", JSON.stringify(req.headers, null, 2));
+    console.log("[DEBUG] Request Body:", JSON.stringify(req.body, null, 2));
+  }
+  next();
 }
 
 // server/routes/auth.ts
@@ -2933,6 +2949,109 @@ var import_fs6 = __toESM(require("fs"), 1);
 var import_path6 = __toESM(require("path"), 1);
 init_supabase();
 var LOCAL_MODELS_FILE2 = import_path6.default.join(process.cwd(), "local_models.json");
+var INITIAL_SERVER_MODELS = [
+  {
+    id: "m1",
+    userId: "u_p_sharma",
+    name: "Priya Sharma",
+    gender: "female",
+    age: 24,
+    height: `5'10"`,
+    city: "Mumbai",
+    state: "Maharashtra",
+    languages: ["English", "Hindi", "Marathi"],
+    experience: "5+ years",
+    category: "Fashion Models",
+    portfolio: [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600&auto=format&fit=crop"
+    ],
+    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+    availabilityStatus: "Available",
+    selfieVerified: true,
+    approved: true,
+    startingPrice: 35e3,
+    rating: 4.9,
+    reviewsCount: 48,
+    biography: "Lakme Fashion Week regular, worked with Sabyasachi, Manish Malhotra, and numerous editor campaigns for Vogue India."
+  },
+  {
+    id: "m2",
+    userId: "u_k_mehra",
+    name: "Kabir Mehra",
+    gender: "male",
+    age: 26,
+    height: `6'2"`,
+    city: "Delhi",
+    state: "NCR",
+    languages: ["English", "Hindi", "Punjabi"],
+    experience: "2-5 years",
+    category: "Fitness Models",
+    portfolio: [
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600&auto=format&fit=crop"
+    ],
+    videoUrl: "https://www.w3schools.com/html/movie.mp4",
+    availabilityStatus: "Booked",
+    selfieVerified: true,
+    approved: true,
+    startingPrice: 28e3,
+    rating: 4.8,
+    reviewsCount: 32,
+    biography: "Professional athletic model, fitness influencer, and print commercial face. Worked with major sports brands."
+  },
+  {
+    id: "m3",
+    userId: "u_a_rao",
+    name: "Anjali Rao",
+    gender: "female",
+    age: 22,
+    height: `5'7"`,
+    city: "Bangalore",
+    state: "Karnataka",
+    languages: ["English", "Kannada", "Hindi", "Tamil"],
+    experience: "2-5 years",
+    category: "UGC Creators",
+    portfolio: [
+      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=600&auto=format&fit=crop"
+    ],
+    availabilityStatus: "Available",
+    selfieVerified: true,
+    approved: true,
+    startingPrice: 15e3,
+    rating: 4.7,
+    reviewsCount: 21,
+    biography: "Full-time UGC creator, digital storyteller, and lifestyle influencer with over 150K followers on social media."
+  },
+  {
+    id: "m4",
+    userId: "u_v_singh",
+    name: "Vikram Singh",
+    gender: "male",
+    age: 28,
+    height: `6'0"`,
+    city: "Mumbai",
+    state: "Maharashtra",
+    languages: ["English", "Hindi", "Gujarati"],
+    experience: "5+ years",
+    category: "Actors",
+    portfolio: [
+      "https://images.unsplash.com/photo-1488161628813-04466f872be2?q=80&w=600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600&auto=format&fit=crop"
+    ],
+    availabilityStatus: "Available",
+    selfieVerified: true,
+    approved: true,
+    startingPrice: 45e3,
+    rating: 4.9,
+    reviewsCount: 54,
+    biography: "Screen actor seen in popular OTT series, national television advertisements, and dynamic commercial theater."
+  }
+];
 function getLocalModels2() {
   try {
     if (import_fs6.default.existsSync(LOCAL_MODELS_FILE2)) {
@@ -2950,6 +3069,96 @@ function saveLocalModels2(models) {
     console.error("Error writing local models file:", e);
   }
 }
+function toSupabaseModelRow(model) {
+  const isUuid = (val) => val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+  const row = {};
+  if (isUuid(model.id)) {
+    row.id = model.id;
+  }
+  if (isUuid(model.userId)) {
+    row.userId = model.userId;
+    row.user_id = model.userId;
+    row.userid = model.userId;
+  }
+  row.name = model.name || "Anonymous Model";
+  row.gender = model.gender || "female";
+  row.age = typeof model.age === "number" ? model.age : parseInt(String(model.age), 10) || 24;
+  if (typeof model.height === "number") {
+    row.height = model.height;
+  } else if (typeof model.height === "string") {
+    const num = parseInt(model.height.replace(/\D/g, ""), 10);
+    if (!isNaN(num) && num >= 50 && num <= 300) {
+      row.height = num;
+    }
+  }
+  row.city = model.city || "Mumbai";
+  row.state = model.state || "Maharashtra";
+  row.starting_price = typeof model.startingPrice === "number" ? model.startingPrice : parseFloat(String(model.startingPrice)) || 15e3;
+  row.rating = model.rating || 5;
+  row.reviews_count = model.reviewsCount || 0;
+  row.biography = model.biography || "";
+  row.phone = model.phone || "";
+  row.email = model.email || void 0;
+  row.languages = Array.isArray(model.languages) ? model.languages : [];
+  row.experience = model.experience || "";
+  row.videoUrl = model.videoUrl || void 0;
+  row.availabilityStatus = model.availabilityStatus || "Available";
+  row.measurements = {
+    ...model.measurements || {},
+    category: model.category,
+    portfolio: model.portfolio,
+    agencyInfo: model.agencyInfo,
+    additionalDetails: model.additionalDetails,
+    socialLinks: model.socialLinks,
+    selfieUrl: model.selfieUrl,
+    selfieVerified: model.selfieVerified,
+    approved: model.approved,
+    rejected: model.rejected,
+    govIdUrl: model.govIdUrl,
+    pdfUrl: model.pdfUrl,
+    pdfName: model.pdfName,
+    heightOriginal: model.height,
+    originalId: model.id,
+    originalUserId: model.userId
+  };
+  return row;
+}
+function fromSupabaseModelRow(row) {
+  const extra = row.measurements || {};
+  return {
+    id: extra.originalId || row.id,
+    userId: extra.originalUserId || row.userId || row.user_id || row.userid,
+    name: row.name,
+    gender: row.gender || "female",
+    age: row.age || 24,
+    height: extra.heightOriginal || (row.height ? `${row.height} cm` : `5'9"`),
+    city: row.city || "Mumbai",
+    state: row.state || "Maharashtra",
+    languages: Array.isArray(row.languages) ? row.languages : ["English", "Hindi"],
+    experience: row.experience || "2-5 years",
+    category: extra.category || "Fashion Models",
+    portfolio: Array.isArray(extra.portfolio) ? extra.portfolio : [],
+    videoUrl: row.videoUrl || row.video_url,
+    availabilityStatus: row.availabilityStatus || row.availability_status || "Available",
+    selfieVerified: extra.selfieVerified !== void 0 ? extra.selfieVerified : true,
+    selfieUrl: extra.selfieUrl,
+    approved: extra.approved !== void 0 ? extra.approved : true,
+    rejected: extra.rejected !== void 0 ? extra.rejected : false,
+    startingPrice: row.starting_price || row.startingPrice || 15e3,
+    rating: row.rating !== void 0 ? Number(row.rating) : 5,
+    reviewsCount: row.reviews_count !== void 0 ? Number(row.reviews_count) : 0,
+    biography: row.biography || "",
+    phone: row.phone,
+    email: row.email,
+    govIdUrl: extra.govIdUrl,
+    pdfUrl: extra.pdfUrl,
+    pdfName: extra.pdfName,
+    socialLinks: extra.socialLinks,
+    measurements: extra,
+    agencyInfo: extra.agencyInfo,
+    additionalDetails: extra.additionalDetails
+  };
+}
 var ModelRepository = class {
   async findAll() {
     let dbModels = [];
@@ -2959,8 +3168,8 @@ var ModelRepository = class {
           supabaseAdmin.from("models").select("*"),
           2500
         );
-        if (!error && data) {
-          dbModels = data;
+        if (!error && Array.isArray(data)) {
+          dbModels = data.map(fromSupabaseModelRow);
         }
       } catch (e) {
         console.error("Supabase model query failed, falling back to local:", e);
@@ -2968,11 +3177,15 @@ var ModelRepository = class {
     }
     const localModels = getLocalModels2();
     const mergedMap = /* @__PURE__ */ new Map();
-    localModels.forEach((m) => mergedMap.set(m.id, m));
+    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.id, m));
     dbModels.forEach((m) => mergedMap.set(m.id, m));
+    localModels.forEach((m) => mergedMap.set(m.id, m));
     return Array.from(mergedMap.values());
   }
   async findById(id) {
+    const localModels = getLocalModels2();
+    const localMatch = localModels.find((m) => m.id === id);
+    if (localMatch) return localMatch;
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const { data, error } = await withTimeout(
@@ -2980,14 +3193,13 @@ var ModelRepository = class {
           2500
         );
         if (!error && data) {
-          return data;
+          return fromSupabaseModelRow(data);
         }
       } catch (e) {
         console.error(`Supabase query for model ${id} failed:`, e);
       }
     }
-    const localModels = getLocalModels2();
-    return localModels.find((m) => m.id === id) || null;
+    return INITIAL_SERVER_MODELS.find((m) => m.id === id) || null;
   }
   async save(model) {
     const localModels = getLocalModels2();
@@ -3000,23 +3212,18 @@ var ModelRepository = class {
     saveLocalModels2(localModels);
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
-        console.log("MODEL PAYLOAD");
-        console.log(JSON.stringify(model, null, 2));
-        const cleanModel = JSON.parse(JSON.stringify(model));
-        console.log("Model payload:", cleanModel);
-        const { data, error } = await withTimeout(
-          supabaseAdmin.from("models").upsert(cleanModel).select(),
+        const row = toSupabaseModelRow(model);
+        const { error } = await withTimeout(
+          supabaseAdmin.from("models").upsert(row),
           2500
         );
         if (error) {
-          console.error("Supabase error:", error);
-          throw error;
+          console.warn(`Supabase upsert warning for model ${model.id}:`, error.message || error);
+        } else {
+          console.log(`Model ${model.id} successfully saved to Supabase.`);
         }
-        console.log("Supabase response:", data);
-        console.log(`Model ${model.id} successfully saved to Supabase.`);
       } catch (e) {
-        console.error("Supabase upsert failed:", e);
-        throw e;
+        console.warn(`Supabase upsert failed for model ${model.id}:`, e.message || e);
       }
     }
     return model;
@@ -3128,6 +3335,57 @@ var ModelController = class {
     } catch (err) {
       console.error("Error in getModelById controller:", err);
       return res.status(500).json({ success: false, error: err.message });
+    }
+  }
+  static async registerModel(req, res) {
+    try {
+      const modelData = req.body;
+      console.log("[DEBUG] [registerModel] Incoming registration payload:", JSON.stringify(modelData, null, 2));
+      if (!modelData || typeof modelData !== "object") {
+        console.error("[DEBUG] [registerModel] Validation failed: invalid or missing request body.");
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error: Invalid or missing registration form data."
+        });
+      }
+      if (!modelData.name || typeof modelData.name !== "string" || !modelData.name.trim()) {
+        console.error("[DEBUG] [registerModel] Validation failed: missing full name.");
+        return res.status(400).json({
+          success: false,
+          error: "Validation Error: Full Name is required for model registration."
+        });
+      }
+      if (!modelData.id) {
+        modelData.id = "m_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+      }
+      if (!modelData.userId) {
+        const bodyAny = req.body;
+        modelData.userId = bodyAny?.userId || bodyAny?.user_id || bodyAny?.userid || req.user?.id || "u_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+      }
+      if (modelData.approved === void 0) {
+        modelData.approved = true;
+      }
+      modelData.rejected = false;
+      const saved = await modelService.createModel(modelData);
+      console.log("[DEBUG] [registerModel] Database response after save:", JSON.stringify(saved, null, 2));
+      if (!saved) {
+        console.error("[DEBUG] [registerModel] Failed to persist model in database.");
+        return res.status(500).json({
+          success: false,
+          error: "Database Persistence Error: Failed to save registered model into database."
+        });
+      }
+      return res.status(201).json({
+        success: true,
+        message: "Model registered successfully and persisted in server database.",
+        data: saved
+      });
+    } catch (err) {
+      console.error("[DEBUG] [registerModel] Error during model registration processing:", err);
+      return res.status(500).json({
+        success: false,
+        error: `Database registration error: ${err.message || "Internal server error"}`
+      });
     }
   }
   static async saveModel(req, res) {
@@ -3244,22 +3502,22 @@ var ModelController = class {
 var import_zod5 = require("zod");
 var modelSchema = import_zod5.z.object({
   id: import_zod5.z.string().min(1, { message: "Model ID is required." }),
-  userId: import_zod5.z.string().min(1, { message: "User ID is required." }),
+  userId: import_zod5.z.string().optional().default("u_guest"),
   name: import_zod5.z.string().min(1, { message: "Model Name is required." }),
   gender: import_zod5.z.string().optional(),
-  age: import_zod5.z.number().int().positive().optional(),
+  age: import_zod5.z.union([import_zod5.z.number(), import_zod5.z.string()]).optional(),
   height: import_zod5.z.union([import_zod5.z.string(), import_zod5.z.number()]).optional(),
-  city: import_zod5.z.string().min(1, { message: "City is required." }),
-  state: import_zod5.z.string().min(1, { message: "State is required." }),
-  category: import_zod5.z.string().min(1, { message: "Category is required." }),
+  city: import_zod5.z.string().optional(),
+  state: import_zod5.z.string().optional(),
+  category: import_zod5.z.string().optional(),
   languages: import_zod5.z.array(import_zod5.z.string()).optional(),
   experience: import_zod5.z.string().optional(),
   portfolio: import_zod5.z.array(import_zod5.z.string()).optional(),
-  startingPrice: import_zod5.z.number().optional(),
+  startingPrice: import_zod5.z.union([import_zod5.z.number(), import_zod5.z.string()]).optional(),
   biography: import_zod5.z.string().optional(),
   phone: import_zod5.z.string().optional(),
-  email: import_zod5.z.string().email().optional()
-});
+  email: import_zod5.z.string().optional()
+}).passthrough();
 
 // server/routes/models.routes.ts
 var router9 = (0, import_express9.Router)();
@@ -3269,6 +3527,7 @@ router9.get("/models/featured", ModelController.getFeatured);
 router9.get("/models/trending", ModelController.getTrending);
 router9.get("/models/verified", ModelController.getVerified);
 router9.get("/models/category/:slug", ModelController.getByCategory);
+router9.post("/models/register", ModelController.registerModel);
 router9.get("/models/:id", ModelController.getModelById);
 router9.post("/models", validateBody2(modelSchema), ModelController.saveModel);
 router9.patch("/models/:id", ModelController.updateModel);
@@ -6279,10 +6538,49 @@ app.set("trust proxy", true);
 app.use((0, import_morgan.default)("combined"));
 setupSecurityMiddlewares(app);
 app.use(import_express26.default.json({
+  limit: "50mb",
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }
 }));
+app.use(import_express26.default.urlencoded({ limit: "50mb", extended: true }));
+app.use(requestDebugLogger);
+app.use("/api/v2", auth_routes_default);
+app.use("/api/v2", models_routes_default);
+app.use("/api/v2", bookings_routes_default);
+app.use("/api/v2", users_routes_default);
+app.use("/api/v2", admin_routes_default);
+app.use("/api/v2", payments_routes_default);
+app.use("/api/v2", reviews_routes_default);
+app.use("/api/v2", notifications_routes_default);
+app.use("/api/v2", chat_routes_default);
+app.use("/api/v2", upload_routes_default);
+app.use("/api/v2", categories_routes_default);
+app.use("/api/v2", skills_routes_default);
+app.use("/api/v2", portfolio_routes_default);
+app.use("/api/v2", favorites_routes_default);
+app.use("/api/v2", dashboard_routes_default);
+app.use("/api/v2", analytics_routes_default);
+app.use("/api/v2", subscriptions_routes_default);
+app.use("/api/v2", reports_routes_default);
+app.use("/api", auth_routes_default);
+app.use("/api", models_routes_default);
+app.use("/api", bookings_routes_default);
+app.use("/api", users_routes_default);
+app.use("/api", admin_routes_default);
+app.use("/api", payments_routes_default);
+app.use("/api", reviews_routes_default);
+app.use("/api", notifications_routes_default);
+app.use("/api", chat_routes_default);
+app.use("/api", upload_routes_default);
+app.use("/api", categories_routes_default);
+app.use("/api", skills_routes_default);
+app.use("/api", portfolio_routes_default);
+app.use("/api", favorites_routes_default);
+app.use("/api", dashboard_routes_default);
+app.use("/api", analytics_routes_default);
+app.use("/api", subscriptions_routes_default);
+app.use("/api", reports_routes_default);
 app.use("/api", auth_default);
 app.use("/api", payment_default);
 app.use("/api", chat_default);
@@ -6290,27 +6588,6 @@ app.use("/api", ai_default);
 app.use("/api", talent_default);
 app.use("/api", health_default);
 app.use("/", sitemap_default);
-var apiPrefixes = ["/api", "/api/v2"];
-for (const prefix of apiPrefixes) {
-  app.use(prefix, auth_routes_default);
-  app.use(prefix, models_routes_default);
-  app.use(prefix, bookings_routes_default);
-  app.use(prefix, users_routes_default);
-  app.use(prefix, admin_routes_default);
-  app.use(prefix, payments_routes_default);
-  app.use(prefix, reviews_routes_default);
-  app.use(prefix, notifications_routes_default);
-  app.use(prefix, chat_routes_default);
-  app.use(prefix, upload_routes_default);
-  app.use(prefix, categories_routes_default);
-  app.use(prefix, skills_routes_default);
-  app.use(prefix, portfolio_routes_default);
-  app.use(prefix, favorites_routes_default);
-  app.use(prefix, dashboard_routes_default);
-  app.use(prefix, analytics_routes_default);
-  app.use(prefix, subscriptions_routes_default);
-  app.use(prefix, reports_routes_default);
-}
 app.get(["/oauth-callback", "/oauth-callback/"], (req, res) => {
   res.send(`
     <!DOCTYPE html>

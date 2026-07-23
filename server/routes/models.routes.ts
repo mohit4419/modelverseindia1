@@ -17,6 +17,8 @@ router.get('/models/trending', ModelController.getTrending);
 router.get('/models/verified', ModelController.getVerified);
 router.get('/models/category/:slug', ModelController.getByCategory);
 
+router.post('/models/register', ModelController.registerModel);
+
 router.get('/models/:id', ModelController.getModelById);
 router.post('/models', validateBody(modelSchema), ModelController.saveModel);
 router.patch('/models/:id', ModelController.updateModel);

@@ -14,7 +14,7 @@ export const messageService = {
     let dbMessages: Message[] = [];
     if (isSupabaseAvailable && supabase) {
       try {
-        const { data, error } = await supabase.from('chat_messages').select('*');
+        const { data, error } = await supabase.from('messages').select('*');
         if (!error && data) {
           dbMessages = data as Message[];
         }
@@ -67,7 +67,7 @@ export const messageService = {
           }
         }
         const { error } = await supabase
-          .from('chat_messages')
+          .from('messages')
           .insert(removeUndefined(msg));
         if (error) throw error;
       } catch (e) {
@@ -86,7 +86,7 @@ export const messageService = {
 
     if (isSupabaseAvailable && supabase) {
       try {
-        const { error } = await supabase.from('chat_messages').delete().neq('id', '');
+        const { error } = await supabase.from('messages').delete().neq('id', '');
         if (error) throw error;
       } catch (e) {
         console.warn('Supabase messaging clear failed:', e);

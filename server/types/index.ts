@@ -45,6 +45,7 @@ export interface Model {
   selfieVerified?: boolean;
   selfieUrl?: string;
   approved?: boolean;
+  rejected?: boolean;
   available?: boolean;
   archived?: boolean;
   featured?: boolean;

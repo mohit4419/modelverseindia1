@@ -39,8 +39,8 @@ export function useSearch(initialModels?: Model[]) {
   }, [searchTerm]);
 
   const filteredModels = results.filter((model) => {
-    const matchesCity = selectedCity ? model.city === selectedCity : true;
-    const matchesCategory = selectedCategory ? model.category === selectedCategory : true;
+    const matchesCity = selectedCity ? model.city?.toLowerCase() === selectedCity.toLowerCase() : true;
+    const matchesCategory = selectedCategory ? model.category?.toLowerCase() === selectedCategory.toLowerCase() : true;
     return matchesCity && matchesCategory;
   });
 

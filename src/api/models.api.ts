@@ -46,6 +46,19 @@ export const modelsApi = {
     return result.data;
   },
 
+  async registerModel(model: Model): Promise<Model> {
+    const response = await fetch('/api/v2/models/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(model),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to register model');
+    }
+    return result.data;
+  },
+
   async updateModel(id: string, updates: Partial<Model>): Promise<Model> {
     const response = await fetch(`/api/v2/models/${id}`, {
       method: 'PUT',

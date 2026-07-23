@@ -45,7 +45,7 @@ export default function ProfileView({
   currentUserId,
   currentUserName
 }: ProfileViewProps) {
-  const [activeImage, setActiveImage] = useState(model.portfolio?.[0]);
+  const [activeImage, setActiveImage] = useState(model.portfolio[0]);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -639,7 +639,7 @@ export default function ProfileView({
                 }`}
               >
                 <img
-                  src={model.portfolio?.[0]}
+                  src={model.portfolio[0]}
                   alt="Video Thumbnail"
                   className="absolute inset-0 h-full w-full object-cover opacity-50"
                 />
@@ -647,7 +647,7 @@ export default function ProfileView({
                 <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] font-black text-white uppercase tracking-wider bg-purple-600 px-1.5 py-0.5 rounded font-mono z-10">REEL</span>
               </button>
             )}
-            {model.portfolio?.map((img, idx) => (
+            {model.portfolio.map((img, idx) => (
               <button
                 key={idx}
                 type="button"

@@ -154,8 +154,8 @@ export default function HomePage() {
           {/* Grid of filtered models */}
           {(() => {
             const filteredHomeModels = models.filter((m) => {
-              if (!m.approved) return false;
-              if (activeHomeCategory !== 'all' && m.category !== activeHomeCategory) return false;
+              if (m.approved === false) return false;
+              if (activeHomeCategory !== 'all' && m.category?.toLowerCase() !== activeHomeCategory.toLowerCase()) return false;
               return true;
             });
 

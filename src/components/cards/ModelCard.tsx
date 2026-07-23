@@ -15,7 +15,7 @@ export default function ModelCard({ model, onClick }: ModelCardProps) {
     >
       <div className="aspect-[3/4] w-full overflow-hidden bg-neutral-100 relative">
         <img
-          src={model.portfolio?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80'}
+          src={model.portfolio[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80'}
           alt={model.name}
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover transition duration-500 group-hover:scale-105"

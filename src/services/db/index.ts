@@ -37,6 +37,7 @@ export const dbService = {
   subscribeToModels: modelService.subscribeToModels.bind(modelService),
   getModels: modelService.getModels.bind(modelService),
   saveModel: modelService.saveModel.bind(modelService),
+  registerModel: modelService.registerModel.bind(modelService),
 
   // Bookings
   subscribeToBookings: bookingService.subscribeToBookings.bind(bookingService),

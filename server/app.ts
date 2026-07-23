@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import morgan from 'morgan';
 
 import { setupSecurityMiddlewares } from './middleware/security';
+import { requestDebugLogger } from './utils/debug';
 import authRouter from './routes/auth';
 import paymentRouter from './routes/payment';
 import chatRouter from './routes/chat';
@@ -41,12 +42,54 @@ setupSecurityMiddlewares(app);
 
 // JSON body parser with rawBuffer access required to match signatures for webhooks
 app.use(express.json({
+  limit: '50mb',
   verify: (req: any, res, buf) => {
     req.rawBody = buf;
   }
 }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(requestDebugLogger);
 
-// Mount v1 routers (Backward Compatibility)
+// Mount v2 routers (New Core Architecture) FIRST at /api/v2 and /api
+app.use('/api/v2', authRoutesV2);
+app.use('/api/v2', modelsRoutesV2);
+app.use('/api/v2', bookingsRoutesV2);
+app.use('/api/v2', usersRoutesV2);
+app.use('/api/v2', adminRoutesV2);
+app.use('/api/v2', paymentsRoutesV2);
+app.use('/api/v2', reviewsRoutesV2);
+app.use('/api/v2', notificationsRoutesV2);
+app.use('/api/v2', chatRoutesV2);
+app.use('/api/v2', uploadRoutesV2);
+app.use('/api/v2', categoriesRoutesV2);
+app.use('/api/v2', skillsRoutesV2);
+app.use('/api/v2', portfolioRoutesV2);
+app.use('/api/v2', favoritesRoutesV2);
+app.use('/api/v2', dashboardRoutesV2);
+app.use('/api/v2', analyticsRoutesV2);
+app.use('/api/v2', subscriptionsRoutesV2);
+app.use('/api/v2', reportsRoutesV2);
+
+// Mount v1/legacy routers and /api fallback
+app.use('/api', authRoutesV2);
+app.use('/api', modelsRoutesV2);
+app.use('/api', bookingsRoutesV2);
+app.use('/api', usersRoutesV2);
+app.use('/api', adminRoutesV2);
+app.use('/api', paymentsRoutesV2);
+app.use('/api', reviewsRoutesV2);
+app.use('/api', notificationsRoutesV2);
+app.use('/api', chatRoutesV2);
+app.use('/api', uploadRoutesV2);
+app.use('/api', categoriesRoutesV2);
+app.use('/api', skillsRoutesV2);
+app.use('/api', portfolioRoutesV2);
+app.use('/api', favoritesRoutesV2);
+app.use('/api', dashboardRoutesV2);
+app.use('/api', analyticsRoutesV2);
+app.use('/api', subscriptionsRoutesV2);
+app.use('/api', reportsRoutesV2);
+
 app.use('/api', authRouter);
 app.use('/api', paymentRouter);
 app.use('/api', chatRouter);
@@ -54,29 +97,6 @@ app.use('/api', aiRouter);
 app.use('/api', talentRouter);
 app.use('/api', healthRouter);
 app.use('/', sitemapRouter);
-
-// Mount v2 routers (New Core Architecture)
-const apiPrefixes = ['/api', '/api/v2'];
-for (const prefix of apiPrefixes) {
-  app.use(prefix, authRoutesV2);
-  app.use(prefix, modelsRoutesV2);
-  app.use(prefix, bookingsRoutesV2);
-  app.use(prefix, usersRoutesV2);
-  app.use(prefix, adminRoutesV2);
-  app.use(prefix, paymentsRoutesV2);
-  app.use(prefix, reviewsRoutesV2);
-  app.use(prefix, notificationsRoutesV2);
-  app.use(prefix, chatRoutesV2);
-  app.use(prefix, uploadRoutesV2);
-  app.use(prefix, categoriesRoutesV2);
-  app.use(prefix, skillsRoutesV2);
-  app.use(prefix, portfolioRoutesV2);
-  app.use(prefix, favoritesRoutesV2);
-  app.use(prefix, dashboardRoutesV2);
-  app.use(prefix, analyticsRoutesV2);
-  app.use(prefix, subscriptionsRoutesV2);
-  app.use(prefix, reportsRoutesV2);
-}
 
 
 // Secure Callback route for OAuth popup

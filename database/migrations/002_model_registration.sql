@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS public.clients (
 -- 2. Models Table
 CREATE TABLE IF NOT EXISTS public.models (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+    "userId" UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    userid UUID,
     name TEXT NOT NULL CHECK (char_length(name) > 0),
     gender TEXT CHECK (gender IN ('Male', 'Female', 'Other', 'Prefer not to say', 'male', 'female', 'non-binary')),
     age INTEGER CHECK (age BETWEEN 1 AND 120),

@@ -11,8 +11,8 @@ export default function BecomeModelIndex() {
     <div className="py-10 max-w-4xl mx-auto px-4">
       <BecomeModelForm
         userId={clientId}
-        onRegisterSubmit={(newModel) => {
-          handleModelRegisterSubmit(newModel);
+        onRegisterSubmit={async (newModel) => {
+          await handleModelRegisterSubmit(newModel);
         }}
         onGoHome={() => {
           window.location.href = '/';
