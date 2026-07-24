@@ -74,28 +74,58 @@ export interface Model {
 
 export interface Booking {
   id: string;
+
+  bookingNumber?: string;
+
   clientId: string;
-  clientName: string;
+
   modelId: string;
-  modelName: string;
-  modelImage: string;
-  projectDetails: {
-    brandName: string;
-    companyName: string;
-    campaignType: string;
-    shootType: string;
-    location: string;
-    date: string;
-    duration: string;
-    budgetRange: string;
-    notes?: string;
-  };
-  status: BookingStatus;
-  createdAt: string;
-  priceAmount: number;
-  pdfSummaryUrl?: string;
-  pdfGeneratedAt?: string;
-  isSharedWithClient?: boolean;
+
+  projectTitle: string;
+
+  projectType?: string;
+
+  eventType?: string;
+
+  bookingDate?: string;
+
+  startDate: string;
+
+  endDate: string;
+
+  startTime?: string;
+
+  endTime?: string;
+
+  numberOfModels: number;
+
+  location?: string;
+
+  amount: number;
+
+  paymentStatus: 'unpaid' | 'partially_paid' | 'paid' | 'refunded';
+
+  advanceAmount: number;
+
+  specialRequirements?: string;
+
+  clientNotes?: string;
+
+  modelNotes?: string;
+
+  status:
+    | 'pending'
+    | 'accepted'
+    | 'rejected'
+    | 'confirmed'
+    | 'completed'
+    | 'cancelled';
+
+  projectDetails: Record<string, any>;
+
+  createdAt?: string;
+
+  updatedAt?: string;
 }
 
 export interface PaymentRecord {

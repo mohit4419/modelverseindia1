@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
 import { BookingProvider, useBooking } from './context/BookingContext';
+import { PaymentProvider } from './context/PaymentContext';
 
 // Custom Hooks
 import { useModels } from './hooks/useModels';
@@ -919,7 +920,9 @@ export default function App() {
     <AuthProvider>
       <AppProvider>
         <BookingProvider>
-          <AppContent />
+          <PaymentProvider>
+            <AppContent />
+          </PaymentProvider>
         </BookingProvider>
       </AppProvider>
     </AuthProvider>
