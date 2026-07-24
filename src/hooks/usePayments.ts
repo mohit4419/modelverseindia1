@@ -4,7 +4,7 @@
  */
 
 import { useBooking } from '../context/BookingContext';
-
+import { paymentService } from '../services/payment.service';
 export function usePayments() {
   const {
     payments,
@@ -41,6 +41,9 @@ export function usePayments() {
     verifyingPayment,
     setVerifyingPayment,
     handlePremiumUnlockSuccess,
-    handleAddPaymentRecord
+    handleAddPaymentRecord,
+    createSession: paymentService.createSession,
+  verifyPayment: paymentService.verifyPayment,
+
   };
 }

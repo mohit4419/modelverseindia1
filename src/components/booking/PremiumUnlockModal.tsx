@@ -9,7 +9,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import Confetti from 'react-confetti';
 import { motion } from 'motion/react';
 import { Model, PREMIUM_UNLOCK_AMOUNT } from '../../types';
-import { usePayments } from '../../context/PaymentContext';
+import { usePayments } from '../../hooks/usePayments';
 import { accessControlService } from '../../services/accessControl.service';
 
 interface PremiumUnlockModalProps {
@@ -85,6 +85,9 @@ export default function PremiumUnlockModal({
         amount: targetAmount,
       });
       
+
+      
+      
       if (data && data.isReal && gateway === 'Razorpay') {
         const loadScript = () => {
           return new Promise((resolve) => {
@@ -111,7 +114,7 @@ export default function PremiumUnlockModal({
           currency: data.currency || "INR",
           name: 'ModelVerse India',
           description: planType === 'enterprise' ? 'Enterprise Agency License' : `Test Transaction - ${model.name}`,
-          image: "https://example.com/your_logo",
+          
           order_id: data.id,
           handler: async function (res: any) {
             const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = res;

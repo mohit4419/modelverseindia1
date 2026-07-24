@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider, useApp } from './context/AppContext';
 import { BookingProvider, useBooking } from './context/BookingContext';
+import { PaymentProvider } from './context/PaymentContext';
 
 // Custom Hooks
 import { useModels } from './hooks/useModels';
@@ -593,7 +594,7 @@ function AppContent() {
 
       {/* LOTTIE-STYLE SMOOTH PAYMENT VERIFICATION OVERLAY */}
       {verifyingPayment.isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl text-center relative overflow-hidden">
             {verifyingPayment.step === 'verifying' && (
               <div className="flex flex-col items-center py-6">
@@ -768,13 +769,13 @@ function AppContent() {
       )}
 
       {/* FLOATING ACTION ACTION BUTTONS */}
-      <div className={`fixed transition-all duration-300 ${showAdBanner ? 'bottom-[120px] md:bottom-[84px]' : 'bottom-6'} right-6 z-40 flex flex-col items-center space-y-3`}>
+      <div className={`fixed transition-all duration-300 ${showAdBanner ? 'bottom-120px md:bottom-84px' : 'bottom-6'} right-6 z-40 flex flex-col items-center space-y-3`}>
         <div className="group flex items-center space-x-2">
           <a
             href="https://www.instagram.com/model_verse_india?igsh=MWdhdzU0bThua2ZsNA=="
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white shadow-lg transition duration-300 hover:scale-105 active:scale-95 focus:outline-none relative group ring-4 ring-white/10"
+            className="flex items-center justify-center h-12 w-12 rounded-full bg-linear-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white shadow-lg transition duration-300 hover:scale-105 active:scale-95 focus:outline-none relative group ring-4 ring-white/10"
             id="instagram-action-btn"
           >
             <Instagram className="h-5 w-5" />
@@ -808,8 +809,8 @@ function AppContent() {
 
       {/* BEAUTIFUL GATING OVERLAY */}
       {!isAuthenticated && !isGuestMode && currentTab !== 'auth' && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-fadeIn">
-          <div className="w-full max-w-md max-h-[95vh] overflow-y-auto rounded-3xl bg-white p-6 md:p-8 text-center shadow-2xl border border-neutral-200/80 relative text-left">
+        <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="w-full max-w-md max-h-[95vh] overflow-y-auto rounded-3xl bg-white p-6 md:p-8 text-left shadow-2xl border border-neutral-200/80 relative text-left ">
             <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-purple-500/10 blur-xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 h-32 w-32 rounded-full bg-pink-500/10 blur-xl pointer-events-none" />
 
@@ -899,7 +900,7 @@ function AppContent() {
             animate={{ y: 0, x: '-50%', opacity: 1 }}
             exit={{ y: 80, x: '-50%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 120, damping: 15 }}
-            className="fixed bottom-4 left-1/2 z-[45] w-[calc(100%-2rem)] max-w-4xl"
+            className="fixed bottom-4 left-1/2 z-45 w-[calc(100%-2rem)] max-w-4xl"
           >
             <BannerAd 
               onClose={() => {
@@ -919,7 +920,10 @@ export default function App() {
     <AuthProvider>
       <AppProvider>
         <BookingProvider>
-          <AppContent />
+          <PaymentProvider>
+            <AppContent />
+          </PaymentProvider>
+          
         </BookingProvider>
       </AppProvider>
     </AuthProvider>
