@@ -9,9 +9,12 @@ import { BlogController } from '../controllers/blog.controller';
 const router = Router();
 
 router.get('/blogs', BlogController.getBlogs);
+router.get('/blogs/categories', BlogController.getCategories);
+router.get('/blog-categories', BlogController.getCategories);
 router.get('/blogs/:id', BlogController.getBlogById);
 router.post('/blogs', BlogController.saveBlog);
 router.put('/blogs/:id', BlogController.saveBlog);
+router.patch('/blogs/:id/status', BlogController.updateStatus);
 router.patch('/blogs/:id', BlogController.saveBlog);
 router.delete('/blogs/:id', BlogController.deleteBlog);
 

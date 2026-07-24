@@ -74,58 +74,28 @@ export interface Model {
 
 export interface Booking {
   id: string;
-
-  bookingNumber?: string;
-
   clientId: string;
-
+  clientName: string;
   modelId: string;
-
-  projectTitle: string;
-
-  projectType?: string;
-
-  eventType?: string;
-
-  bookingDate?: string;
-
-  startDate: string;
-
-  endDate: string;
-
-  startTime?: string;
-
-  endTime?: string;
-
-  numberOfModels: number;
-
-  location?: string;
-
-  amount: number;
-
-  paymentStatus: 'unpaid' | 'partially_paid' | 'paid' | 'refunded';
-
-  advanceAmount: number;
-
-  specialRequirements?: string;
-
-  clientNotes?: string;
-
-  modelNotes?: string;
-
-  status:
-    | 'pending'
-    | 'accepted'
-    | 'rejected'
-    | 'confirmed'
-    | 'completed'
-    | 'cancelled';
-
-  projectDetails: Record<string, any>;
-
-  createdAt?: string;
-
-  updatedAt?: string;
+  modelName: string;
+  modelImage: string;
+  projectDetails: {
+    brandName: string;
+    companyName: string;
+    campaignType: string;
+    shootType: string;
+    location: string;
+    date: string;
+    duration: string;
+    budgetRange: string;
+    notes?: string;
+  };
+  status: BookingStatus;
+  createdAt: string;
+  priceAmount: number;
+  pdfSummaryUrl?: string;
+  pdfGeneratedAt?: string;
+  isSharedWithClient?: boolean;
 }
 
 export interface PaymentRecord {
@@ -170,15 +140,69 @@ export interface Review {
 export interface BlogItem {
   id: string;
   title: string;
+  slug?: string;
   category: string;
+  categoryId?: string;
   summary: string;
   content: string;
+  excerpt?: string;
   imageUrl: string;
+  featuredImage?: string;
   author: string;
+  authorName?: string;
+  authorId?: string;
   publishedDate: string;
+  publishedAt?: string;
   authorEmail?: string;
-  authorRole?: string;
+  authorRole?: 'admin' | 'client' | 'model' | 'contributor' | string;
   userId?: string;
+  status?: 'draft' | 'pending' | 'published' | 'rejected';
+  isFeatured?: boolean;
+  readTime?: number; // in minutes
+  views?: number;
+  likesCount?: number;
+  commentsCount?: number;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+}
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface BlogComment {
+  id: string;
+  blogId: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  parentCommentId?: string;
+  comment: string;
+  status: 'active' | 'hidden';
+  createdAt: string;
+}
+
+export interface BlogLike {
+  id: string;
+  blogId: string;
+  userId: string;
+  createdAt: string;
+}
+
+export interface BlogTag {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 export interface AuditLog {

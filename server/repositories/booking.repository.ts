@@ -39,32 +39,21 @@ export class BookingRepository {
           2500
         );
         if (!error && data) {
-         dbBookings = data.map((row: any) => ({
-  id: row.id,
-  bookingNumber: row.booking_number,
-  clientId: row.client_id,
-  modelId: row.model_id,
-  projectTitle: row.project_title,
-  projectType: row.project_type,
-  eventType: row.event_type,
-  bookingDate: row.booking_date,
-  startDate: row.start_date,
-  endDate: row.end_date,
-  startTime: row.start_time,
-  endTime: row.end_time,
-  numberOfModels: row.number_of_models,
-  location: row.location,
-  amount: Number(row.amount),
-  paymentStatus: row.payment_status,
-  advanceAmount: Number(row.advance_amount),
-  specialRequirements: row.special_requirements,
-  clientNotes: row.client_notes,
-  modelNotes: row.model_notes,
-  status: row.status,
-  projectDetails: row.project_details || {},
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-})) as Booking[];
+          dbBookings = data.map((b: any) => ({
+            id: b.id,
+            clientId: b.clientId,
+            clientName: b.clientName,
+            modelId: b.modelId,
+            modelName: b.modelName,
+            modelImage: b.modelImage,
+            projectDetails: b.projectDetails || {},
+            status: b.status,
+            createdAt: b.createdAt,
+            priceAmount: b.priceAmount,
+            pdfSummaryUrl: b.pdfSummaryUrl,
+            pdfGeneratedAt: b.pdfGeneratedAt,
+            isSharedWithClient: b.isSharedWithClient,
+          })) as Booking[];
         }
       } catch (e) {
         console.error('Supabase booking query failed:', e);
@@ -87,32 +76,21 @@ export class BookingRepository {
           2500
         );
         if (!error && data) {
-         return {
-  id: data.id,
-  bookingNumber: data.booking_number,
-  clientId: data.client_id,
-  modelId: data.model_id,
-  projectTitle: data.project_title,
-  projectType: data.project_type,
-  eventType: data.event_type,
-  bookingDate: data.booking_date,
-  startDate: data.start_date,
-  endDate: data.end_date,
-  startTime: data.start_time,
-  endTime: data.end_time,
-  numberOfModels: data.number_of_models,
-  location: data.location,
-  amount: Number(data.amount),
-  paymentStatus: data.payment_status,
-  advanceAmount: Number(data.advance_amount),
-  specialRequirements: data.special_requirements,
-  clientNotes: data.client_notes,
-  modelNotes: data.model_notes,
-  status: data.status,
-  projectDetails: data.project_details || {},
-  createdAt: data.created_at,
-  updatedAt: data.updated_at,
-} as Booking;
+          return {
+            id: data.id,
+            clientId: data.clientId,
+            clientName: data.clientName,
+            modelId: data.modelId,
+            modelName: data.modelName,
+            modelImage: data.modelImage,
+            projectDetails: data.projectDetails || {},
+            status: data.status,
+            createdAt: data.createdAt,
+            priceAmount: data.priceAmount,
+            pdfSummaryUrl: data.pdfSummaryUrl,
+            pdfGeneratedAt: data.pdfGeneratedAt,
+            isSharedWithClient: data.isSharedWithClient,
+          } as Booking;
         }
       } catch (e) {
         console.error(`Supabase query for booking ${id} failed:`, e);
@@ -136,34 +114,21 @@ export class BookingRepository {
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from('bookings').upsert(
-            {
-  id: booking.id,
-  booking_number: booking.bookingNumber,
-  client_id: booking.clientId,
-  model_id: booking.modelId,
-  project_title: booking.projectTitle,
-  project_type: booking.projectType,
-  event_type: booking.eventType,
-  booking_date: booking.bookingDate,
-  start_date: booking.startDate,
-  end_date: booking.endDate,
-  start_time: booking.startTime,
-  end_time: booking.endTime,
-  number_of_models: booking.numberOfModels,
-  location: booking.location,
-  amount: booking.amount,
-  payment_status: booking.paymentStatus,
-  advance_amount: booking.advanceAmount,
-  special_requirements: booking.specialRequirements,
-  client_notes: booking.clientNotes,
-  model_notes: booking.modelNotes,
-  status: booking.status,
-  project_details: booking.projectDetails,
-  created_at: booking.createdAt,
-  updated_at: booking.updatedAt,
-}
-          ),
+          supabaseAdmin.from('bookings').upsert({
+            id: booking.id,
+            clientId: booking.clientId,
+            clientName: booking.clientName,
+            modelId: booking.modelId,
+            modelName: booking.modelName,
+            modelImage: booking.modelImage,
+            projectDetails: booking.projectDetails,
+            status: booking.status,
+            createdAt: booking.createdAt,
+            priceAmount: booking.priceAmount,
+            pdfSummaryUrl: booking.pdfSummaryUrl || null,
+            pdfGeneratedAt: booking.pdfGeneratedAt || null,
+            isSharedWithClient: booking.isSharedWithClient || false,
+          }),
           2500
         );
         if (error) throw error;

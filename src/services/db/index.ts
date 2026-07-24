@@ -79,6 +79,8 @@ export const dbService = {
   getBlogs: blogService.getBlogs.bind(blogService),
   saveBlog: blogService.saveBlog.bind(blogService),
   deleteBlog: blogService.deleteBlog.bind(blogService),
+  updateBlogStatus: blogService.updateStatus.bind(blogService),
+  getBlogCategories: blogService.getCategories.bind(blogService),
 
   // Audit Logs
   subscribeToAuditLogs: auditService.subscribeToAuditLogs.bind(auditService),

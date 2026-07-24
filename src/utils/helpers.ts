@@ -11,3 +11,5 @@ export function truncateText(text: string, limit = 100): string {
   if (text.length <= limit) return text;
   return text.substring(0, limit) + '...';
 }
+
+export { slugify, generateSlug, generateUniqueSlug } from './slug';

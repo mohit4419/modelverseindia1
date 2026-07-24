@@ -77,13 +77,13 @@ export class StorageService {
             .from('storage')
             .getPublicUrl(`${sanitizedFolder}/${fileName}`);
 
-          console.log(`Successfully uploaded file to Supabase Storage 'storage' bucket: ${urlData.publicUrl}`);
+          console.log(`[StorageService] Successfully uploaded file to Supabase Storage 'storage' bucket: ${urlData.publicUrl}`);
           return {
             url: urlData.publicUrl,
             publicId: `storage:${sanitizedFolder}/${fileName}`
           };
         } else {
-          // If the 'storage' bucket doesn't exist or has issues, try bucket matching the sanitizedFolder name
+          // If the 'storage' bucket doesn't exist or has RLS/signature limits, try folder bucket
           const { data: folderUploadData, error: folderUploadError } = await supabaseAdmin.storage
             .from(sanitizedFolder)
             .upload(fileName, fileBuffer, {
@@ -97,17 +97,18 @@ export class StorageService {
               .from(sanitizedFolder)
               .getPublicUrl(fileName);
 
-            console.log(`Successfully uploaded file to Supabase Storage bucket '${sanitizedFolder}': ${urlData.publicUrl}`);
+            console.log(`[StorageService] Successfully uploaded file to Supabase Storage bucket '${sanitizedFolder}': ${urlData.publicUrl}`);
             return {
               url: urlData.publicUrl,
               publicId: `${sanitizedFolder}:${fileName}`
             };
           } else {
-            console.warn('Supabase storage direct bucket upload failed/skipped. Details:', uploadError || folderUploadError);
+            const detailMsg = (uploadError || folderUploadError)?.message || 'Bucket or signature restriction';
+            console.info(`[StorageService] Supabase cloud storage skipped (${detailMsg}). Seamlessly saved to local workspace storage.`);
           }
         }
-      } catch (err) {
-        console.error('Supabase Storage upload error. Falling back to local storage:', err);
+      } catch (err: any) {
+        console.info(`[StorageService] Supabase Storage upload unavailable (${err?.message || 'Connection error'}). Falling back to local storage.`);
       }
     }
 
