@@ -260,7 +260,7 @@ export default function PremiumUnlockModal({
             <div className="text-center">
               
               {/* Upgrade Badge */}
-              <div className="mx-auto my-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-purple-650 to-pink-600 shadow-md">
+              <div className="mx-auto my-2 flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-r from-purple-650 to-pink-600 shadow-md">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
 
@@ -452,7 +452,7 @@ export default function PremiumUnlockModal({
             </div>
 
             {/* Inner QR white card exactly like Google Pay image */}
-            <div className="bg-white rounded-3xl p-5 shadow-xl border border-neutral-100 flex flex-col items-center w-full max-w-[290px] relative">
+            <div className="bg-white rounded-3xl p-5 shadow-xl border border-neutral-100 flex flex-col items-center w-full max-w-290px relative">
               {/* Responsive SVG QR Code containing dynamic transaction URI */}
               <div className="relative p-3 bg-white border border-neutral-100 rounded-2xl shadow-xs">
                 <QRCodeSVG
