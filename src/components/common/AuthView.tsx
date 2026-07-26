@@ -1641,6 +1641,7 @@ export default function AuthView({
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
+                        autoComplete={activeTab === 'login' ? 'current-password' : 'new-password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 font-bold focus:outline-none focus:border-purple-650"

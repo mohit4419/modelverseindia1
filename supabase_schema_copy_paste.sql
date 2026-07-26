@@ -87,27 +87,27 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE OR REPLACE FUNCTION public.sync_profiles_from_users()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (
-    id, name, email, role, phone, status, "avatarUrl", "createdAt", updated_at
-  ) VALUES (
-    NEW.id,
-    NEW.full_name,
-    NEW.email,
-    NEW.role,
-    NEW.phone,
-    NEW.status,
-    NEW.avatar,
-    NEW.created_at::text,
-    NEW.updated_at::text
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    name = EXCLUDED.name,
-    email = EXCLUDED.email,
-    role = EXCLUDED.role,
-    phone = EXCLUDED.phone,
-    status = EXCLUDED.status,
-    "avatarUrl" = EXCLUDED."avatarUrl",
-    updated_at = EXCLUDED.updated_at;
+  BEGIN
+    INSERT INTO public.profiles (
+      id, name, email, role, phone, status, created_at
+    ) VALUES (
+      NEW.id,
+      NEW.full_name,
+      NEW.email,
+      NEW.role,
+      NEW.phone,
+      NEW.status,
+      NEW.created_at
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      name = EXCLUDED.name,
+      email = EXCLUDED.email,
+      role = EXCLUDED.role,
+      phone = EXCLUDED.phone,
+      status = EXCLUDED.status;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
