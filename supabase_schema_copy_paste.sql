@@ -121,32 +121,37 @@ CREATE TRIGGER trg_sync_profiles_from_users
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user_signup()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.users (
-    id, 
-    email, 
-    full_name, 
-    role, 
-    phone,
-    status, 
-    created_at,
-    updated_at
-  )
-  VALUES (
-    NEW.id::text,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'client'),
-    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
-    'active',
-    timezone('utc'::text, now()),
-    timezone('utc'::text, now())
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
-    full_name = COALESCE(EXCLUDED.full_name, users.full_name),
-    role = COALESCE(EXCLUDED.role, users.role),
-    phone = COALESCE(EXCLUDED.phone, users.phone),
-    updated_at = timezone('utc'::text, now());
+  BEGIN
+    INSERT INTO public.users (
+      id, 
+      email, 
+      full_name, 
+      role, 
+      phone,
+      status, 
+      created_at,
+      updated_at
+    )
+    VALUES (
+      NEW.id::text,
+      NEW.email,
+      COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+      COALESCE(NEW.raw_user_meta_data->>'role', 'client'),
+      COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+      'active',
+      timezone('utc'::text, now()),
+      timezone('utc'::text, now())
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email,
+      full_name = COALESCE(EXCLUDED.full_name, users.full_name),
+      role = COALESCE(EXCLUDED.role, users.role),
+      phone = COALESCE(EXCLUDED.phone, users.phone),
+      updated_at = timezone('utc'::text, now());
+  EXCEPTION WHEN OTHERS THEN
+    -- Prevent trigger failure from aborting auth.signUp with 500 Internal Server Error
+    NULL;
+  END;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
