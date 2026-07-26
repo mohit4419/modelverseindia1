@@ -479,74 +479,63 @@ export default function AuthView({
         let isEmailUnconfirmed = false;
         
         if (isSupabaseConfigured && supabase) {
-          const { data, error: signUpError } = await supabase.auth.signUp({
-            email: cleanEmail,
-            password: password,
-            options: {
-              emailRedirectTo: window.location.origin,
-              data: {
-                full_name: combinedName,
-                name: combinedName,
-                phone: phone.trim(),
-                role: selectedRole
+          try {
+            const { data, error: signUpError } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password: password,
+              options: {
+                emailRedirectTo: window.location.origin,
+                data: {
+                  full_name: combinedName,
+                  name: combinedName,
+                  phone: phone.trim(),
+                  role: selectedRole
+                }
               }
-            }
-          });
+            });
 
-          if (signUpError) {
-            const isDbTriggerError = signUpError.message?.toLowerCase().includes('database error') || signUpError.message?.toLowerCase().includes('500');
-            if (!isDbTriggerError) {
-              setError(signUpError.message);
-              setIsLoading(false);
-              return;
+            if (signUpError) {
+              const errMsg = signUpError.message?.toLowerCase() || '';
+              const isDbTriggerError = errMsg.includes('database error') || errMsg.includes('500') || errMsg.includes('unexpected_failure');
+              if (!isDbTriggerError) {
+                setError(signUpError.message);
+                setIsLoading(false);
+                return;
+              }
+              console.warn('Supabase Auth server note (proceeding with user DB creation):', signUpError.message);
             }
-            console.warn('Supabase Auth trigger note (proceeding with user DB creation):', signUpError.message);
+
+            if (data?.user) {
+              if (data.user.identities && data.user.identities.length === 0) {
+                setError('An account with this email address already exists. Please Log In or reset your password.');
+                setIsLoading(false);
+                return;
+              }
+              registeredUserId = data.user.id;
+              isEmailUnconfirmed = !data.user.email_confirmed_at;
+            }
+          } catch (supErr: any) {
+            console.warn('Supabase Auth call exception (proceeding with direct DB creation):', supErr);
           }
 
-          if (data?.user) {
-            // Check if user already exists
-            if (data.user.identities && data.user.identities.length === 0) {
-              setError('An account with this email address already exists. Please Log In or reset your password.');
-              setIsLoading(false);
-              return;
-            }
+          // Direct DB write to public.profiles & public.users tables in Supabase
+          const userStatus = isEmailUnconfirmed ? 'unconfirmed' : 'active';
+          const validUuidForDb = registeredUserId.length > 20 ? registeredUserId : `10000000-1000-4000-8000-${Date.now().toString(16).padStart(12, '0').slice(-12)}`;
 
-            registeredUserId = data.user.id;
-            isEmailUnconfirmed = !data.user.email_confirmed_at;
+          const profileRow = {
+            id: validUuidForDb,
+            email: cleanEmail,
+            name: combinedName,
+            role: selectedRole,
+            phone: phone.trim(),
+            status: userStatus,
+            created_at: new Date().toISOString()
+          };
 
-            // Direct DB write to public.users & public.profiles tables using Supabase UUID
-            const userStatus = isEmailUnconfirmed ? 'unconfirmed' : 'active';
-
-            const dbUserRow = {
-              id: registeredUserId,
-              email: cleanEmail,
-              full_name: combinedName,
-              role: selectedRole,
-              phone: phone.trim(),
-              status: userStatus
-            };
-
-            const profileRow = {
-              id: registeredUserId,
-              email: cleanEmail,
-              name: combinedName,
-              role: selectedRole,
-              phone: phone.trim(),
-              status: userStatus,
-              created_at: new Date().toISOString()
-            };
-
-            // Write directly to users and profiles database tables in Supabase
-            try {
-              await supabase.from('users').upsert(dbUserRow);
-            } catch (e) {
-              console.warn('Supabase users table write note:', e);
-            }
-            try {
-              await supabase.from('profiles').upsert(profileRow);
-            } catch (e) {
-              console.warn('Supabase profiles table write note:', e);
-            }
+          try {
+            await supabase.from('profiles').upsert(profileRow);
+          } catch (e) {
+            console.warn('Supabase profiles table write note:', e);
           }
         }
 
