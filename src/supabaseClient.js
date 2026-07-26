@@ -11,13 +11,16 @@ const getEnv = () => {
 };
 
 const env = getEnv();
-const SUPABASE_URL = env.VITE_SUPABASE_URL || env.SUPABASE_URL || "";
+const SUPABASE_URL =
+  env.VITE_SUPABASE_URL ||
+  env.SUPABASE_URL ||
+  "https://azffjicefmbamgfcgkbg.supabase.co";
 
 const SUPABASE_PUBLIC_KEY =
   env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   env.VITE_SUPABASE_ANON_KEY ||
   env.SUPABASE_ANON_KEY ||
-  "";
+  "sb_publishable_oMzS4LpmCVpdO1jKteJLYQ_SAJf_X4z";
 
 export const isSupabaseConfigured = !!(SUPABASE_URL && SUPABASE_PUBLIC_KEY);
 

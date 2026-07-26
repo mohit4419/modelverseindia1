@@ -42,6 +42,19 @@ interface AuthViewProps {
   onGuestMode?: () => void;
 }
 
+const getDisplayError = (err: any): string => {
+  if (!err) return '';
+  if (typeof err === 'string') return err;
+  if (err.message && typeof err.message === 'string') return err.message;
+  if (err.error_description && typeof err.error_description === 'string') return err.error_description;
+  if (err.msg && typeof err.msg === 'string') return err.msg;
+  try {
+    const json = JSON.stringify(err);
+    if (json !== '{}') return json;
+  } catch (e) {}
+  return 'Registration processing note. Please check your credentials and try again.';
+};
+
 export default function AuthView({ 
   onAuthSuccess, 
   onCancel, 
@@ -1031,7 +1044,7 @@ export default function AuthView({
               {error && (
                 <div className="p-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-xs flex items-center space-x-2 animate-shake">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{error}</span>
+                  <span>{getDisplayError(error)}</span>
                 </div>
               )}
               {successMsg && (
@@ -1149,7 +1162,7 @@ export default function AuthView({
               {error && (
                 <div className="p-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-xs flex items-center space-x-2 animate-shake">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{error}</span>
+                  <span>{getDisplayError(error)}</span>
                 </div>
               )}
               {successMsg && (
@@ -1302,7 +1315,7 @@ export default function AuthView({
               {error && (
                 <div className="mt-4 p-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-xs flex items-center space-x-2 animate-shake">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{error}</span>
+                  <span>{getDisplayError(error)}</span>
                 </div>
               )}
               {successMsg && (
@@ -1451,7 +1464,7 @@ export default function AuthView({
               {error && (
                 <div className="mt-4 p-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-xs flex items-center space-x-2 animate-shake">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{error}</span>
+                  <span>{getDisplayError(error)}</span>
                 </div>
               )}
               {successMsg && (
