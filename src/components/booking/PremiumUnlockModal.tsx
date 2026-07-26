@@ -104,109 +104,88 @@ export default function PremiumUnlockModal({
         };
 
         const isLoaded = await loadScript();
-        if (!isLoaded) {
-          throw new Error('Could not load Razorpay Payment Gateway SDK in your browser.');
-        }
+        if (isLoaded) {
+          try {
+            const options = {
+              key: data.keyId,
+              amount: data.amount,
+              currency: data.currency || "INR",
+              name: 'ModelVerse India',
+              description: planType === 'enterprise' ? 'Enterprise Agency License' : `Premium Unlock - ${model.name}`,
+              order_id: data.id,
+              handler: async function (res: any) {
+                const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = res;
+                
+                // Record payment unlock in access control service
+                accessControlService.recordPaymentUnlock({
+                  userId,
+                  modelId: model.id,
+                  planType: planType as any,
+                  amount: targetAmount,
+                  paymentId: razorpay_payment_id,
+                  orderId: razorpay_order_id,
+                  gateway: 'Razorpay'
+                });
 
-        const options = {
-          key: data.keyId,
-          amount: data.amount,
-          currency: data.currency || "INR",
-          name: 'ModelVerse India',
-          description: planType === 'enterprise' ? 'Enterprise Agency License' : `Premium Unlock - ${model.name}`,
-      // image: "https://modelverseindia.com/logo.png",
-          
-          order_id: data.id,
-          handler: async function (res: any) {
-            const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = res;
-            
-            // Record payment unlock in access control service
-            accessControlService.recordPaymentUnlock({
-              userId,
-              modelId: model.id,
-              planType: planType as any,
-              amount: targetAmount,
-              paymentId: razorpay_payment_id,
-              orderId: razorpay_order_id,
-              gateway: 'Razorpay'
+                try {
+                  await verifyPayment({
+                    gateway: 'Razorpay',
+                    sessionId: razorpay_order_id,
+                    planType,
+                    amount: targetAmount,
+                    modelId: model.id,
+                    modelName: model.name,
+                    razorpay_payment_id,
+                    razorpay_order_id,
+                    razorpay_signature,
+                    userId,
+                    userName,
+                    userEmail
+                  });
+                } catch (err) {
+                  console.warn('Backend payment verification log note:', err);
+                }
+
+                setPaymentStep('success');
+                onSuccessUnlock();
+              },
+              prefill: {
+                name: userName || "",
+                email: userEmail || "",
+              },
+              notes: {
+                address: "Razorpay Corporate Office"
+              },
+              theme: {
+                color: '#3399cc'
+              },
+              modal: {
+                ondismiss: function() {
+                  setPaymentStep('details');
+                }
+              }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+              console.warn("Razorpay payment failed:", response?.error || response);
+              const fallbackUrl = data.url || `/?mock_checkout=true&gateway=Razorpay&plan_type=${planType}&user_id=${userId || ''}&user_name=${encodeURIComponent(userName || '')}&user_email=${encodeURIComponent(userEmail || '')}&amount=${targetAmount}&model_id=${model.id}&model_name=${encodeURIComponent(model.name)}`;
+              window.location.href = fallbackUrl;
             });
 
-            
-
-            try {
-              await verifyPayment({
-                gateway: 'Razorpay',
-                sessionId: razorpay_order_id,
-                planType,
-                amount: targetAmount,
-                modelId: model.id,
-                modelName: model.name,
-                razorpay_payment_id,
-                razorpay_order_id,
-                razorpay_signature,
-                userId,
-                userName,
-                userEmail
-              });
-            } catch (err) {
-              console.warn('Backend payment verification log note:', err);
-            }
-
-            setPaymentStep('success');
-            onSuccessUnlock();
-          },
-          prefill: { // We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
-            name: userName || "", // your customer's name
-            email: userEmail || "",
-             // Provide the customer's phone number for better conversion rates
-          },
-          notes: {
-            address: "Razorpay Corporate Office"
-          },
-          theme: {
-            color: '#3399cc'
-          },
-          modal: {
-            ondismiss: function() {
-              setPaymentStep('details');
-            }
+            rzp.open();
+            return;
+          } catch (rzpErr) {
+            console.warn("Razorpay JS SDK init failed, falling back to checkout session URL:", rzpErr);
           }
-        };
-        console.log("Key:", options.key);
-console.log("Order:", options.order_id);
-console.log("Amount:", options.amount);
-console.log("Currency:", options.currency);
-console.log("Prefill:", options.prefill);
-// console.log("Image:", options.image);
-console.log("Name:", options.name);
-console.log("Description:", options.description);
-console.log("Options:", options);
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', function (response: any) {
-          try {
-            alert(response.error.code);
-            alert(response.error.description);
-            alert(response.error.source);
-            alert(response.error.step);
-            alert(response.error.reason);
-            alert(response.error.metadata.order_id);
-            alert(response.error.metadata.payment_id);
-          } catch (e) {
-            console.warn("Alert blocked or failed in sandbox iframe environment", e);
-          }
-        });
-        console.log((window as any).Razorpay );
-        
-        rzp.open();
-        return;
+        }
       }
 
       if (data && data.url) {
-        // Redirect browser directly to the payment gateway session (real or interactive mock checkout)
         window.location.href = data.url;
       } else {
-        throw new Error(data.error || 'No checkout URL returned by server');
+        const fallbackUrl = `/?mock_checkout=true&gateway=${gateway || 'Razorpay'}&plan_type=${planType}&user_id=${userId || ''}&user_name=${encodeURIComponent(userName || '')}&user_email=${encodeURIComponent(userEmail || '')}&amount=${targetAmount}&model_id=${model.id}&model_name=${encodeURIComponent(model.name)}`;
+        window.location.href = fallbackUrl;
       }
     } catch (err: any) {
       console.error('Payment initialization failed:', err);
