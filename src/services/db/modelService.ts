@@ -52,7 +52,6 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
     languages: Array.isArray(model.languages) ? model.languages : ['English', 'Hindi'],
     experience: model.experience || 'Fresh Face',
     starting_price: Number(model.startingPrice || (model as any).starting_price) || 15000,
-    archived: Boolean(model.archived),
     approved: model.approved !== undefined ? Boolean(model.approved) : true,
     rejected: Boolean(model.rejected),
     selfie_verified: model.selfieVerified !== undefined ? Boolean(model.selfieVerified) : true,
@@ -65,7 +64,8 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
       ...(typeof model.measurements === 'object' ? model.measurements : {}),
       originalId: model.id,
       originalUserId: model.userId,
-      heightOriginal: model.height
+      heightOriginal: model.height,
+      archived: Boolean(model.archived)
     },
     biography: model.biography || '',
     category: model.category || 'fashion'
