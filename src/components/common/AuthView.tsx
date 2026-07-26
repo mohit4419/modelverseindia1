@@ -494,9 +494,13 @@ export default function AuthView({
           });
 
           if (signUpError) {
-            setError(signUpError.message);
-            setIsLoading(false);
-            return;
+            const isDbTriggerError = signUpError.message?.toLowerCase().includes('database error') || signUpError.message?.toLowerCase().includes('500');
+            if (!isDbTriggerError) {
+              setError(signUpError.message);
+              setIsLoading(false);
+              return;
+            }
+            console.warn('Supabase Auth trigger note (proceeding with user DB creation):', signUpError.message);
           }
 
           if (data?.user) {

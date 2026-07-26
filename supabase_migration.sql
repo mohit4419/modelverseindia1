@@ -146,10 +146,13 @@ CREATE TRIGGER trg_sync_profiles_from_users
 
 -- Create trigger for automatic sync from auth.users (Supabase native Auth) directly into public.users & public.profiles
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user_signup()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
+  -- 1. Sync into public.users
   BEGIN
-    -- 1. Sync into public.users
     INSERT INTO public.users (
       id, 
       email, 
@@ -176,8 +179,12 @@ BEGIN
       role = COALESCE(EXCLUDED.role, users.role),
       phone = COALESCE(EXCLUDED.phone, users.phone),
       updated_at = timezone('utc'::text, now());
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Users sync error: %', SQLERRM;
+  END;
 
-    -- 2. Sync into public.profiles
+  -- 2. Sync into public.profiles
+  BEGIN
     INSERT INTO public.profiles (
       id,
       email,
@@ -202,12 +209,12 @@ BEGIN
       role = COALESCE(EXCLUDED.role, profiles.role),
       phone = COALESCE(EXCLUDED.phone, profiles.phone);
   EXCEPTION WHEN OTHERS THEN
-    -- Prevent trigger failure from aborting auth.signUp with 500 Internal Server Error
-    NULL;
+    RAISE WARNING 'Profiles sync error: %', SQLERRM;
   END;
+
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
