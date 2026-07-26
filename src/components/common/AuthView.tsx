@@ -533,8 +533,16 @@ export default function AuthView({
             };
 
             // Write directly to users and profiles database tables in Supabase
-            await supabase.from('users').upsert(dbUserRow).catch(e => console.warn('Supabase users table write note:', e));
-            await supabase.from('profiles').upsert(profileRow).catch(e => console.warn('Supabase profiles table write note:', e));
+            try {
+              await supabase.from('users').upsert(dbUserRow);
+            } catch (e) {
+              console.warn('Supabase users table write note:', e);
+            }
+            try {
+              await supabase.from('profiles').upsert(profileRow);
+            } catch (e) {
+              console.warn('Supabase profiles table write note:', e);
+            }
           }
         }
 

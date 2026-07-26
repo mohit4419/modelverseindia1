@@ -4,7 +4,7 @@
  */
 
 export type UserRole = 'client' | 'model' | 'admin';
-export type UserStatus = 'active' | 'suspended';
+export type UserStatus = 'active' | 'suspended' | 'pending' | 'unconfirmed';
 export type BookingStatus = 'pending' | 'assigned' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
 export type PaymentStatus = 'success' | 'pending' | 'failed';
 
