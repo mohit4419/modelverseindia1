@@ -159,7 +159,12 @@ export const authService = {
         
         const handleMessage = async (event: MessageEvent) => {
           const origin = event.origin;
-          if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
+          if (
+            origin !== window.location.origin && 
+            !origin.endsWith('.run.app') && 
+            !origin.includes('localhost') && 
+            !origin.includes('modelverse')
+          ) {
             return;
           }
 

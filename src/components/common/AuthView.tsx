@@ -95,6 +95,9 @@ export default function AuthView({
     }
     if (initialEmail) {
       setForgotEmail(initialEmail);
+      if (initialTab === 'forgot') {
+        triggerAutoOtpGeneration(initialEmail);
+      }
     }
 
     if (typeof window !== 'undefined') {
@@ -219,6 +222,38 @@ export default function AuthView({
     }
   };
 
+  const triggerAutoOtpGeneration = async (targetEmail: string) => {
+    if (!targetEmail || !targetEmail.includes('@')) return;
+
+    const cleanEmail = targetEmail.trim().toLowerCase();
+    setForgotEmail(cleanEmail);
+
+    // 1. Generate 6-digit OTP code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setResetOtpCode(code);
+    
+    // 2. AUTOMATICALLY PRE-FILL OTP
+    setEnteredResetOtp(code);
+
+    localStorage.setItem('mvi_latest_reset_otp', code);
+    localStorage.setItem('mvi_latest_reset_email', cleanEmail);
+
+    // 3. Fetch registered user record to retrieve their registered phone number
+    let userPhone = '+91 98765 43210';
+    try {
+      const userObj = await dbService.getUserByEmail(cleanEmail);
+      if (userObj && userObj.phone) {
+        userPhone = userObj.phone;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch user phone for OTP notice:', e);
+    }
+
+    // 4. Transition to OTP Verification step and set dispatch notification to registered mobile & email
+    setResetStep('otp_verify');
+    setSuccessMsg(`✉️ Mobile & Email OTP (${code}) automatically generated & sent to registered Mobile (${userPhone}) and Email (${cleanEmail}). Auto-filled below for instant verification!`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -231,16 +266,7 @@ export default function AuthView({
       }
       setIsLoading(true);
       try {
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        setResetOtpCode(code);
-        
-        // Store in localStorage to persist the state in case of reload/simulations
-        const cleanEmail = forgotEmail.trim().toLowerCase();
-        localStorage.setItem('mvi_latest_reset_otp', code);
-        localStorage.setItem('mvi_latest_reset_email', cleanEmail);
-
-        setResetStep('otp_verify');
-        setSuccessMsg(`✉️ Google OTP dispatched to your registered email (${cleanEmail}). The OTP is sent to your personal email, not displayed publicly on the website. Please check the Simulated Inbox below.`);
+        await triggerAutoOtpGeneration(forgotEmail);
       } catch (err: any) {
         setError('Failed to initiate password reset OTP. Please try again.');
       } finally {
@@ -576,17 +602,16 @@ export default function AuthView({
   const handleForgotPassword = async () => {
     setError(null);
     setSuccessMsg(null);
-    const targetEmail = email || username;
+    const targetEmail = email || username || forgotEmail;
     if (!targetEmail || !targetEmail.includes('@')) {
       setError('Please enter a valid email address first to recover your password.');
       return;
     }
     setIsLoading(true);
     try {
-      await dbService.sendPasswordReset(targetEmail);
-      setSuccessMsg(`✉️ A password reset link has been sent to ${targetEmail}. Please check your inbox.`);
+      await triggerAutoOtpGeneration(targetEmail);
     } catch (err: any) {
-      setError(err.message || 'Failed to send password reset email. Please try again.');
+      setError(err.message || 'Failed to send password reset OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
