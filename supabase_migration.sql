@@ -144,11 +144,12 @@ CREATE TRIGGER trg_sync_profiles_from_users
     AFTER INSERT OR UPDATE ON public.users
     FOR EACH ROW EXECUTE FUNCTION public.sync_profiles_from_users();
 
--- Create trigger for automatic sync from auth.users (Supabase native Auth) directly into public.users
+-- Create trigger for automatic sync from auth.users (Supabase native Auth) directly into public.users & public.profiles
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user_signup()
 RETURNS TRIGGER AS $$
 BEGIN
   BEGIN
+    -- 1. Sync into public.users
     INSERT INTO public.users (
       id, 
       email, 
@@ -175,6 +176,31 @@ BEGIN
       role = COALESCE(EXCLUDED.role, users.role),
       phone = COALESCE(EXCLUDED.phone, users.phone),
       updated_at = timezone('utc'::text, now());
+
+    -- 2. Sync into public.profiles
+    INSERT INTO public.profiles (
+      id,
+      email,
+      name,
+      role,
+      phone,
+      status,
+      created_at
+    )
+    VALUES (
+      NEW.id::text,
+      NEW.email,
+      COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+      COALESCE(NEW.raw_user_meta_data->>'role', 'client'),
+      COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+      'active',
+      timezone('utc'::text, now())
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email,
+      name = COALESCE(EXCLUDED.name, profiles.name),
+      role = COALESCE(EXCLUDED.role, profiles.role),
+      phone = COALESCE(EXCLUDED.phone, profiles.phone);
   EXCEPTION WHEN OTHERS THEN
     -- Prevent trigger failure from aborting auth.signUp with 500 Internal Server Error
     NULL;

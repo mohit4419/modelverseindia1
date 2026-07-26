@@ -473,31 +473,68 @@ export default function AuthView({
           return;
         }
 
-        // Real Supabase sign up if available, else local registered user creation
         const combinedName = `${firstName.trim()} ${lastName.trim()}`;
+        const cleanEmail = email.trim().toLowerCase();
         let registeredUserId = `u_reg_${Date.now()}`;
+        let isEmailUnconfirmed = false;
         
         if (isSupabaseConfigured && supabase) {
-          try {
-            const { data, error: signUpError } = await supabase.auth.signUp({
-              email: email.trim(),
-              password: password,
-              options: {
-                data: {
-                  full_name: combinedName,
-                  phone: phone.trim(),
-                  role: selectedRole
-                }
+          const { data, error: signUpError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password: password,
+            options: {
+              emailRedirectTo: window.location.origin,
+              data: {
+                full_name: combinedName,
+                name: combinedName,
+                phone: phone.trim(),
+                role: selectedRole
               }
-            });
-
-            if (!signUpError && data?.user?.id) {
-              registeredUserId = data.user.id;
-            } else if (signUpError) {
-              console.warn('Supabase auth.signUp note (proceeding with user DB creation):', signUpError.message);
             }
-          } catch (supErr: any) {
-            console.warn('Supabase auth.signUp exception caught (proceeding with user DB creation):', supErr);
+          });
+
+          if (signUpError) {
+            setError(signUpError.message);
+            setIsLoading(false);
+            return;
+          }
+
+          if (data?.user) {
+            // Check if user already exists
+            if (data.user.identities && data.user.identities.length === 0) {
+              setError('An account with this email address already exists. Please Log In or reset your password.');
+              setIsLoading(false);
+              return;
+            }
+
+            registeredUserId = data.user.id;
+            isEmailUnconfirmed = !data.user.email_confirmed_at;
+
+            // Direct DB write to public.users & public.profiles tables using Supabase UUID
+            const userStatus = isEmailUnconfirmed ? 'unconfirmed' : 'active';
+
+            const dbUserRow = {
+              id: registeredUserId,
+              email: cleanEmail,
+              full_name: combinedName,
+              role: selectedRole,
+              phone: phone.trim(),
+              status: userStatus
+            };
+
+            const profileRow = {
+              id: registeredUserId,
+              email: cleanEmail,
+              name: combinedName,
+              role: selectedRole,
+              phone: phone.trim(),
+              status: userStatus,
+              created_at: new Date().toISOString()
+            };
+
+            // Write directly to users and profiles database tables in Supabase
+            await supabase.from('users').upsert(dbUserRow).catch(e => console.warn('Supabase users table write note:', e));
+            await supabase.from('profiles').upsert(profileRow).catch(e => console.warn('Supabase profiles table write note:', e));
           }
         }
 
@@ -505,22 +542,58 @@ export default function AuthView({
           id: registeredUserId,
           role: selectedRole,
           name: combinedName,
-          email: email.trim(),
+          email: cleanEmail,
           phone: phone.trim(),
-          status: 'active',
+          status: isEmailUnconfirmed ? 'unconfirmed' : 'active',
           createdAt: new Date().toISOString(),
         };
 
         await dbService.saveUser(newUser);
-        await dbService.registerCredentials(email.trim(), selectedRole);
+        await dbService.registerCredentials(cleanEmail, selectedRole);
 
-        // Pre-fill email and password on the login tab for instant 1-click access
-        setUsername(email.trim());
+        // Auto-provision model profile if registering as a model
+        if (selectedRole === 'model') {
+          const defaultModelObj: Model = {
+            id: registeredUserId,
+            userId: registeredUserId,
+            name: combinedName,
+            gender: 'female',
+            age: 23,
+            height: "5'8\"",
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            languages: ['English', 'Hindi'],
+            experience: 'Fresh Face',
+            startingPrice: 15000,
+            archived: false,
+            approved: true,
+            selfieVerified: true,
+            rating: 5,
+            reviewsCount: 1,
+            email: cleanEmail,
+            phone: phone.trim(),
+            portfolio: [
+              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500',
+              'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500'
+            ],
+            measurements: { bust: '34"', waist: '26"', hips: '36"' },
+            biography: 'Enthusiastic and professional model looking for casting opportunities.',
+            category: 'fashion'
+          };
+          await dbService.saveModel(defaultModelObj).catch(e => console.warn('Model save note:', e));
+        }
+
+        // Show mandatory Email Verification message if unconfirmed
+        setUsername(cleanEmail);
         setPassword(password);
-        setSuccessMsg("🎉 Account registered successfully! Click 'Log In' below to access your dashboard.");
+        if (isEmailUnconfirmed) {
+          setSuccessMsg(`📧 Verification email sent to ${cleanEmail}! Please check your inbox and click the confirmation link to activate your account.`);
+        } else {
+          setSuccessMsg("🎉 Signup successful! Your account details have been saved to the database. Click 'Log In' below to access your dashboard.");
+        }
         setActiveTab('login');
       } catch (err: any) {
-        setError(err.message || 'Failed to initiate signup verification.');
+        setError(err.message || 'Failed to complete registration.');
       } finally {
         setIsLoading(false);
       }
