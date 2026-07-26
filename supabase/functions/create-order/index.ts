@@ -29,8 +29,8 @@ serve(async (req: Request) => {
 
     const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID");
     const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
-    // prefer PEOJECT_URL if present (custom env), fallback to SUPABASE_URL
-    const supabaseUrl = Deno.env.get("PEOJECT_URL") ?? Deno.env.get("SUPABASE_URL");
+    // prefer PROJECT_URL if present (custom env), fallback to SUPABASE_URL
+    const supabaseUrl = Deno.env.get("PROJECT_URL") ?? Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!razorpayKeyId || !razorpayKeySecret) {
@@ -113,10 +113,11 @@ if (authError || !user) {
     return new Response(
       JSON.stringify({
         success: true,
-        order_id: order.id,
+        id: order.id,
         amount: order.amount,
         currency: order.currency,
-        key: razorpayKeyId,
+        keyId: razorpayKeyId,
+        isReal:true
       }),
       {
         headers: {

@@ -298,11 +298,11 @@ export class BlogRepository {
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const row = {
-          id: normalizedBlog.id,
+          id: String(normalizedBlog.id),
           title: normalizedBlog.title,
           slug: normalizedBlog.slug,
           category: normalizedBlog.category,
-          category_id: normalizedBlog.categoryId || null,
+          category_id: normalizedBlog.categoryId ? String(normalizedBlog.categoryId) : null,
           brief_summary: normalizedBlog.summary,
           summary: normalizedBlog.summary,
           content: normalizedBlog.content,
@@ -313,8 +313,8 @@ export class BlogRepository {
           author: normalizedBlog.author,
           author_role: normalizedBlog.authorRole || 'contributor',
           author_email: normalizedBlog.authorEmail || null,
-          author_id: normalizedBlog.authorId || normalizedBlog.userId || null,
-          user_id: normalizedBlog.userId || normalizedBlog.authorId || null,
+          author_id: (normalizedBlog.authorId || normalizedBlog.userId) ? String(normalizedBlog.authorId || normalizedBlog.userId) : null,
+          user_id: (normalizedBlog.userId || normalizedBlog.authorId) ? String(normalizedBlog.userId || normalizedBlog.authorId) : null,
           status: normalizedBlog.status,
           is_featured: normalizedBlog.isFeatured || false,
           read_time: normalizedBlog.readTime,
@@ -331,15 +331,15 @@ export class BlogRepository {
 
         const { error } = await withTimeout(
           supabaseAdmin.from('blogs').upsert(row),
-          3000
+          4000
         );
         if (error) {
-          console.warn(`Supabase upsert warning for blog ${normalizedBlog.id}:`, error.message || error);
+          console.error(`[BlogRepository] Supabase upsert error for blog ${normalizedBlog.id}:`, error.message || error);
         } else {
-          console.log(`[BlogRepository] Successfully synced blog "${normalizedBlog.title}" to Supabase.`);
+          console.log(`[BlogRepository] Successfully synced blog "${normalizedBlog.title}" (${normalizedBlog.id}) to Supabase database.`);
         }
       } catch (e: any) {
-        console.warn(`Supabase upsert failed for blog ${normalizedBlog.id}:`, e.message || e);
+        console.error(`[BlogRepository] Supabase upsert failed for blog ${normalizedBlog.id}:`, e.message || e);
       }
     }
 

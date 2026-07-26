@@ -113,7 +113,8 @@ export default function PremiumUnlockModal({
           amount: data.amount,
           currency: data.currency || "INR",
           name: 'ModelVerse India',
-          description: planType === 'enterprise' ? 'Enterprise Agency License' : `Test Transaction - ${model.name}`,
+          description: planType === 'enterprise' ? 'Enterprise Agency License' : `Premium Unlock - ${model.name}`,
+      // image: "https://modelverseindia.com/logo.png",
           
           order_id: data.id,
           handler: async function (res: any) {
@@ -129,6 +130,8 @@ export default function PremiumUnlockModal({
               orderId: razorpay_order_id,
               gateway: 'Razorpay'
             });
+
+            
 
             try {
               await verifyPayment({
@@ -153,9 +156,9 @@ export default function PremiumUnlockModal({
             onSuccessUnlock();
           },
           prefill: { // We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
-            name: userName || 'Premium Client', // your customer's name
-            email: userEmail || 'client@advertiser.com',
-            contact: '9999999999' // Provide the customer's phone number for better conversion rates
+            name: userName || "", // your customer's name
+            email: userEmail || "",
+             // Provide the customer's phone number for better conversion rates
           },
           notes: {
             address: "Razorpay Corporate Office"
@@ -169,6 +172,15 @@ export default function PremiumUnlockModal({
             }
           }
         };
+        console.log("Key:", options.key);
+console.log("Order:", options.order_id);
+console.log("Amount:", options.amount);
+console.log("Currency:", options.currency);
+console.log("Prefill:", options.prefill);
+// console.log("Image:", options.image);
+console.log("Name:", options.name);
+console.log("Description:", options.description);
+console.log("Options:", options);
 
         const rzp = new (window as any).Razorpay(options);
         rzp.on('payment.failed', function (response: any) {
@@ -184,6 +196,8 @@ export default function PremiumUnlockModal({
             console.warn("Alert blocked or failed in sandbox iframe environment", e);
           }
         });
+        console.log((window as any).Razorpay );
+        
         rzp.open();
         return;
       }
@@ -443,7 +457,7 @@ export default function PremiumUnlockModal({
             <div className="flex items-center space-x-3 mb-4 w-full justify-center">
               <div className="h-9 w-9 rounded-full border border-neutral-300 overflow-hidden shrink-0 shadow-sm bg-neutral-200">
                 <img 
-                  src="https://images.unsplash.com/photo-1590053416244-6725227bf792?auto=format&fit=crop&q=80&w=120" 
+                  src="https://modelverseindia.com/logo.png"
                   alt="POLITICS" 
                   className="h-full w-full object-cover animate-pulse"
                 />

@@ -1,10 +1,12 @@
 import Razorpay from 'razorpay';
 import { ENV } from './env';
-
+console.log("===== razorpay.ts loaded =====");
 let razorpayClient: any = null;
 
 export function getRazorpay() {
+  console.log("getRazorpay() called");
   if (!razorpayClient) {
+    console.log("Creating Razorpay Clients");
     const rawKeyId = ENV.RAZORPAY_KEY_ID;
     const rawKeySecret = ENV.RAZORPAY_KEY_SECRET;
     
@@ -20,6 +22,7 @@ export function getRazorpay() {
         key_id: keyId,
         key_secret: keySecret
       });
+      console.log("Razorpay initialized");
       console.log('Razorpay SDK client successfully initialized server-side with key: ' + keyId);
     } catch (e) {
       console.error('Failed to initialize Razorpay SDK:', e);

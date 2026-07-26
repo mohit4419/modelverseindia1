@@ -55,6 +55,12 @@ export async function createPaymentSession(params: CreateSessionParams): Promise
   const rzp = getRazorpay();
   if (rzp && gateway === 'Razorpay') {
     try {
+      console.log("==============");
+console.log("KEY:", ENV.RAZORPAY_KEY_ID);
+console.log("SECRET:", ENV.RAZORPAY_KEY_SECRET?.substring(0, 8));
+console.log("AMOUNT:", targetAmount * 100);
+console.log("PLAN:", planType);
+console.log("==============");
       const order = await rzp.orders.create({
         amount: targetAmount * 100, // Razorpay expects amount in paise (1 INR = 100 paise)
         currency: 'INR',
@@ -67,6 +73,7 @@ export async function createPaymentSession(params: CreateSessionParams): Promise
           amount: String(targetAmount)
         }
       });
+      console.log("ORDER =", order);
       return {
         id: order.id,
         amount: order.amount,

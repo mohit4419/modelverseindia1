@@ -53,6 +53,32 @@
 -- ▼
 -- audit_logs
 
+-- 0. Safely convert existing UUID columns to TEXT if tables were created with UUID type previously
+DO $$ 
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'id' AND data_type = 'uuid'
+  ) THEN
+    BEGIN
+      ALTER TABLE public.users ALTER COLUMN id TYPE TEXT USING id::text;
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
+  END IF;
+  
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'id' AND data_type = 'uuid'
+  ) THEN
+    BEGIN
+      ALTER TABLE public.profiles ALTER COLUMN id TYPE TEXT USING id::text;
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
+  END IF;
+END $$;
+
 -- 1. Create the 'users' table exactly with requested columns
 CREATE TABLE IF NOT EXISTS public.users (
     id TEXT PRIMARY KEY,
@@ -396,9 +422,27 @@ CREATE POLICY "Allow write" ON public.notifications FOR ALL USING (true) WITH CH
 CREATE POLICY "Allow write" ON public.audit_logs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow write on profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
 
--- Insert dummy users for testing
-INSERT INTO public.users (id, full_name, email, phone, role, status) VALUES
-('c_test', 'Demo Client', 'client@modelverse.in', '+91 98765 43210', 'client', 'active'),
-('m1', 'Pooja Hegde', 'model@modelverse.in', '+91 91111 22222', 'model', 'active'),
-('a_admin', 'Super Admin', 'admin@modelverse.in', '+91 99999 88888', 'admin', 'active')
-ON CONFLICT (id) DO NOTHING;
+-- Insert dummy users for testing safely
+DO $$
+BEGIN
+  INSERT INTO public.users (id, full_name, email, phone, role, status) VALUES
+  ('c_test', 'Demo Client', 'client@modelverse.in', '+91 98765 43210', 'client', 'active'),
+  ('m1', 'Pooja Hegde', 'model@modelverse.in', '+91 91111 22222', 'model', 'active'),
+  ('a_admin', 'Super Admin', 'admin@modelverse.in', '+91 99999 88888', 'admin', 'active')
+  ON CONFLICT (id) DO NOTHING;
+EXCEPTION WHEN OTHERS THEN
+  BEGIN
+    INSERT INTO public.users (id, full_name, email, phone, role, status) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'Demo Client', 'client@modelverse.in', '+91 98765 43210', 'client', 'active'),
+    ('00000000-0000-0000-0000-000000000002', 'Pooja Hegde', 'model@modelverse.in', '+91 91111 22222', 'model', 'active'),
+    ('00000000-0000-0000-0000-000000000003', 'Super Admin', 'admin@modelverse.in', '+91 99999 88888', 'admin', 'active')
+    ON CONFLICT (id) DO NOTHING;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+END $$;
+
+-- Grant privileges on all tables in public schema for API access
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+

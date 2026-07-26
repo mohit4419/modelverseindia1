@@ -1,7 +1,57 @@
--- Supabase SQL Migration Script for ModelVerse India (Copy-Paste Reference)
--- Description: Sets up and aligns the entire database schema exactly to the requested structural hierarchy:
---
---
+-- 0. Safely convert existing UUID columns to TEXT if tables were created with UUID type previously
+DO $$ 
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'id' AND data_type = 'uuid'
+  ) THEN
+    BEGIN
+      ALTER TABLE public.users ALTER COLUMN id TYPE TEXT USING id::text;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+  END IF;
+  
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'id' AND data_type = 'uuid'
+  ) THEN
+    BEGIN
+      ALTER TABLE public.profiles ALTER COLUMN id TYPE TEXT USING id::text;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'blog_categories' AND column_name = 'id' AND data_type = 'uuid'
+  ) THEN
+    BEGIN
+      ALTER TABLE public.blog_categories ALTER COLUMN id TYPE TEXT USING id::text;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'blogs' AND column_name = 'category_id' AND data_type = 'uuid'
+  ) THEN
+    BEGIN
+      ALTER TABLE public.blogs ALTER COLUMN category_id TYPE TEXT USING category_id::text;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'blogs' AND column_name = 'author_id' AND data_type = 'uuid'
+  ) THEN
+    BEGIN
+      ALTER TABLE public.blogs ALTER COLUMN author_id TYPE TEXT USING author_id::text;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+  END IF;
+END $$;
+
 -- 1. Create the 'users' table exactly with requested columns
 CREATE TABLE IF NOT EXISTS public.users (
     id TEXT PRIMARY KEY,
@@ -345,9 +395,116 @@ CREATE POLICY "Allow write" ON public.notifications FOR ALL USING (true) WITH CH
 CREATE POLICY "Allow write" ON public.audit_logs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow write on profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
 
--- Insert dummy users for testing
-INSERT INTO public.users (id, full_name, email, phone, role, status) VALUES
-('c_test', 'Demo Client', 'client@modelverse.in', '+91 98765 43210', 'client', 'active'),
-('m1', 'Pooja Hegde', 'model@modelverse.in', '+91 91111 22222', 'model', 'active'),
-('a_admin', 'Super Admin', 'admin@modelverse.in', '+91 99999 88888', 'admin', 'active')
-ON CONFLICT (id) DO NOTHING;
+-- Insert dummy users for testing safely
+DO $$
+BEGIN
+  INSERT INTO public.users (id, full_name, email, phone, role, status) VALUES
+  ('c_test', 'Demo Client', 'client@modelverse.in', '+91 98765 43210', 'client', 'active'),
+  ('m1', 'Pooja Hegde', 'model@modelverse.in', '+91 91111 22222', 'model', 'active'),
+  ('a_admin', 'Super Admin', 'admin@modelverse.in', '+91 99999 88888', 'admin', 'active')
+  ON CONFLICT (id) DO NOTHING;
+EXCEPTION WHEN OTHERS THEN
+  BEGIN
+    INSERT INTO public.users (id, full_name, email, phone, role, status) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'Demo Client', 'client@modelverse.in', '+91 98765 43210', 'client', 'active'),
+    ('00000000-0000-0000-0000-000000000002', 'Pooja Hegde', 'model@modelverse.in', '+91 91111 22222', 'model', 'active'),
+    ('00000000-0000-0000-0000-000000000003', 'Super Admin', 'admin@modelverse.in', '+91 99999 88888', 'admin', 'active')
+    ON CONFLICT (id) DO NOTHING;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+END $$;
+
+-- 12. Create 'blog_categories' table
+CREATE TABLE IF NOT EXISTS public.blog_categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT,
+    icon TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Seed default categories safely
+DO $$
+BEGIN
+  INSERT INTO public.blog_categories (id, name, slug, description, icon) VALUES
+  ('cat-1', 'Fashion', 'fashion', 'High fashion couture & runway trends', 'Sparkles'),
+  ('cat-2', 'Modeling Tips', 'modeling-tips', 'Posing, portfolios, and casting advice', 'BookOpen'),
+  ('cat-3', 'Beauty', 'beauty', 'Skincare, makeup, and camera aesthetics', 'Sun'),
+  ('cat-4', 'Lifestyle', 'lifestyle', 'Fitness, travel, and personal branding', 'Heart'),
+  ('cat-5', 'Industry News', 'industry-news', 'Latest agency trends and casting calls', 'Newspaper'),
+  ('cat-6', 'Success Stories', 'success-stories', 'Inspirational journeys of ModelVerse talent', 'Award')
+  ON CONFLICT (slug) DO NOTHING;
+EXCEPTION WHEN OTHERS THEN
+  BEGIN
+    INSERT INTO public.blog_categories (name, slug, description, icon) VALUES
+    ('Fashion', 'fashion', 'High fashion couture & runway trends', 'Sparkles'),
+    ('Modeling Tips', 'modeling-tips', 'Posing, portfolios, and casting advice', 'BookOpen'),
+    ('Beauty', 'beauty', 'Skincare, makeup, and camera aesthetics', 'Sun'),
+    ('Lifestyle', 'lifestyle', 'Fitness, travel, and personal branding', 'Heart'),
+    ('Industry News', 'industry-news', 'Latest agency trends and casting calls', 'Newspaper'),
+    ('Success Stories', 'success-stories', 'Inspirational journeys of ModelVerse talent', 'Award')
+    ON CONFLICT (slug) DO NOTHING;
+  EXCEPTION WHEN OTHERS THEN
+    NULL;
+  END;
+END $$;
+
+-- 13. Create 'blogs' table
+CREATE TABLE IF NOT EXISTS public.blogs (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    category TEXT DEFAULT 'Industry Tips',
+    category_id TEXT,
+    author_id TEXT,
+    author_name TEXT,
+    author TEXT,
+    author_role TEXT DEFAULT 'contributor',
+    author_email TEXT,
+    user_id TEXT,
+    brief_summary TEXT,
+    summary TEXT,
+    content TEXT NOT NULL,
+    excerpt TEXT,
+    featured_image TEXT,
+    image_url TEXT,
+    status TEXT DEFAULT 'published' CHECK (status IN ('draft', 'pending', 'published', 'rejected')),
+    is_featured BOOLEAN DEFAULT false,
+    read_time INTEGER DEFAULT 3,
+    views INTEGER DEFAULT 0,
+    likes_count INTEGER DEFAULT 0,
+    comments_count INTEGER DEFAULT 0,
+    seo_title TEXT,
+    seo_description TEXT,
+    seo_keywords TEXT,
+    published_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    published_date TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+GRANT ALL ON TABLE public.blogs TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.blog_categories TO anon, authenticated, service_role, postgres;
+
+ALTER TABLE public.blogs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_categories ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public select" ON public.blogs;
+DROP POLICY IF EXISTS "Allow write" ON public.blogs;
+CREATE POLICY "Allow public select" ON public.blogs FOR SELECT USING (true);
+CREATE POLICY "Allow write" ON public.blogs FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public select" ON public.blog_categories;
+DROP POLICY IF EXISTS "Allow write" ON public.blog_categories;
+CREATE POLICY "Allow public select" ON public.blog_categories FOR SELECT USING (true);
+CREATE POLICY "Allow write" ON public.blog_categories FOR ALL USING (true) WITH CHECK (true);
+
+-- Grant privileges on all tables in public schema for API access
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+
+
