@@ -5,7 +5,7 @@
 
 import { supabase } from '../../supabaseClient';
 import { User } from '../../types';
-import { isSupabaseAvailable, removeUndefined, sanitizeValue } from './helpers';
+import { isSupabaseAvailable, isUUID, removeUndefined, sanitizeValue } from './helpers';
 import { SEED_USERS } from './seedData';
 
 export async function getUsers(): Promise<User[]> {
@@ -61,34 +61,45 @@ export async function saveUser(user: User): Promise<void> {
 export async function getUser(userId: string): Promise<User | null> {
   if (isSupabaseAvailable && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      if (error) throw error;
-      if (data) {
-        return sanitizeValue(data as User);
+      if (isUUID(userId)) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        if (!error && data) {
+          return sanitizeValue(data as User);
+        }
+      } else if (userId.includes('@')) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', userId.trim().toLowerCase())
+          .maybeSingle();
+        if (!error && data) {
+          return sanitizeValue(data as User);
+        }
       }
     } catch (e: any) {
       console.warn(`Failed to fetch user ${userId} directly from Supabase, falling back to compiled memory:`, e);
     }
   }
   const users = await getUsers();
-  const found = users.find(u => u.id === userId) || null;
+  const found = users.find(u => u.id === userId || u.email.toLowerCase() === userId.toLowerCase()) || null;
   return found ? sanitizeValue(found) : null;
 }
 
 export async function getUserFavorites(userId: string): Promise<string[] | null> {
   if (isSupabaseAvailable && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('favorites')
-        .eq('id', userId)
-        .maybeSingle();
-      if (!error && data) {
-        return data.favorites || [];
+      if (isUUID(userId) || userId.includes('@')) {
+        const query = supabase.from('profiles').select('favorites');
+        const { data, error } = isUUID(userId)
+          ? await query.eq('id', userId).maybeSingle()
+          : await query.eq('email', userId.trim().toLowerCase()).maybeSingle();
+        if (!error && data) {
+          return data.favorites || [];
+        }
       }
     } catch (e) {
       console.error('Supabase fetch favorites failed:', e);

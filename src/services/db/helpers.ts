@@ -71,6 +71,10 @@ export function removeUndefined<T>(obj: T): T {
   return cleanObj;
 }
 
+export function isUUID(str: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
+
 // Self-healing database helpers to ensure referential integrity before saves
 export async function ensureUserExistsInDb(
   userId: string,
@@ -80,10 +84,17 @@ export async function ensureUserExistsInDb(
 ): Promise<void> {
   if (!isSupabaseAvailable || !supabase) return;
   try {
-    const { data, error } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle();
-    if (!error && data) {
-      return;
+    let exists = false;
+    if (isUUID(userId)) {
+      const { data, error } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle();
+      if (!error && data) exists = true;
+    } else if (email && email.includes('@')) {
+      const { data, error } = await supabase.from('profiles').select('id').eq('email', email.trim().toLowerCase()).maybeSingle();
+      if (!error && data) exists = true;
     }
+
+    if (exists) return;
+
     const local = localStorage.getItem('mvi_users');
     const localUsers: User[] = local ? JSON.parse(local) : seedUsers;
     const existing = localUsers.find(u => u.id === userId) || seedUsers.find(u => u.id === userId);
