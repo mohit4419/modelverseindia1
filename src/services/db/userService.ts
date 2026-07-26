@@ -45,15 +45,20 @@ export async function saveUser(user: User): Promise<void> {
     console.error('Local storage saveUser failed:', localErr);
   }
 
-  if (isSupabaseAvailable && supabase) {
+  if (isSupabaseAvailable && supabase && isUUID(user.id)) {
     try {
+      const userRow = {
+        ...user,
+        created_at: (user as any).createdAt || (user as any).created_at
+      };
+      delete (userRow as any).createdAt;
       const { error } = await supabase
         .from('profiles')
-        .upsert(removeUndefined(user));
+        .upsert(removeUndefined(userRow));
       if (error) throw error;
       console.log(`Successfully saved user profile for ${user.id} in Supabase`);
     } catch (e: any) {
-      console.warn('Supabase user save failed, falling back to local storage:', e);
+      console.warn('Supabase user save note:', e?.message || e);
     }
   }
 }

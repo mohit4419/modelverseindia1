@@ -115,20 +115,11 @@ export async function ensureUserExistsInDb(
     };
     delete (userToInsert as any).createdAt;
 
-    const dbUserRow = removeUndefined({
-      id: userId,
-      full_name: userToInsert.name,
-      email: userToInsert.email,
-      role: userToInsert.role || 'model',
-      phone: userToInsert.phone || '',
-      status: 'active'
-    });
-
-    const { error: uErr } = await supabase.from('users').upsert(dbUserRow);
-    if (uErr) console.warn('Supabase users table upsert note:', uErr.message);
-
-    const { error: pErr } = await supabase.from('profiles').upsert(removeUndefined(userToInsert));
-    if (pErr) console.warn('Supabase profiles table upsert note:', pErr.message);
+    // Only upsert to Supabase profiles table if userId is a valid UUID
+    if (isUUID(userId)) {
+      const { error: pErr } = await supabase.from('profiles').upsert(removeUndefined(userToInsert));
+      if (pErr) console.warn('Supabase profiles table upsert note:', pErr.message);
+    }
   } catch (err) {
     console.warn(`[Self-healing] Failed to ensure user ${userId} exists in Supabase:`, err);
   }
