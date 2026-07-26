@@ -247,4 +247,8 @@ export interface Post {
 }
 
 // Pricing configuration derived securely from environment variables
-export const PREMIUM_UNLOCK_AMOUNT = Number((import.meta as any).env.VITE_PREMIUM_UNLOCK_AMOUNT || '399');
+export const PREMIUM_UNLOCK_AMOUNT = Number(
+  (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.VITE_PREMIUM_UNLOCK_AMOUNT) ||
+  (typeof process !== 'undefined' && process?.env?.PREMIUM_UNLOCK_AMOUNT) ||
+  '399'
+);

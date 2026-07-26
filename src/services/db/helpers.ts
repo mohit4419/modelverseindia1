@@ -76,6 +76,20 @@ export function isUUID(str: string): boolean {
 }
 
 // Self-healing database helpers to ensure referential integrity before saves
+export async function getValidUserIdForModel(providedUserId?: string): Promise<string> {
+  if (!isSupabaseAvailable || !supabase) return providedUserId || 'u_default';
+  
+  if (isUUID(providedUserId)) {
+    const { data } = await supabase.from('users').select('id').eq('id', providedUserId).maybeSingle();
+    if (data?.id) return data.id;
+  }
+  
+  const { data: firstUser } = await supabase.from('users').select('id').limit(1).maybeSingle();
+  if (firstUser?.id) return firstUser.id;
+  
+  return providedUserId || 'u_default';
+}
+
 export async function ensureUserExistsInDb(
   userId: string,
   name?: string,
@@ -84,30 +98,37 @@ export async function ensureUserExistsInDb(
 ): Promise<void> {
   if (!isSupabaseAvailable || !supabase) return;
   try {
-    let exists = false;
-    if (isUUID(userId)) {
-      const { data, error } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle();
-      if (!error && data) exists = true;
-    } else if (email && email.includes('@')) {
-      const { data, error } = await supabase.from('profiles').select('id').eq('email', email.trim().toLowerCase()).maybeSingle();
-      if (!error && data) exists = true;
+    let localUsers: User[] = seedUsers;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const local = localStorage.getItem('mvi_users');
+      if (local) localUsers = JSON.parse(local);
     }
-
-    if (exists) return;
-
-    const local = localStorage.getItem('mvi_users');
-    const localUsers: User[] = local ? JSON.parse(local) : seedUsers;
     const existing = localUsers.find(u => u.id === userId) || seedUsers.find(u => u.id === userId);
-    const userToInsert: User = existing || {
+    const userToInsert: Record<string, any> = existing ? { ...existing, created_at: (existing as any).createdAt || (existing as any).created_at } : {
       id: userId,
-      role: 'client',
-      name: name || 'Demo Client',
-      email: email || 'client@modelverse.in',
+      role: 'model',
+      name: name || 'Demo Model User',
+      email: email || 'model@modelverse.in',
       phone: '+91 98765 43210',
       status: 'active',
-      createdAt: new Date().toISOString()
+      created_at: new Date().toISOString()
     };
-    await supabase.from('profiles').upsert(removeUndefined(userToInsert));
+    delete (userToInsert as any).createdAt;
+
+    const dbUserRow = removeUndefined({
+      id: userId,
+      full_name: userToInsert.name,
+      email: userToInsert.email,
+      role: userToInsert.role || 'model',
+      phone: userToInsert.phone || '',
+      status: 'active'
+    });
+
+    const { error: uErr } = await supabase.from('users').upsert(dbUserRow);
+    if (uErr) console.warn('Supabase users table upsert note:', uErr.message);
+
+    const { error: pErr } = await supabase.from('profiles').upsert(removeUndefined(userToInsert));
+    if (pErr) console.warn('Supabase profiles table upsert note:', pErr.message);
   } catch (err) {
     console.warn(`[Self-healing] Failed to ensure user ${userId} exists in Supabase:`, err);
   }

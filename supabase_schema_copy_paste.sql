@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS public.models (
     name TEXT NOT NULL,
     gender TEXT,
     age INTEGER,
-    height TEXT,
+    height INTEGER,
     city TEXT NOT NULL,
     state TEXT NOT NULL,
     starting_price INTEGER DEFAULT 15000,
@@ -184,9 +184,26 @@ CREATE TABLE IF NOT EXISTS public.models (
     biography TEXT,
     phone TEXT,
     email TEXT,
+    approved BOOLEAN DEFAULT true,
+    rejected BOOLEAN DEFAULT false,
+    selfie_verified BOOLEAN DEFAULT true,
+    category TEXT DEFAULT 'fashion',
+    portfolio JSONB DEFAULT '[]'::jsonb,
+    measurements JSONB DEFAULT '{}'::jsonb,
+    languages JSONB DEFAULT '["English", "Hindi"]'::jsonb,
+    experience TEXT DEFAULT 'Fresh Face',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT true;
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS rejected BOOLEAN DEFAULT false;
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS selfie_verified BOOLEAN DEFAULT true;
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'fashion';
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS portfolio JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS measurements JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS languages JSONB DEFAULT '["English", "Hindi"]'::jsonb;
+ALTER TABLE public.models ADD COLUMN IF NOT EXISTS experience TEXT DEFAULT 'Fresh Face';
 
 -- 4. Create model-associated auxiliary child tables
 -- A. model_media
