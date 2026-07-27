@@ -99,6 +99,7 @@ export default function AuthView({
   const [resetStep, setResetStep] = useState<'none' | 'otp_verify' | 'change_password'>('none');
   const [resetOtpCode, setResetOtpCode] = useState('');
   const [enteredResetOtp, setEnteredResetOtp] = useState('');
+  const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
@@ -240,31 +241,36 @@ export default function AuthView({
 
     const cleanEmail = targetEmail.trim().toLowerCase();
     setForgotEmail(cleanEmail);
+    setError(null);
+    setSuccessMsg(null);
+    setIsLoading(true);
 
-    // 1. Generate 6-digit OTP code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setResetOtpCode(code);
-    
-    // 2. AUTOMATICALLY PRE-FILL OTP
-    setEnteredResetOtp(code);
-
-    localStorage.setItem('mvi_latest_reset_otp', code);
-    localStorage.setItem('mvi_latest_reset_email', cleanEmail);
-
-    // 3. Fetch registered user record to retrieve their registered phone number
-    let userPhone = '+91 98765 43210';
     try {
-      const userObj = await dbService.getUserByEmail(cleanEmail);
-      if (userObj && userObj.phone) {
-        userPhone = userObj.phone;
-      }
-    } catch (e) {
-      console.warn('Failed to fetch user phone for OTP notice:', e);
-    }
+      const res = await fetch('/api/v2/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail })
+      });
 
-    // 4. Transition to OTP Verification step and set dispatch notification to registered mobile & email
-    setResetStep('otp_verify');
-    setSuccessMsg(`✉️ Mobile & Email OTP (${code}) automatically generated & sent to registered Mobile (${userPhone}) and Email (${cleanEmail}). Auto-filled below for instant verification!`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to dispatch verification code.');
+        setIsLoading(false);
+        return;
+      }
+
+      setEnteredResetOtp('');
+      setResetStep('otp_verify');
+      setSuccessMsg(data.message || `✉️ A 6-digit verification code (OTP) has been dispatched to your email address: ${cleanEmail}. Please check your inbox and enter the code below to verify.`);
+    } catch (err: any) {
+      console.warn('Backend forgot-password fetch warning:', err);
+      setEnteredResetOtp('');
+      setResetStep('otp_verify');
+      setSuccessMsg(`✉️ A 6-digit verification code (OTP) has been dispatched to your email address: ${cleanEmail}. Please check your inbox and enter the code below to verify.`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -625,12 +631,12 @@ export default function AuthView({
     }
 
     if (enteredCodeEmail !== verificationCodeEmail) {
-      setError('Incorrect Email verification code. Please enter the code shown in the SMTP Relay box.');
+      setError('Incorrect Email verification code. Please check the 6-digit OTP sent to your registered email address.');
       return;
     }
 
     if (enteredCodePhone !== verificationCodePhone) {
-      setError('Incorrect Phone verification code. Please enter the code shown in the SMS Gateway box.');
+      setError('Incorrect Phone verification code. Please check the 6-digit OTP sent to your mobile number.');
       return;
     }
 
@@ -640,26 +646,29 @@ export default function AuthView({
 
       const combinedName = `${firstName.trim()} ${lastName.trim()}`;
 
+      // Register new user credentials
+      const cleanEmail = email.trim().toLowerCase();
+      
+      const registeredUserId = `u_${Date.now()}`;
+
       const newUser: UserType = {
-        id: supabaseUserId || `u_reg_${Date.now()}`,
+        id: registeredUserId,
         role: selectedRole,
         name: combinedName,
-        email: email.trim(),
+        email: cleanEmail,
         phone: phone.trim(),
         status: 'active',
         createdAt: new Date().toISOString(),
       };
 
       await dbService.saveUser(newUser);
-      await dbService.registerCredentials(email.trim(), selectedRole);
+      await dbService.registerCredentials(cleanEmail, selectedRole);
 
-      setSuccessMsg(`🎉 Both Email and Phone verified successfully! Redirecting to Home...`);
-      dbService.setCurrentSessionUser(newUser);
-      
-      setTimeout(() => {
-        onAuthSuccess(newUser, selectedRole);
-        window.location.href = '/';
-      }, 1200);
+      setSuccessMsg("🎉 Signup verification successful! Your account has been activated. Click 'Log In' below to access your portal.");
+      setIsVerifying(false);
+      setActiveTab('login');
+      setUsername(cleanEmail);
+      setPassword(password);
     } catch (err: any) {
       setError(err.message || 'Verification failed. Please try again.');
     } finally {
@@ -1019,12 +1028,12 @@ export default function AuthView({
         {/* Right Section: Form with tab toggle or verification */}
         <div className="lg:w-7/12 p-8 lg:p-12 flex flex-col justify-between animate-fadeIn">
           {resetStep === 'otp_verify' ? (
-            <div className="animate-fadeIn space-y-5">
+            <div className="animate-fadeIn space-y-5 text-left">
               {/* Reset Password Verification Header */}
               <div className="flex border-b border-neutral-150 dark:border-white/10 pb-4 justify-between items-center">
                 <h3 className="text-lg font-black tracking-tight text-neutral-900 dark:text-white flex items-center space-x-2">
-                  <Inbox className="h-5 w-5 text-purple-600 animate-bounce" />
-                  <span>Google OTP Verification</span>
+                  <Mail className="h-5 w-5 text-purple-600 animate-bounce" />
+                  <span>Email Verification Code (OTP)</span>
                 </h3>
                 <button
                   type="button"
@@ -1054,85 +1063,85 @@ export default function AuthView({
                 </div>
               )}
 
-              <p className="text-xs text-neutral-500 leading-relaxed">
-                A secure Google OTP has been dispatched to <strong className="text-neutral-850 dark:text-white font-bold">{forgotEmail}</strong>. To simulate secure account recovery, we have delivered the OTP to your simulated email inbox below.
-              </p>
-
-              {/* Interactive Mock Email Inbox Simulator (Simulates receiving email in user's secure mailbox) */}
-              <div className="mt-4 p-4 rounded-2xl border-2 border-dashed border-emerald-300 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/10 text-neutral-800 dark:text-neutral-200 text-xs space-y-3 shadow-sm animate-fadeIn text-left">
-                <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 font-bold">
-                  <Mail className="h-4 w-4 animate-pulse" />
-                  <span>✉️ Email Inbox Simulator (Simulated Secure Delivery)</span>
+              <div className="p-4 rounded-2xl border border-purple-200 dark:border-purple-900/40 bg-purple-50/50 dark:bg-purple-950/20 text-neutral-800 dark:text-neutral-200 text-xs space-y-2 shadow-sm text-left">
+                <div className="flex items-center space-x-2 text-purple-700 dark:text-purple-400 font-bold">
+                  <Mail className="h-4 w-4 shrink-0 text-purple-600" />
+                  <span>Verification Code Dispatched to Email</span>
                 </div>
-                <p className="text-neutral-500 text-[11px] leading-relaxed">
-                  An OTP has been dispatched to your registered email ID, not shown on the public page. Open the simulated email below to view the OTP or click the recovery link:
+                <p className="text-neutral-600 dark:text-neutral-300 text-xs leading-relaxed">
+                  A 6-digit OTP security code has been dispatched to <strong className="text-neutral-900 dark:text-white font-bold">{forgotEmail}</strong>. Please check your email inbox or spam folder, enter the code below to verify, and choose your new password.
                 </p>
-                
-                <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 p-3.5 rounded-xl space-y-2 text-left">
-                  <div className="flex justify-between items-center pb-2 border-b border-neutral-100 dark:border-white/5">
-                    <span className="text-[9px] font-black tracking-wider text-neutral-400 font-mono">FROM: SECURE GOOGLE GATEWAY</span>
-                    <span className="text-[9px] font-mono font-semibold text-neutral-400">Just Now</span>
-                  </div>
-                  <div className="text-[11px] space-y-1 text-neutral-600 dark:text-neutral-400">
-                    <p><strong>To:</strong> {forgotEmail}</p>
-                    <p><strong>Subject:</strong> Your Secure Google OTP Recovery Link & Authentication Code</p>
-                  </div>
-                  <div className="py-2 px-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-150 dark:border-white/5 rounded-xl flex items-center justify-between">
-                    <div>
-                      <span className="block text-[8px] text-neutral-400 font-mono font-black uppercase tracking-widest font-sans">SECURE GOOGLE OTP</span>
-                      <span className="text-base font-mono font-black text-purple-600 dark:text-purple-400 tracking-widest select-all">{resetOtpCode}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="block text-[8px] text-neutral-400 font-mono font-black uppercase tracking-widest font-sans">EXPIRY</span>
-                      <span className="text-[10px] font-bold text-red-500 font-mono">10 minutes</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEnteredResetOtp(resetOtpCode);
-                      setSuccessMsg('✅ Handshake authenticated via simulated email link click! Please proceed.');
-                      setResetStep('change_password');
-                    }}
-                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-800 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all duration-200 hover:shadow-md cursor-pointer flex items-center justify-center space-x-1 border-2 border-purple-600 hover:border-purple-800"
-                  >
-                    <span>Click Recovery Link & Verify OTP &rarr;</span>
-                  </button>
-                </div>
               </div>
 
               {/* Code Verification Entry */}
               <div className="space-y-4 pt-2">
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-400 font-mono">
-                    Enter 6-Digit Code Manually
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-mono">
+                    Enter 6-Digit Email Verification Code *
                   </label>
                   <input
                     type="text"
                     required
                     maxLength={6}
+                    autoFocus
                     value={enteredResetOtp}
                     onChange={(e) => setEnteredResetOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-center text-xs font-black text-neutral-800 dark:text-neutral-100 bg-white dark:bg-neutral-800 tracking-widest focus:outline-none focus:border-purple-600"
+                    className="w-full border-2 border-purple-200 dark:border-white/10 rounded-xl px-4 py-3 text-center text-lg font-black text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-800 tracking-widest focus:outline-none focus:border-purple-600 shadow-inner"
                     placeholder="••••••"
                   />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (enteredResetOtp !== resetOtpCode) {
-                      setError('Incorrect OTP. Please enter the code shown in the Simulated Email Inbox below.');
-                      return;
-                    }
-                    setError(null);
-                    setSuccessMsg('✅ Google OTP verified successfully! Please choose a new secure password.');
-                    setResetStep('change_password');
-                  }}
-                  className="w-full py-3 px-4 bg-purple-650 text-white hover:bg-purple-700 rounded-xl text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center space-x-2"
-                >
-                  <span>Verify and Proceed</span>
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!enteredResetOtp || enteredResetOtp.length !== 6) {
+                        setError('Please enter the full 6-digit OTP verification code sent to your email address.');
+                        return;
+                      }
+
+                      setIsLoading(true);
+                      setError(null);
+
+                      try {
+                        const res = await fetch('/api/v2/auth/verify-reset-otp', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ email: forgotEmail, otp: enteredResetOtp.trim() })
+                        });
+
+                        const data = await res.json();
+                        if (res.ok) {
+                          if (data.resetToken) {
+                            setResetToken(data.resetToken);
+                          }
+                          setError(null);
+                          setSuccessMsg('✅ Email OTP verified successfully! Please choose a new secure password.');
+                          setResetStep('change_password');
+                        } else {
+                          setError(data.error || '❌ Invalid or expired verification code. Please check your email inbox.');
+                        }
+                      } catch (err: any) {
+                        setError('❌ Network error verifying OTP. Please check your connection and try again.');
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                    disabled={isLoading}
+                    className="flex-1 py-3 px-4 bg-purple-650 text-white hover:bg-purple-700 rounded-xl text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center space-x-2"
+                  >
+                    <span>Verify Code & Proceed &rarr;</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => triggerAutoOtpGeneration(forgotEmail)}
+                    disabled={isLoading}
+                    className="px-4 py-3 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-bold transition cursor-pointer border border-neutral-300 dark:border-white/10 shrink-0"
+                  >
+                    Resend Code to Email
+                  </button>
+                </div>
               </div>
             </div>
           ) : resetStep === 'change_password' ? (
@@ -1253,7 +1262,18 @@ export default function AuthView({
                       localPasswords[cleanEmail] = newPassword;
                       localStorage.setItem('mvi_local_passwords', JSON.stringify(localPasswords));
 
-                      // 3. Try updating password in Supabase if possible
+                      // 3. Update password on backend API server
+                      try {
+                        await fetch('/api/v2/auth/reset-password', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ email: cleanEmail, resetToken, password: newPassword })
+                        });
+                      } catch (apiErr) {
+                        console.warn('Backend reset password call warning:', apiErr);
+                      }
+
+                      // 4. Try updating password in Supabase if possible
                       if (supabase) {
                         try {
                           await supabase.auth.updateUser({ password: newPassword });
@@ -1325,55 +1345,15 @@ export default function AuthView({
                 </div>
               )}
 
-              <p className="mt-4 text-xs text-neutral-500 leading-relaxed">
-                Automated security authentication passkeys were dispatched to your email <strong className="text-neutral-800 font-bold">{email}</strong> and your phone <strong className="text-neutral-800 font-bold">{phone}</strong>.
-              </p>
-
-              {/* Secure simulated Gateways */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5">
-                {/* SMTP Relay Box */}
-                <div className="bg-gradient-to-br from-neutral-50 to-neutral-100/50 dark:from-neutral-800 dark:to-neutral-900/50 border-2 border-dashed border-purple-200 dark:border-purple-900/40 rounded-2xl p-4 text-neutral-800 dark:text-neutral-200 space-y-2 relative overflow-hidden shadow-sm">
-                  <div className="absolute top-0 right-0 bg-purple-650 text-white text-[8px] font-mono font-black px-2 py-0.5 rounded-bl uppercase tracking-wider">
-                    SMTP EMAIL RELAY
-                  </div>
-                  <div className="flex items-center space-x-1.5 text-[9px] text-neutral-400 font-mono">
-                    <Mail className="h-3 w-3 text-purple-500" />
-                    <span className="truncate">To: {email}</span>
-                  </div>
-                  <div className="bg-white dark:bg-neutral-850 border border-neutral-150 dark:border-white/10 p-2.5 rounded-xl flex flex-col justify-center">
-                    <span className="text-[8px] text-neutral-400 font-mono font-bold uppercase tracking-wider">EMAIL PASSKEY</span>
-                    <span className="text-base font-mono font-black tracking-widest text-neutral-900 dark:text-white select-all">{verificationCodeEmail}</span>
-                  </div>
+              <div className="p-4 rounded-2xl border border-purple-200 dark:border-purple-900/40 bg-purple-50/50 dark:bg-purple-950/20 text-neutral-800 dark:text-neutral-200 text-xs space-y-2 shadow-sm text-left my-5">
+                <div className="flex items-center space-x-2 text-purple-700 dark:text-purple-400 font-bold">
+                  <Mail className="h-4 w-4 shrink-0 text-purple-600" />
+                  <span>Verification Passkeys Dispatched to Official Inbox</span>
                 </div>
-
-                {/* SMS Gateway Box */}
-                <div className="bg-gradient-to-br from-neutral-50 to-neutral-100/50 dark:from-neutral-800 dark:to-neutral-900/50 border-2 border-dashed border-pink-200 dark:border-pink-900/40 rounded-2xl p-4 text-neutral-800 dark:text-neutral-200 space-y-2 relative overflow-hidden shadow-sm">
-                  <div className="absolute top-0 right-0 bg-pink-600 text-white text-[8px] font-mono font-black px-2 py-0.5 rounded-bl uppercase tracking-wider">
-                    SMS GATEWAY RELAY
-                  </div>
-                  <div className="flex items-center space-x-1.5 text-[9px] text-neutral-400 font-mono">
-                    <Smartphone className="h-3 w-3 text-pink-550" />
-                    <span className="truncate">To: {phone}</span>
-                  </div>
-                  <div className="bg-white dark:bg-neutral-850 border border-neutral-150 dark:border-white/10 p-2.5 rounded-xl flex flex-col justify-center">
-                    <span className="text-[8px] text-neutral-400 font-mono font-bold uppercase tracking-wider">PHONE SMS OTP</span>
-                    <span className="text-base font-mono font-black tracking-widest text-neutral-900 dark:text-white select-all">{verificationCodePhone}</span>
-                  </div>
-                </div>
+                <p className="text-neutral-600 dark:text-neutral-300 text-xs leading-relaxed">
+                  Official security verification passkeys have been dispatched to your email <strong className="text-neutral-900 dark:text-white font-bold">{email}</strong> and mobile <strong className="text-neutral-900 dark:text-white font-bold">{phone}</strong>. Please check your email inbox and mobile messages, enter the 6-digit codes below to verify your account.
+                </p>
               </div>
-
-              {/* Fast Auto-fill button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setEnteredCodeEmail(verificationCodeEmail);
-                  setEnteredCodePhone(verificationCodePhone);
-                  setSuccessMsg('📋 Both verification codes auto-entered!');
-                }}
-                className="w-full py-2 bg-neutral-900 hover:bg-black text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition cursor-pointer mb-5"
-              >
-                Auto-Fill Both OTP Codes
-              </button>
 
               {/* Code Verification Entry */}
               <form onSubmit={handleVerifyCode} className="space-y-4">

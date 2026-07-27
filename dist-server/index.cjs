@@ -47,7 +47,7 @@ var init_env = __esm({
       SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "",
       SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
       SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_API_KEY || "",
-      PREMIUM_UNLOCK_AMOUNT: Number(process.env.PREMIUM_UNLOCK_AMOUNT || process.env.VITE_PREMIUM_UNLOCK_AMOUNT || "299")
+      PREMIUM_UNLOCK_AMOUNT: Number(process.env.PREMIUM_UNLOCK_AMOUNT || process.env.VITE_PREMIUM_UNLOCK_AMOUNT || "399")
     };
   }
 });
@@ -55,10 +55,10 @@ var init_env = __esm({
 // server/config/supabase.ts
 var supabase_exports = {};
 __export(supabase_exports, {
-  isSupabaseConfigured: () => isSupabaseConfigured,
+  isSupabaseConfigured: () => isSupabaseConfigured2,
   optionalSupabaseAuth: () => optionalSupabaseAuth,
   requireSupabaseAuth: () => requireSupabaseAuth,
-  supabaseAdmin: () => supabaseAdmin,
+  supabaseAdmin: () => supabaseAdmin2,
   withTimeout: () => withTimeout
 });
 function withTimeout(promise, timeoutMs = 2500) {
@@ -85,11 +85,11 @@ async function requireSupabaseAuth(req, res, next) {
   if (!token) {
     return res.status(401).json({ error: "Unauthorized: Token not provided" });
   }
-  if (!isSupabaseConfigured || !supabaseAdmin) {
+  if (!isSupabaseConfigured2 || !supabaseAdmin2) {
     return res.status(503).json({ error: "Service Unavailable: Supabase server is not configured" });
   }
   try {
-    const { data: { user }, error } = await withTimeout(supabaseAdmin.auth.getUser(token), 3e3);
+    const { data: { user }, error } = await withTimeout(supabaseAdmin2.auth.getUser(token), 3e3);
     if (error || !user) {
       return res.status(401).json({ error: "Unauthorized: Invalid Supabase token", details: error?.message });
     }
@@ -105,9 +105,9 @@ async function optionalSupabaseAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1];
-    if (token && isSupabaseConfigured && supabaseAdmin) {
+    if (token && isSupabaseConfigured2 && supabaseAdmin2) {
       try {
-        const { data: { user } } = await withTimeout(supabaseAdmin.auth.getUser(token), 2e3);
+        const { data: { user } } = await withTimeout(supabaseAdmin2.auth.getUser(token), 2e3);
         if (user) {
           req.user = user;
           req.supabaseToken = token;
@@ -119,24 +119,24 @@ async function optionalSupabaseAuth(req, res, next) {
   }
   next();
 }
-var import_supabase_js, supabaseUrl, supabaseKey, supabaseAdmin, isSupabaseConfigured;
+var import_supabase_js, supabaseUrl, supabaseKey, supabaseAdmin2, isSupabaseConfigured2;
 var init_supabase = __esm({
   "server/config/supabase.ts"() {
     import_supabase_js = require("@supabase/supabase-js");
     init_env();
     supabaseUrl = ENV.SUPABASE_URL;
     supabaseKey = ENV.SUPABASE_SECRET_KEY || ENV.SUPABASE_ANON_KEY;
-    supabaseAdmin = null;
-    isSupabaseConfigured = false;
+    supabaseAdmin2 = null;
+    isSupabaseConfigured2 = false;
     if (supabaseUrl && supabaseKey) {
       try {
-        supabaseAdmin = (0, import_supabase_js.createClient)(supabaseUrl, supabaseKey, {
+        supabaseAdmin2 = (0, import_supabase_js.createClient)(supabaseUrl, supabaseKey, {
           auth: {
             persistSession: false,
             autoRefreshToken: false
           }
         });
-        isSupabaseConfigured = true;
+        isSupabaseConfigured2 = true;
         console.log("[Supabase Server] Successfully initialized Supabase admin client from config.");
       } catch (err) {
         console.error("[Supabase Server] Failed to initialize Supabase admin client:", err);
@@ -378,7 +378,7 @@ function saveLocalHashedUsers(users) {
 }
 router.get("/supabase/status", (req, res) => {
   return res.json({
-    isConfigured: isSupabaseConfigured,
+    isConfigured: isSupabaseConfigured2,
     url: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL ? "Configured" : "Missing",
     hasSecretKey: !!(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
     hasPublishableKey: !!(process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_API_KEY)
@@ -390,13 +390,13 @@ router.post("/auth/register-db", validateBody(registerSchema), async (req, res) 
   const salt = import_crypto2.default.randomBytes(16).toString("hex");
   const passwordHash = await import_bcrypt.default.hash(password, 12);
   const userId = import_crypto2.default.randomUUID();
-  if (isSupabaseConfigured && supabaseAdmin) {
+  if (isSupabaseConfigured2 && supabaseAdmin2) {
     try {
-      const { data: existingUser } = await supabaseAdmin.from("users").select("id").eq("email", cleanEmail).maybeSingle();
+      const { data: existingUser } = await supabaseAdmin2.from("users").select("id").eq("email", cleanEmail).maybeSingle();
       if (existingUser) {
         return res.status(400).json({ error: "User with this email is already registered." });
       }
-      const { data, error: insertError } = await supabaseAdmin.from("users").insert({
+      const { data, error: insertError } = await supabaseAdmin2.from("users").insert({
         id: userId,
         email: cleanEmail,
         password_hash: passwordHash,
@@ -451,9 +451,9 @@ router.post("/auth/register-db", validateBody(registerSchema), async (req, res) 
 router.post("/auth/login-db", validateBody(loginSchema), async (req, res) => {
   const { email, password } = req.body;
   const cleanEmail = email.trim().toLowerCase();
-  if (isSupabaseConfigured && supabaseAdmin) {
+  if (isSupabaseConfigured2 && supabaseAdmin2) {
     try {
-      const { data: user2 } = await supabaseAdmin.from("users").select("*").eq("email", cleanEmail).maybeSingle();
+      const { data: user2 } = await supabaseAdmin2.from("users").select("*").eq("email", cleanEmail).maybeSingle();
       if (user2) {
         let isPasswordCorrect = false;
         try {
@@ -467,7 +467,7 @@ router.post("/auth/login-db", validateBody(loginSchema), async (req, res) => {
             isPasswordCorrect = true;
             console.log(`Legacy user ${cleanEmail} authenticated successfully via SHA-256 fallback. Upgrading hash to Bcrypt...`);
             const updatedBcryptHash = await import_bcrypt.default.hash(password, 12);
-            await supabaseAdmin.from("users").update({ password_hash: updatedBcryptHash }).eq("id", user2.id);
+            await supabaseAdmin2.from("users").update({ password_hash: updatedBcryptHash }).eq("id", user2.id);
           }
         }
         if (isPasswordCorrect) {
@@ -529,11 +529,11 @@ router.post("/supabase/verify-token", async (req, res) => {
   if (!token) {
     return res.status(400).json({ error: "Token is required" });
   }
-  if (!isSupabaseConfigured || !supabaseAdmin) {
+  if (!isSupabaseConfigured2 || !supabaseAdmin2) {
     return res.status(503).json({ error: "Supabase server-side client is not initialized" });
   }
   try {
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error } = await supabaseAdmin2.auth.getUser(token);
     if (error || !user) {
       return res.status(401).json({ error: "Invalid or expired token", details: error?.message });
     }
@@ -549,14 +549,14 @@ router.get("/supabase/profile", requireSupabaseAuth, (req, res) => {
   });
 });
 router.get("/supabase/users", requireSupabaseAuth, async (req, res) => {
-  if (!isSupabaseConfigured || !supabaseAdmin) {
+  if (!isSupabaseConfigured2 || !supabaseAdmin2) {
     return res.status(503).json({ error: "Supabase server-side client is not initialized" });
   }
   try {
-    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+    const { data: { users }, error } = await supabaseAdmin2.auth.admin.listUsers();
     if (error) {
       console.warn("Could not list users from auth admin, attempting public users table:", error.message);
-      const { data: publicUsers, error: publicError } = await supabaseAdmin.from("users").select("*");
+      const { data: publicUsers, error: publicError } = await supabaseAdmin2.from("users").select("*");
       if (publicError) {
         return res.status(403).json({
           error: "Forbidden: Elevate permissions using the service_role key to access admin functions",
@@ -581,9 +581,12 @@ var import_crypto4 = __toESM(require("crypto"), 1);
 // server/config/razorpay.ts
 var import_razorpay = __toESM(require("razorpay"), 1);
 init_env();
+console.log("===== razorpay.ts loaded =====");
 var razorpayClient = null;
 function getRazorpay() {
+  console.log("getRazorpay() called");
   if (!razorpayClient) {
+    console.log("Creating Razorpay Clients");
     const rawKeyId = ENV.RAZORPAY_KEY_ID;
     const rawKeySecret = ENV.RAZORPAY_KEY_SECRET;
     if (!rawKeyId || !rawKeySecret || rawKeyId.trim() === "" || rawKeySecret.trim() === "") {
@@ -597,6 +600,7 @@ function getRazorpay() {
         key_id: keyId,
         key_secret: keySecret
       });
+      console.log("Razorpay initialized");
       console.log("Razorpay SDK client successfully initialized server-side with key: " + keyId);
     } catch (e) {
       console.error("Failed to initialize Razorpay SDK:", e);
@@ -685,25 +689,25 @@ function saveLocalMessages(messages) {
 var ChatRepository = class {
   async findAllRooms() {
     let dbRooms = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data: roomsData, error: roomsError } = await withTimeout(
-          supabaseAdmin.from("chat_rooms").select("*"),
+          supabaseAdmin2.from("chat_rooms").select("*"),
           3500
         );
         if (!roomsError && roomsData) {
           const clientIds = [...new Set(roomsData.map((r) => r.client_id).filter(Boolean))];
           const modelIds = [...new Set(roomsData.map((r) => r.model_id).filter(Boolean))];
           const { data: usersData } = await withTimeout(
-            supabaseAdmin.from("users").select("id, full_name, avatar").in("id", clientIds),
+            supabaseAdmin2.from("users").select("id, full_name, avatar").in("id", clientIds),
             2e3
           );
           const { data: modelsData } = await withTimeout(
-            supabaseAdmin.from("models").select("id, name").in("id", modelIds),
+            supabaseAdmin2.from("models").select("id, name").in("id", modelIds),
             2e3
           );
           const { data: portfolioData } = await withTimeout(
-            supabaseAdmin.from("portfolio_images").select("model_id, image_url").in("model_id", modelIds),
+            supabaseAdmin2.from("portfolio_images").select("model_id, image_url").in("model_id", modelIds),
             2e3
           );
           const userMap = new Map(usersData?.map((u) => [u.id, u]) || []);
@@ -758,7 +762,7 @@ var ChatRepository = class {
       rooms.push(room);
     }
     saveLocalRooms(rooms);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const dbPayload = {
           id: room.id,
@@ -771,7 +775,7 @@ var ChatRepository = class {
           closed_at: room.closedAt || null
         };
         await withTimeout(
-          supabaseAdmin.from("chat_rooms").upsert(dbPayload),
+          supabaseAdmin2.from("chat_rooms").upsert(dbPayload),
           2500
         );
       } catch (e) {
@@ -782,20 +786,20 @@ var ChatRepository = class {
   }
   async findMessagesByRoomId(roomId) {
     let dbMessages = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data: msgsData, error } = await withTimeout(
-          supabaseAdmin.from("chat_messages").select("*").eq("room_id", roomId),
+          supabaseAdmin2.from("chat_messages").select("*").eq("room_id", roomId),
           3500
         );
         if (!error && msgsData) {
           const senderIds = [...new Set(msgsData.map((m) => m.sender_id).filter(Boolean))];
           const { data: usersData } = await withTimeout(
-            supabaseAdmin.from("users").select("id, full_name").in("id", senderIds),
+            supabaseAdmin2.from("users").select("id, full_name").in("id", senderIds),
             2e3
           );
           const { data: modelsData } = await withTimeout(
-            supabaseAdmin.from("models").select("id, name").in("id", senderIds),
+            supabaseAdmin2.from("models").select("id, name").in("id", senderIds),
             2e3
           );
           const senderMap = /* @__PURE__ */ new Map();
@@ -832,7 +836,7 @@ var ChatRepository = class {
     const messages = getLocalMessages();
     messages.push(msg);
     saveLocalMessages(messages);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const dbPayload = {
           id: msg.id,
@@ -847,7 +851,7 @@ var ChatRepository = class {
           created_at: msg.createdAt || (/* @__PURE__ */ new Date()).toISOString()
         };
         await withTimeout(
-          supabaseAdmin.from("chat_messages").insert(dbPayload),
+          supabaseAdmin2.from("chat_messages").insert(dbPayload),
           2500
         );
       } catch (e) {
@@ -865,14 +869,14 @@ var ChatRepository = class {
   async clearAll() {
     saveLocalRooms([]);
     saveLocalMessages([]);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         await withTimeout(
-          supabaseAdmin.from("chat_messages").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+          supabaseAdmin2.from("chat_messages").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
           2500
         );
         await withTimeout(
-          supabaseAdmin.from("chat_rooms").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
+          supabaseAdmin2.from("chat_rooms").delete().neq("id", "00000000-0000-0000-0000-000000000000"),
           2500
         );
       } catch (e) {
@@ -938,9 +942,9 @@ async function generateChatResponse(params) {
   if (clientId && modelId) {
     const key = `${clientId}:${modelId}`;
     let isUnlocked = verifiedChatAccess.has(key);
-    if (!isUnlocked && isSupabaseConfigured && supabaseAdmin) {
+    if (!isUnlocked && isSupabaseConfigured2 && supabaseAdmin2) {
       try {
-        const { data: payRecord } = await supabaseAdmin.from("payments").select("id").eq("user_id", clientId).eq("model_id", modelId).eq("status", "captured").maybeSingle();
+        const { data: payRecord } = await supabaseAdmin2.from("payments").select("id").eq("user_id", clientId).eq("model_id", modelId).eq("status", "captured").maybeSingle();
         if (payRecord) {
           isUnlocked = true;
           verifiedChatAccess.add(key);
@@ -1077,6 +1081,12 @@ async function createPaymentSession(params) {
   const rzp = getRazorpay();
   if (rzp && gateway === "Razorpay") {
     try {
+      console.log("==============");
+      console.log("KEY:", ENV.RAZORPAY_KEY_ID);
+      console.log("SECRET:", ENV.RAZORPAY_KEY_SECRET?.substring(0, 8));
+      console.log("AMOUNT:", targetAmount * 100);
+      console.log("PLAN:", planType);
+      console.log("==============");
       const order = await rzp.orders.create({
         amount: targetAmount * 100,
         // Razorpay expects amount in paise (1 INR = 100 paise)
@@ -1090,6 +1100,7 @@ async function createPaymentSession(params) {
           amount: String(targetAmount)
         }
       });
+      console.log("ORDER =", order);
       return {
         id: order.id,
         amount: order.amount,
@@ -1140,7 +1151,7 @@ async function verifyPaymentSignature(params) {
         verifiedChatAccess.add(`${userId}:${modelId}`);
         console.log(`Chat access unlocked via verify: ${userId}:${modelId}`);
       }
-      if (isSupabaseConfigured && supabaseAdmin) {
+      if (isSupabaseConfigured2 && supabaseAdmin2) {
         try {
           const dbId = isValidUUID(razorpay_payment_id) ? razorpay_payment_id : void 0;
           const dbUserId = isValidUUID(userId) ? userId : null;
@@ -1157,7 +1168,7 @@ async function verifyPaymentSignature(params) {
           if (dbId) {
             insertPayload.id = dbId;
           }
-          const { error: dbError } = await supabaseAdmin.from("payments").insert(insertPayload);
+          const { error: dbError } = await supabaseAdmin2.from("payments").insert(insertPayload);
           if (dbError) throw dbError;
           console.log("Successfully recorded verified Razorpay transaction in Supabase database.");
         } catch (dbErr) {
@@ -1188,7 +1199,7 @@ async function verifyPaymentSignature(params) {
     verifiedChatAccess.add(`${userId}:${modelId}`);
     console.log(`Chat access unlocked via simulated verify: ${userId}:${modelId}`);
   }
-  if (isSupabaseConfigured && supabaseAdmin) {
+  if (isSupabaseConfigured2 && supabaseAdmin2) {
     try {
       const dbId = isValidUUID(sessionId) ? sessionId : void 0;
       const dbUserId = isValidUUID(userId) ? userId : null;
@@ -1205,7 +1216,7 @@ async function verifyPaymentSignature(params) {
       if (dbId) {
         insertPayload.id = dbId;
       }
-      const { error: dbError } = await supabaseAdmin.from("payments").insert(insertPayload);
+      const { error: dbError } = await supabaseAdmin2.from("payments").insert(insertPayload);
       if (dbError) throw dbError;
       console.log("Successfully recorded simulated transaction in Supabase database.");
     } catch (dbErr) {
@@ -2101,9 +2112,9 @@ function saveLocalModels(models) {
 router5.get("/models", async (req, res) => {
   try {
     let dbModels = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
-        const { data, error } = await withTimeout(supabaseAdmin.from("models").select("*"), 2500);
+        const { data, error } = await withTimeout(supabaseAdmin2.from("models").select("*"), 2500);
         if (!error && data) {
           dbModels = data;
         }
@@ -2136,10 +2147,10 @@ router5.post("/models", async (req, res) => {
       localModels.push(model);
     }
     saveLocalModels(localModels);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const cleanModel = JSON.parse(JSON.stringify(model));
-        const { error } = await withTimeout(supabaseAdmin.from("models").upsert(cleanModel), 2500);
+        const { error } = await withTimeout(supabaseAdmin2.from("models").upsert(cleanModel), 2500);
         if (error) throw error;
         console.log(`Backend successfully upserted model ${model.id} in Supabase`);
       } catch (e) {
@@ -2439,10 +2450,10 @@ function saveLocalProfiles(profiles) {
 var UserRepository = class {
   async findUserByEmail(email) {
     const cleanEmail = email.trim().toLowerCase();
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("users").select("*").eq("email", cleanEmail).maybeSingle(),
+          supabaseAdmin2.from("users").select("*").eq("email", cleanEmail).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -2463,10 +2474,10 @@ var UserRepository = class {
     return localUsers.find((u) => u.email.toLowerCase() === cleanEmail) || null;
   }
   async findProfileById(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("profiles").select("*").eq("id", id).maybeSingle(),
+          supabaseAdmin2.from("profiles").select("*").eq("id", id).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -2494,10 +2505,10 @@ var UserRepository = class {
     const localUsers = getLocalUsers();
     localUsers.push(user);
     saveLocalUsers(localUsers);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("users").insert({
+          supabaseAdmin2.from("users").insert({
             id: user.id,
             email: user.email.toLowerCase(),
             password_hash: user.passwordHash,
@@ -2521,7 +2532,7 @@ var UserRepository = class {
       localUsers[idx] = { ...localUsers[idx], ...updates };
       saveLocalUsers(localUsers);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const mappedUpdates = {};
         if (updates.email) mappedUpdates.email = updates.email.toLowerCase();
@@ -2529,7 +2540,7 @@ var UserRepository = class {
         if (updates.salt) mappedUpdates.salt = updates.salt;
         if (updates.phoneNumber !== void 0) mappedUpdates.phone_number = updates.phoneNumber;
         const { error } = await withTimeout(
-          supabaseAdmin.from("users").update(mappedUpdates).eq("id", id),
+          supabaseAdmin2.from("users").update(mappedUpdates).eq("id", id),
           2500
         );
         if (error) throw error;
@@ -2546,14 +2557,14 @@ var UserRepository = class {
     const localProfiles = getLocalProfiles();
     const filteredProfiles = localProfiles.filter((p) => p.id !== id);
     saveLocalProfiles(filteredProfiles);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         await withTimeout(
-          supabaseAdmin.from("profiles").delete().eq("id", id),
+          supabaseAdmin2.from("profiles").delete().eq("id", id),
           2500
         );
         await withTimeout(
-          supabaseAdmin.from("users").delete().eq("id", id),
+          supabaseAdmin2.from("users").delete().eq("id", id),
           2500
         );
       } catch (e) {
@@ -2571,10 +2582,10 @@ var UserRepository = class {
       localProfiles.push(profile);
     }
     saveLocalProfiles(localProfiles);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("profiles").upsert({
+          supabaseAdmin2.from("profiles").upsert({
             id: profile.id,
             name: profile.name,
             email: profile.email,
@@ -2596,10 +2607,10 @@ var UserRepository = class {
   }
   async findAllProfiles() {
     let dbProfiles = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("profiles").select("*"),
+          supabaseAdmin2.from("profiles").select("*"),
           2500
         );
         if (!error && data) {
@@ -2617,10 +2628,10 @@ var UserRepository = class {
   }
   async findAllUsers() {
     let dbUsers = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("users").select("*"),
+          supabaseAdmin2.from("users").select("*"),
           2500
         );
         if (!error && data) {
@@ -2804,20 +2815,87 @@ var AuthController = class {
   static async forgotPassword(req, res) {
     try {
       const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ error: "Email is required." });
+      if (!email || !email.includes("@")) {
+        return res.status(400).json({ error: "A valid email address is required." });
       }
-      return res.status(200).json({ success: true, message: "Password reset link has been sent if the email exists." });
+      const cleanEmail = email.trim().toLowerCase();
+      const otpCode = Math.floor(1e5 + Math.random() * 9e5).toString();
+      const expiresAt = Date.now() + 15 * 60 * 1e3;
+      resetOtpStore.set(cleanEmail, { code: otpCode, expiresAt, verified: false });
+      await emailService.sendOtpEmail(cleanEmail, otpCode, "password_reset");
+      if (isSupabaseConfigured && supabaseAdmin) {
+        try {
+          await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail);
+          console.log(`[Auth] Supabase auth resetPasswordForEmail dispatched to: ${cleanEmail}`);
+        } catch (sbErr) {
+          console.warn("[Auth] Supabase reset password email notice:", sbErr?.message || sbErr);
+        }
+      }
+      console.log(`[EmailService] Dispatched password reset OTP to email: ${cleanEmail}`);
+      return res.status(200).json({
+        success: true,
+        message: `Password reset verification code (OTP) has been dispatched to ${cleanEmail}. Please check your email inbox.`
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+  static async verifyResetOtp(req, res) {
+    try {
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        return res.status(400).json({ error: "Email address and 6-digit OTP code are required." });
+      }
+      const cleanEmail = email.trim().toLowerCase();
+      const record = resetOtpStore.get(cleanEmail);
+      if (!record) {
+        return res.status(400).json({ error: "No active password reset OTP request found for this email. Please request a new OTP code." });
+      }
+      if (Date.now() > record.expiresAt) {
+        resetOtpStore.delete(cleanEmail);
+        return res.status(400).json({ error: "The OTP code has expired. Please request a new verification code." });
+      }
+      if (record.code !== otp.trim()) {
+        return res.status(400).json({ error: "Invalid verification code. Please check the 6-digit OTP sent to your email address." });
+      }
+      const resetToken = import_crypto6.default.randomUUID();
+      record.verified = true;
+      record.resetToken = resetToken;
+      return res.status(200).json({ success: true, resetToken, message: "OTP verified successfully." });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
   }
   static async resetPassword(req, res) {
     try {
-      const { token, password } = req.body;
-      if (!token || !password) {
-        return res.status(400).json({ error: "Token and new password are required." });
+      const { email, resetToken, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email address and new password are required." });
       }
+      const cleanEmail = email.trim().toLowerCase();
+      const record = resetOtpStore.get(cleanEmail);
+      if (!record || !record.verified) {
+        return res.status(400).json({ error: "Unauthorized reset request. Please verify the 6-digit OTP sent to your email first." });
+      }
+      if (resetToken && record.resetToken && record.resetToken !== resetToken) {
+        return res.status(400).json({ error: "Invalid or expired password reset token." });
+      }
+      const user = await authService.findUserByEmail(cleanEmail);
+      if (user) {
+        await authService.updatePassword(user.id, password);
+      }
+      if (isSupabaseConfigured && supabaseAdmin) {
+        try {
+          const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+          const authUser = authUsers?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+          if (authUser) {
+            await supabaseAdmin.auth.admin.updateUserById(authUser.id, { password });
+          }
+        } catch (sbErr) {
+          console.warn("Supabase admin password update warning:", sbErr?.message || sbErr);
+        }
+      }
+      resetOtpStore.delete(cleanEmail);
       return res.status(200).json({ success: true, message: "Password has been reset successfully." });
     } catch (err) {
       return res.status(500).json({ error: err.message });
@@ -2998,7 +3076,10 @@ router8.post("/auth/register", authLimiter, validateBody2(registerSchema2), Auth
 router8.post("/auth/login", authLimiter, validateBody2(loginSchema2), AuthController.login);
 router8.post("/auth/logout", AuthController.logout);
 router8.post("/auth/refresh-token", AuthController.refreshToken);
+router8.post("/auth/send-signup-otp", AuthController.sendSignupOtp);
+router8.post("/auth/verify-signup-otp", AuthController.verifySignupOtp);
 router8.post("/auth/forgot-password", AuthController.forgotPassword);
+router8.post("/auth/verify-reset-otp", AuthController.verifyResetOtp);
 router8.post("/auth/reset-password", AuthController.resetPassword);
 router8.post("/auth/verify-email", AuthController.verifyEmail);
 router8.get("/auth/me", verifyToken, AuthController.me);
@@ -3226,10 +3307,10 @@ function fromSupabaseModelRow(row) {
 var ModelRepository = class {
   async findAll() {
     let dbModels = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("models").select("*"),
+          supabaseAdmin2.from("models").select("*"),
           2500
         );
         if (!error && Array.isArray(data)) {
@@ -3250,10 +3331,10 @@ var ModelRepository = class {
     const localModels = getLocalModels2();
     const localMatch = localModels.find((m) => m.id === id);
     if (localMatch) return localMatch;
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("models").select("*").eq("id", id).maybeSingle(),
+          supabaseAdmin2.from("models").select("*").eq("id", id).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -3274,11 +3355,11 @@ var ModelRepository = class {
       localModels.push(model);
     }
     saveLocalModels2(localModels);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const row = toSupabaseModelRow(model);
         const { error } = await withTimeout(
-          supabaseAdmin.from("models").upsert(row),
+          supabaseAdmin2.from("models").upsert(row),
           2500
         );
         if (error) {
@@ -3298,10 +3379,10 @@ var ModelRepository = class {
     if (filtered.length !== localModels.length) {
       saveLocalModels2(filtered);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("models").delete().eq("id", id),
+          supabaseAdmin2.from("models").delete().eq("id", id),
           2500
         );
         if (error) throw error;
@@ -3629,10 +3710,10 @@ function saveLocalBookings(bookings) {
 var BookingRepository = class {
   async findAll() {
     let dbBookings = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("bookings").select("*"),
+          supabaseAdmin2.from("bookings").select("*"),
           2500
         );
         if (!error && data) {
@@ -3663,10 +3744,10 @@ var BookingRepository = class {
     return Array.from(mergedMap.values());
   }
   async findById(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("bookings").select("*").eq("id", id).maybeSingle(),
+          supabaseAdmin2.from("bookings").select("*").eq("id", id).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -3702,10 +3783,10 @@ var BookingRepository = class {
       localBookings.push(booking);
     }
     saveLocalBookings(localBookings);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("bookings").upsert({
+          supabaseAdmin2.from("bookings").upsert({
             id: booking.id,
             clientId: booking.clientId,
             clientName: booking.clientName,
@@ -3736,10 +3817,10 @@ var BookingRepository = class {
     if (filtered.length !== localBookings.length) {
       saveLocalBookings(filtered);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("bookings").delete().eq("id", id),
+          supabaseAdmin2.from("bookings").delete().eq("id", id),
           2500
         );
         if (error) throw error;
@@ -4197,9 +4278,9 @@ var PaymentController = class _PaymentController {
     try {
       const userId = req.user?.id || req.query.userId || "anonymous_user";
       let paymentsList = [];
-      const { supabaseAdmin: supabaseAdmin2, isSupabaseConfigured: isSupabaseConfigured2 } = (init_supabase(), __toCommonJS(supabase_exports));
-      if (isSupabaseConfigured2 && supabaseAdmin2) {
-        const { data, error } = await supabaseAdmin2.from("payments").select("*");
+      const { supabaseAdmin: supabaseAdmin3, isSupabaseConfigured: isSupabaseConfigured3 } = (init_supabase(), __toCommonJS(supabase_exports));
+      if (isSupabaseConfigured3 && supabaseAdmin3) {
+        const { data, error } = await supabaseAdmin3.from("payments").select("*");
         if (!error && data) {
           paymentsList = data;
         }
@@ -4213,9 +4294,9 @@ var PaymentController = class _PaymentController {
     try {
       const { id } = req.params;
       let paymentRecord = null;
-      const { supabaseAdmin: supabaseAdmin2, isSupabaseConfigured: isSupabaseConfigured2 } = (init_supabase(), __toCommonJS(supabase_exports));
-      if (isSupabaseConfigured2 && supabaseAdmin2) {
-        const { data, error } = await supabaseAdmin2.from("payments").select("*").eq("id", id).maybeSingle();
+      const { supabaseAdmin: supabaseAdmin3, isSupabaseConfigured: isSupabaseConfigured3 } = (init_supabase(), __toCommonJS(supabase_exports));
+      if (isSupabaseConfigured3 && supabaseAdmin3) {
+        const { data, error } = await supabaseAdmin3.from("payments").select("*").eq("id", id).maybeSingle();
         if (!error && data) {
           paymentRecord = data;
         }
@@ -4333,10 +4414,10 @@ function isValidUUID2(val) {
 var ReviewRepository = class {
   async findAll() {
     let dbReviews = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("reviews").select("*, users(full_name, avatar)"),
+          supabaseAdmin2.from("reviews").select("*, users(full_name, avatar)"),
           2500
         );
         if (!error && data) {
@@ -4378,10 +4459,10 @@ var ReviewRepository = class {
     if (filtered.length !== localReviews.length) {
       saveLocalReviews(filtered);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("reviews").delete().eq("id", id),
+          supabaseAdmin2.from("reviews").delete().eq("id", id),
           2500
         );
         if (error) throw error;
@@ -4401,7 +4482,7 @@ var ReviewRepository = class {
       localReviews.push(review);
     }
     saveLocalReviews(localReviews);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const dbId = isValidUUID2(review.id) ? review.id : void 0;
         const dbClientId = isValidUUID2(review.clientId) ? review.clientId : null;
@@ -4414,7 +4495,7 @@ var ReviewRepository = class {
         if (dbClientId) insertPayload.client_id = dbClientId;
         if (dbModelId) insertPayload.model_id = dbModelId;
         const { error } = await withTimeout(
-          supabaseAdmin.from("reviews").upsert(insertPayload),
+          supabaseAdmin2.from("reviews").upsert(insertPayload),
           2500
         );
         if (error) throw error;
@@ -4577,7 +4658,7 @@ var NotificationService = class {
     list.push(notification);
     saveLocalNotifications(list);
     console.log(`[Notification Engine] Sent to User ${userId}: ${title} - ${body}`);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         let isValidUUID4 = function(val) {
           if (!val) return false;
@@ -4585,7 +4666,7 @@ var NotificationService = class {
           return uuidRegex.test(val);
         };
         if (isValidUUID4(userId)) {
-          const { data, error } = await supabaseAdmin.from("notifications").insert({
+          const { data, error } = await supabaseAdmin2.from("notifications").insert({
             user_id: userId,
             title,
             body,
@@ -4621,7 +4702,7 @@ var NotificationService = class {
       created.push(notification);
     }
     saveLocalNotifications(list);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         let isValidUUID4 = function(val) {
           if (!val) return false;
@@ -4639,7 +4720,7 @@ var NotificationService = class {
             is_read: false,
             metadata: {}
           }));
-          const { data, error } = await supabaseAdmin.from("notifications").insert(dbPayloads).select();
+          const { data, error } = await supabaseAdmin2.from("notifications").insert(dbPayloads).select();
           if (error) throw error;
           if (data) {
             return data.map(mapDbToNotification);
@@ -4652,9 +4733,9 @@ var NotificationService = class {
     return created;
   }
   async getAllNotifications() {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
-        const { data, error } = await supabaseAdmin.from("notifications").select("*").order("created_at", { ascending: false });
+        const { data, error } = await supabaseAdmin2.from("notifications").select("*").order("created_at", { ascending: false });
         if (!error && data) {
           return data.map(mapDbToNotification);
         }
@@ -4665,7 +4746,7 @@ var NotificationService = class {
     return getLocalNotifications();
   }
   async getUserNotifications(userId) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         let isValidUUID4 = function(val) {
           if (!val) return false;
@@ -4673,7 +4754,7 @@ var NotificationService = class {
           return uuidRegex.test(val);
         };
         if (isValidUUID4(userId)) {
-          const { data, error } = await supabaseAdmin.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+          const { data, error } = await supabaseAdmin2.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false });
           if (!error && data) {
             return data.map(mapDbToNotification);
           }
@@ -4686,7 +4767,7 @@ var NotificationService = class {
     return list.filter((n) => n.userId === userId);
   }
   async markAsRead(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         let isValidUUID4 = function(val) {
           if (!val) return false;
@@ -4694,7 +4775,7 @@ var NotificationService = class {
           return uuidRegex.test(val);
         };
         if (isValidUUID4(id)) {
-          const { data, error } = await supabaseAdmin.from("notifications").update({
+          const { data, error } = await supabaseAdmin2.from("notifications").update({
             is_read: true,
             read_at: (/* @__PURE__ */ new Date()).toISOString(),
             delivery_status: "read"
@@ -4957,29 +5038,29 @@ var StorageService = class {
     const sanitizedFolder = VALID_FOLDERS.includes(folder) ? folder : "temp";
     const fileExtension = import_path11.default.extname(originalName) || ".bin";
     const fileName = `upload_${Date.now()}_${Math.floor(Math.random() * 1e5)}${fileExtension}`;
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         console.log(`Supabase is configured. Attempting upload for ${originalName} under folder ${sanitizedFolder}...`);
-        const { data: uploadData, error: uploadError } = await supabaseAdmin.storage.from("storage").upload(`${sanitizedFolder}/${fileName}`, fileBuffer, {
+        const { data: uploadData, error: uploadError } = await supabaseAdmin2.storage.from("storage").upload(`${sanitizedFolder}/${fileName}`, fileBuffer, {
           contentType: mimeType,
           cacheControl: "3600",
           upsert: false
         });
         if (!uploadError && uploadData) {
-          const { data: urlData } = supabaseAdmin.storage.from("storage").getPublicUrl(`${sanitizedFolder}/${fileName}`);
+          const { data: urlData } = supabaseAdmin2.storage.from("storage").getPublicUrl(`${sanitizedFolder}/${fileName}`);
           console.log(`[StorageService] Successfully uploaded file to Supabase Storage 'storage' bucket: ${urlData.publicUrl}`);
           return {
             url: urlData.publicUrl,
             publicId: `storage:${sanitizedFolder}/${fileName}`
           };
         } else {
-          const { data: folderUploadData, error: folderUploadError } = await supabaseAdmin.storage.from(sanitizedFolder).upload(fileName, fileBuffer, {
+          const { data: folderUploadData, error: folderUploadError } = await supabaseAdmin2.storage.from(sanitizedFolder).upload(fileName, fileBuffer, {
             contentType: mimeType,
             cacheControl: "3600",
             upsert: false
           });
           if (!folderUploadError && folderUploadData) {
-            const { data: urlData } = supabaseAdmin.storage.from(sanitizedFolder).getPublicUrl(fileName);
+            const { data: urlData } = supabaseAdmin2.storage.from(sanitizedFolder).getPublicUrl(fileName);
             console.log(`[StorageService] Successfully uploaded file to Supabase Storage bucket '${sanitizedFolder}': ${urlData.publicUrl}`);
             return {
               url: urlData.publicUrl,
@@ -5025,9 +5106,9 @@ var StorageService = class {
       storageType = parts[0];
       realPath = parts.slice(1).join(":");
     }
-    if (storageType === "storage" && isSupabaseConfigured && supabaseAdmin) {
+    if (storageType === "storage" && isSupabaseConfigured2 && supabaseAdmin2) {
       try {
-        const { error } = await supabaseAdmin.storage.from("storage").remove([realPath]);
+        const { error } = await supabaseAdmin2.storage.from("storage").remove([realPath]);
         if (!error) {
           console.log(`Deleted file from Supabase Storage 'storage' bucket: ${realPath}`);
           return true;
@@ -5035,13 +5116,13 @@ var StorageService = class {
       } catch (e) {
         console.error(`Failed to delete file from Supabase Storage: ${realPath}`, e);
       }
-    } else if (isSupabaseConfigured && supabaseAdmin) {
+    } else if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const pathParts = realPath.split("/");
         const bucketName = storageType !== "local" ? storageType : pathParts[0];
         const fileName = pathParts.length > 1 ? pathParts.slice(1).join("/") : realPath;
         if (VALID_FOLDERS.includes(bucketName)) {
-          const { error } = await supabaseAdmin.storage.from(bucketName).remove([fileName]);
+          const { error } = await supabaseAdmin2.storage.from(bucketName).remove([fileName]);
           if (!error) {
             console.log(`Deleted file from Supabase Storage bucket '${bucketName}': ${fileName}`);
             return true;
@@ -5180,10 +5261,10 @@ function saveLocalCategories(categories) {
 var CategoryRepository = class {
   async findAll() {
     let dbCategories = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("categories").select("*"),
+          supabaseAdmin2.from("categories").select("*"),
           2500
         );
         if (!error && data) {
@@ -5200,10 +5281,10 @@ var CategoryRepository = class {
     return Array.from(mergedMap.values());
   }
   async findById(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("categories").select("*").eq("id", id).maybeSingle(),
+          supabaseAdmin2.from("categories").select("*").eq("id", id).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -5225,10 +5306,10 @@ var CategoryRepository = class {
       localCategories.push(category);
     }
     saveLocalCategories(localCategories);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("categories").upsert(category),
+          supabaseAdmin2.from("categories").upsert(category),
           2500
         );
         if (error) throw error;
@@ -5244,10 +5325,10 @@ var CategoryRepository = class {
     if (filtered.length !== localCategories.length) {
       saveLocalCategories(filtered);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("categories").delete().eq("id", id),
+          supabaseAdmin2.from("categories").delete().eq("id", id),
           2500
         );
         if (error) throw error;
@@ -5397,10 +5478,10 @@ function saveLocalSkills(skills) {
 var SkillRepository = class {
   async findAll() {
     let dbSkills = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("skills").select("*"),
+          supabaseAdmin2.from("skills").select("*"),
           2500
         );
         if (!error && data) {
@@ -5417,10 +5498,10 @@ var SkillRepository = class {
     return Array.from(mergedMap.values());
   }
   async findById(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("skills").select("*").eq("id", id).maybeSingle(),
+          supabaseAdmin2.from("skills").select("*").eq("id", id).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -5442,10 +5523,10 @@ var SkillRepository = class {
       localSkills.push(skill);
     }
     saveLocalSkills(localSkills);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("skills").upsert(skill),
+          supabaseAdmin2.from("skills").upsert(skill),
           2500
         );
         if (error) throw error;
@@ -5461,10 +5542,10 @@ var SkillRepository = class {
     if (filtered.length !== localSkills.length) {
       saveLocalSkills(filtered);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("skills").delete().eq("id", id),
+          supabaseAdmin2.from("skills").delete().eq("id", id),
           2500
         );
         if (error) throw error;
@@ -5607,10 +5688,10 @@ function saveLocalPortfolios(portfolios) {
 var PortfolioRepository = class {
   async findAll() {
     let dbPortfolios = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("portfolio_images").select("*"),
+          supabaseAdmin2.from("portfolio_images").select("*"),
           2500
         );
         if (!error && data) {
@@ -5638,10 +5719,10 @@ var PortfolioRepository = class {
     return all.filter((p) => p.modelId === modelId);
   }
   async findById(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("portfolio_images").select("*").eq("id", id).maybeSingle(),
+          supabaseAdmin2.from("portfolio_images").select("*").eq("id", id).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -5670,7 +5751,7 @@ var PortfolioRepository = class {
       localPortfolios.push(item);
     }
     saveLocalPortfolios(localPortfolios);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const payload = {
           id: item.id,
@@ -5681,7 +5762,7 @@ var PortfolioRepository = class {
           sort_order: item.sortOrder || 0
         };
         const { error } = await withTimeout(
-          supabaseAdmin.from("portfolio_images").upsert(payload),
+          supabaseAdmin2.from("portfolio_images").upsert(payload),
           2500
         );
         if (error) throw error;
@@ -5697,10 +5778,10 @@ var PortfolioRepository = class {
     if (filtered.length !== localPortfolios.length) {
       saveLocalPortfolios(filtered);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("portfolio_images").delete().eq("id", id),
+          supabaseAdmin2.from("portfolio_images").delete().eq("id", id),
           2500
         );
         if (error) throw error;
@@ -5903,10 +5984,10 @@ function saveLocalFavorites(favorites) {
 var FavoriteRepository = class {
   async findAll() {
     let dbFavorites = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("favorites").select("*"),
+          supabaseAdmin2.from("favorites").select("*"),
           2500
         );
         if (!error && data) {
@@ -5932,10 +6013,10 @@ var FavoriteRepository = class {
     return all.filter((f) => f.clientId === clientId);
   }
   async findById(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("favorites").select("*").eq("id", id).maybeSingle(),
+          supabaseAdmin2.from("favorites").select("*").eq("id", id).maybeSingle(),
           2500
         );
         if (!error && data) {
@@ -5962,7 +6043,7 @@ var FavoriteRepository = class {
       localFavorites.push(favorite);
     }
     saveLocalFavorites(localFavorites);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const payload = {
           id: favorite.id,
@@ -5970,7 +6051,7 @@ var FavoriteRepository = class {
           model_id: favorite.modelId
         };
         const { error } = await withTimeout(
-          supabaseAdmin.from("favorites").upsert(payload),
+          supabaseAdmin2.from("favorites").upsert(payload),
           2500
         );
         if (error) throw error;
@@ -5986,10 +6067,10 @@ var FavoriteRepository = class {
     if (filtered.length !== localFavorites.length) {
       saveLocalFavorites(filtered);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("favorites").delete().eq("id", id),
+          supabaseAdmin2.from("favorites").delete().eq("id", id),
           2500
         );
         if (error) throw error;
@@ -6106,10 +6187,10 @@ function isValidUUID3(val) {
 var PaymentRepository = class {
   async findAll() {
     let dbPayments = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("payments").select("*"),
+          supabaseAdmin2.from("payments").select("*"),
           2500
         );
         if (!error && data) {
@@ -6140,12 +6221,12 @@ var PaymentRepository = class {
     return Array.from(mergedMap.values());
   }
   async findById(id) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const queryId = isValidUUID3(id) ? id : null;
         if (queryId) {
           const { data, error } = await withTimeout(
-            supabaseAdmin.from("payments").select("*").eq("id", queryId).maybeSingle(),
+            supabaseAdmin2.from("payments").select("*").eq("id", queryId).maybeSingle(),
             2500
           );
           if (!error && data) {
@@ -6182,7 +6263,7 @@ var PaymentRepository = class {
       localPayments.push(payment);
     }
     saveLocalPayments(localPayments);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const dbId = isValidUUID3(payment.id) ? payment.id : void 0;
         const dbUserId = isValidUUID3(payment.userId) ? payment.userId : null;
@@ -6204,7 +6285,7 @@ var PaymentRepository = class {
           upsertPayload.id = dbId;
         }
         const { error } = await withTimeout(
-          supabaseAdmin.from("payments").upsert(upsertPayload),
+          supabaseAdmin2.from("payments").upsert(upsertPayload),
           2500
         );
         if (error) throw error;
@@ -6726,6 +6807,7 @@ function saveLocalBlogs(blogs) {
 function mapSupabaseRowToBlog(row) {
   const content = row.content || "";
   const title = row.title || "Untitled Article";
+  const resolvedImage = row.featured_image || row.image_url || row.image || row.imageUrl || "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop";
   return {
     id: row.id,
     title,
@@ -6735,8 +6817,8 @@ function mapSupabaseRowToBlog(row) {
     summary: row.brief_summary || row.summary || row.excerpt || "",
     content,
     excerpt: row.excerpt || row.brief_summary || row.summary || "",
-    imageUrl: row.featured_image || row.image_url || row.imageUrl || "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop",
-    featuredImage: row.featured_image || row.image_url || row.imageUrl,
+    imageUrl: resolvedImage,
+    featuredImage: resolvedImage,
     author: row.author_name || row.author || "Anonymous Author",
     authorName: row.author_name || row.author,
     authorId: row.author_id || row.userId,
@@ -6762,9 +6844,9 @@ function mapSupabaseRowToBlog(row) {
 var BlogRepository = class {
   async findAll(filters) {
     let dbBlogs = [];
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
-        let query = supabaseAdmin.from("blogs").select("*").is("deleted_at", null).order("created_at", { ascending: false });
+        let query = supabaseAdmin2.from("blogs").select("*").is("deleted_at", null).order("created_at", { ascending: false });
         if (filters?.status) {
           query = query.eq("status", filters.status);
         }
@@ -6799,10 +6881,10 @@ var BlogRepository = class {
     return results;
   }
   async findByIdOrSlug(idOrSlug) {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const isUuid = idOrSlug.includes("-");
-        let query = supabaseAdmin.from("blogs").select("*").is("deleted_at", null);
+        let query = supabaseAdmin2.from("blogs").select("*").is("deleted_at", null);
         if (isUuid && idOrSlug.length >= 30) {
           query = query.or(`id.eq.${idOrSlug},slug.eq.${idOrSlug}`);
         } else {
@@ -6840,26 +6922,27 @@ var BlogRepository = class {
       localBlogs.unshift(normalizedBlog);
     }
     saveLocalBlogs(localBlogs);
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const row = {
-          id: normalizedBlog.id,
+          id: String(normalizedBlog.id),
           title: normalizedBlog.title,
           slug: normalizedBlog.slug,
           category: normalizedBlog.category,
-          category_id: normalizedBlog.categoryId || null,
+          category_id: normalizedBlog.categoryId ? String(normalizedBlog.categoryId) : null,
           brief_summary: normalizedBlog.summary,
           summary: normalizedBlog.summary,
           content: normalizedBlog.content,
           excerpt: normalizedBlog.excerpt,
           featured_image: normalizedBlog.imageUrl,
           image_url: normalizedBlog.imageUrl,
+          image: normalizedBlog.imageUrl,
           author_name: normalizedBlog.authorName || normalizedBlog.author,
           author: normalizedBlog.author,
           author_role: normalizedBlog.authorRole || "contributor",
           author_email: normalizedBlog.authorEmail || null,
-          author_id: normalizedBlog.authorId || normalizedBlog.userId || null,
-          user_id: normalizedBlog.userId || normalizedBlog.authorId || null,
+          author_id: normalizedBlog.authorId || normalizedBlog.userId ? String(normalizedBlog.authorId || normalizedBlog.userId) : null,
+          user_id: normalizedBlog.userId || normalizedBlog.authorId ? String(normalizedBlog.userId || normalizedBlog.authorId) : null,
           status: normalizedBlog.status,
           is_featured: normalizedBlog.isFeatured || false,
           read_time: normalizedBlog.readTime,
@@ -6874,16 +6957,16 @@ var BlogRepository = class {
           updated_at: normalizedBlog.updatedAt
         };
         const { error } = await withTimeout(
-          supabaseAdmin.from("blogs").upsert(row),
-          3e3
+          supabaseAdmin2.from("blogs").upsert(row),
+          4e3
         );
         if (error) {
-          console.warn(`Supabase upsert warning for blog ${normalizedBlog.id}:`, error.message || error);
+          console.error(`[BlogRepository] Supabase upsert error for blog ${normalizedBlog.id}:`, error.message || error);
         } else {
-          console.log(`[BlogRepository] Successfully synced blog "${normalizedBlog.title}" to Supabase.`);
+          console.log(`[BlogRepository] Successfully synced blog "${normalizedBlog.title}" (${normalizedBlog.id}) to Supabase database.`);
         }
       } catch (e) {
-        console.warn(`Supabase upsert failed for blog ${normalizedBlog.id}:`, e.message || e);
+        console.error(`[BlogRepository] Supabase upsert failed for blog ${normalizedBlog.id}:`, e.message || e);
       }
     }
     return normalizedBlog;
@@ -6905,10 +6988,10 @@ var BlogRepository = class {
       localBlogs[idx].deletedAt = (/* @__PURE__ */ new Date()).toISOString();
       saveLocalBlogs(localBlogs);
     }
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { error } = await withTimeout(
-          supabaseAdmin.from("blogs").update({ deleted_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", id),
+          supabaseAdmin2.from("blogs").update({ deleted_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", id),
           2500
         );
         if (error) {
@@ -6921,10 +7004,10 @@ var BlogRepository = class {
     return idx >= 0;
   }
   async getCategories() {
-    if (isSupabaseConfigured && supabaseAdmin) {
+    if (isSupabaseConfigured2 && supabaseAdmin2) {
       try {
         const { data, error } = await withTimeout(
-          supabaseAdmin.from("blog_categories").select("*").eq("is_active", true),
+          supabaseAdmin2.from("blog_categories").select("*").eq("is_active", true),
           2500
         );
         if (!error && data && data.length > 0) {
@@ -7000,6 +7083,9 @@ var BlogController = class {
         summary,
         content,
         imageUrl,
+        featuredImage,
+        image,
+        image_url,
         author,
         authorName,
         publishedDate,
@@ -7030,6 +7116,7 @@ var BlogController = class {
       const blogId = id || req.params.id || "blog_" + Date.now();
       const slug = existing && existing.title === title && existing.slug ? existing.slug : generateSlug(title);
       const readTime = calculateReadTime(content);
+      const resolvedImage = imageUrl || featuredImage || image || image_url || existing?.imageUrl || "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop";
       const blog = {
         id: blogId,
         title: title.trim(),
@@ -7039,8 +7126,8 @@ var BlogController = class {
         summary: summary ? summary.trim() : content.slice(0, 150) + "...",
         excerpt: summary ? summary.trim() : content.slice(0, 150) + "...",
         content: content.trim(),
-        imageUrl: imageUrl || "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop",
-        featuredImage: imageUrl,
+        imageUrl: resolvedImage,
+        featuredImage: resolvedImage,
         author: author || authorName || "Anonymous Author",
         authorName: authorName || (author ? author.split("(")[0].trim() : "Anonymous Author"),
         publishedDate: publishedDate || existing?.publishedDate || (/* @__PURE__ */ new Date()).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),

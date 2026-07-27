@@ -71,6 +71,9 @@ export class BlogController {
         summary, 
         content, 
         imageUrl, 
+        featuredImage,
+        image,
+        image_url,
         author, 
         authorName,
         publishedDate, 
@@ -107,6 +110,7 @@ export class BlogController {
       const blogId = id || req.params.id || ('blog_' + Date.now());
       const slug = (existing && existing.title === title && existing.slug) ? existing.slug : generateSlug(title);
       const readTime = calculateReadTime(content);
+      const resolvedImage = imageUrl || featuredImage || image || image_url || existing?.imageUrl || 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop';
 
       const blog: BlogItem = {
         id: blogId,
@@ -117,8 +121,8 @@ export class BlogController {
         summary: summary ? summary.trim() : (content.slice(0, 150) + '...'),
         excerpt: summary ? summary.trim() : (content.slice(0, 150) + '...'),
         content: content.trim(),
-        imageUrl: imageUrl || 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop',
-        featuredImage: imageUrl,
+        imageUrl: resolvedImage,
+        featuredImage: resolvedImage,
         author: author || authorName || 'Anonymous Author',
         authorName: authorName || (author ? author.split('(')[0].trim() : 'Anonymous Author'),
         publishedDate: publishedDate || (existing?.publishedDate) || new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),

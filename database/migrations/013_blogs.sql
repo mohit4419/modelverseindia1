@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS public.blogs (
     summary TEXT,
     content TEXT NOT NULL,
     image_url TEXT,
+    featured_image TEXT,
+    image TEXT,
     author TEXT,
     published_date TEXT,
     author_email TEXT,
@@ -19,6 +21,9 @@ CREATE TABLE IF NOT EXISTS public.blogs (
 ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS author_email TEXT;
 ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS author_role TEXT;
 ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS user_id TEXT;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS featured_image TEXT;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS image TEXT;
 
 -- Seed default blogs if empty
 INSERT INTO public.blogs (id, title, category, summary, content, image_url, author, published_date)

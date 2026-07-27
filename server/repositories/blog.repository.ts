@@ -158,6 +158,7 @@ function saveLocalBlogs(blogs: BlogItem[]) {
 function mapSupabaseRowToBlog(row: any): BlogItem {
   const content = row.content || '';
   const title = row.title || 'Untitled Article';
+  const resolvedImage = row.featured_image || row.image_url || row.image || row.imageUrl || 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop';
   return {
     id: row.id,
     title,
@@ -167,8 +168,8 @@ function mapSupabaseRowToBlog(row: any): BlogItem {
     summary: row.brief_summary || row.summary || row.excerpt || '',
     content,
     excerpt: row.excerpt || row.brief_summary || row.summary || '',
-    imageUrl: row.featured_image || row.image_url || row.imageUrl || 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop',
-    featuredImage: row.featured_image || row.image_url || row.imageUrl,
+    imageUrl: resolvedImage,
+    featuredImage: resolvedImage,
     author: row.author_name || row.author || 'Anonymous Author',
     authorName: row.author_name || row.author,
     authorId: row.author_id || row.userId,
@@ -309,6 +310,7 @@ export class BlogRepository {
           excerpt: normalizedBlog.excerpt,
           featured_image: normalizedBlog.imageUrl,
           image_url: normalizedBlog.imageUrl,
+          image: normalizedBlog.imageUrl,
           author_name: normalizedBlog.authorName || normalizedBlog.author,
           author: normalizedBlog.author,
           author_role: normalizedBlog.authorRole || 'contributor',

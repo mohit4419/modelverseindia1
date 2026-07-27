@@ -17,7 +17,10 @@ router.post('/auth/register', authLimiter, validateBody(registerSchema), AuthCon
 router.post('/auth/login', authLimiter, validateBody(loginSchema), AuthController.login);
 router.post('/auth/logout', AuthController.logout);
 router.post('/auth/refresh-token', AuthController.refreshToken);
+router.post('/auth/send-signup-otp', AuthController.sendSignupOtp);
+router.post('/auth/verify-signup-otp', AuthController.verifySignupOtp);
 router.post('/auth/forgot-password', AuthController.forgotPassword);
+router.post('/auth/verify-reset-otp', AuthController.verifyResetOtp);
 router.post('/auth/reset-password', AuthController.resetPassword);
 router.post('/auth/verify-email', AuthController.verifyEmail);
 router.get('/auth/me', verifyToken as any, AuthController.me);

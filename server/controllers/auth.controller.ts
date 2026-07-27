@@ -139,10 +139,69 @@ export class AuthController {
   static async forgotPassword(req: Request, res: Response) {
     try {
       const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ error: 'Email is required.' });
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: 'A valid email address is required.' });
       }
-      return res.status(200).json({ success: true, message: 'Password reset link has been sent if the email exists.' });
+
+      const cleanEmail = email.trim().toLowerCase();
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes expiry
+
+      resetOtpStore.set(cleanEmail, { code: otpCode, expiresAt, verified: false });
+
+      // Send real email OTP via EmailService SMTP
+      await emailService.sendOtpEmail(cleanEmail, otpCode, 'password_reset');
+
+      // Trigger Supabase Auth password reset if configured
+      if (isSupabaseConfigured && supabaseAdmin) {
+        try {
+          await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail);
+          console.log(`[Auth] Supabase auth resetPasswordForEmail dispatched to: ${cleanEmail}`);
+        } catch (sbErr: any) {
+          console.warn('[Auth] Supabase reset password email notice:', sbErr?.message || sbErr);
+        }
+      }
+
+      console.log(`[EmailService] Dispatched password reset OTP to email: ${cleanEmail}`);
+
+      // DO NOT return OTP code in JSON response!
+      return res.status(200).json({
+        success: true,
+        message: `Password reset verification code (OTP) has been dispatched to ${cleanEmail}. Please check your email inbox.`
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async verifyResetOtp(req: Request, res: Response) {
+    try {
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        return res.status(400).json({ error: 'Email address and 6-digit OTP code are required.' });
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+      const record = resetOtpStore.get(cleanEmail);
+
+      if (!record) {
+        return res.status(400).json({ error: 'No active password reset OTP request found for this email. Please request a new OTP code.' });
+      }
+
+      if (Date.now() > record.expiresAt) {
+        resetOtpStore.delete(cleanEmail);
+        return res.status(400).json({ error: 'The OTP code has expired. Please request a new verification code.' });
+      }
+
+      if (record.code !== otp.trim()) {
+        return res.status(400).json({ error: 'Invalid verification code. Please check the 6-digit OTP sent to your email address.' });
+      }
+
+      const resetToken = crypto.randomUUID();
+      record.verified = true;
+      record.resetToken = resetToken;
+
+      return res.status(200).json({ success: true, resetToken, message: 'OTP verified successfully.' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -150,10 +209,42 @@ export class AuthController {
 
   static async resetPassword(req: Request, res: Response) {
     try {
-      const { token, password } = req.body;
-      if (!token || !password) {
-        return res.status(400).json({ error: 'Token and new password are required.' });
+      const { email, resetToken, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email address and new password are required.' });
       }
+
+      const cleanEmail = email.trim().toLowerCase();
+      const record = resetOtpStore.get(cleanEmail);
+
+      if (!record || !record.verified) {
+        return res.status(400).json({ error: 'Unauthorized reset request. Please verify the 6-digit OTP sent to your email first.' });
+      }
+
+      if (resetToken && record.resetToken && record.resetToken !== resetToken) {
+        return res.status(400).json({ error: 'Invalid or expired password reset token.' });
+      }
+
+      const user = await authService.findUserByEmail(cleanEmail);
+      if (user) {
+        await authService.updatePassword(user.id, password);
+      }
+
+      // Sync Supabase Auth user password if available
+      if (isSupabaseConfigured && supabaseAdmin) {
+        try {
+          const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+          const authUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === cleanEmail);
+          if (authUser) {
+            await supabaseAdmin.auth.admin.updateUserById(authUser.id, { password });
+          }
+        } catch (sbErr: any) {
+          console.warn('Supabase admin password update warning:', sbErr?.message || sbErr);
+        }
+      }
+
+      resetOtpStore.delete(cleanEmail);
+
       return res.status(200).json({ success: true, message: 'Password has been reset successfully.' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });

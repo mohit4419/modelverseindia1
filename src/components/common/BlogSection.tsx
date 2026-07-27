@@ -154,7 +154,7 @@ export default function BlogSection({ currentRole, userEmail }: BlogSectionProps
     setFormCategory(blog.category);
     setFormSummary(blog.summary);
     setFormContent(blog.content);
-    setFormImageUrl(blog.imageUrl);
+    setFormImageUrl(blog.imageUrl || blog.featuredImage || PRESET_IMAGES[0].url);
     setFormAuthor(blog.author);
     setFormError('');
     setFormSuccess('');
@@ -262,6 +262,7 @@ export default function BlogSection({ currentRole, userEmail }: BlogSectionProps
 
     const existingBlog = editingId ? blogs.find(b => b.id === editingId) : null;
     const defaultStatus = isAdmin ? 'published' : (existingBlog?.status || 'pending');
+    const finalImageUrl = formImageUrl.trim() || existingBlog?.imageUrl || PRESET_IMAGES[0].url;
 
     const newBlog: BlogItem = {
       id: editingId || 'blog_' + Date.now(),
@@ -269,7 +270,8 @@ export default function BlogSection({ currentRole, userEmail }: BlogSectionProps
       category: formCategory,
       summary: formSummary.trim(),
       content: formContent.trim(),
-      imageUrl: formImageUrl.trim(),
+      imageUrl: finalImageUrl,
+      featuredImage: finalImageUrl,
       author: formAuthor.trim() || `Author (${userEmail || 'user@modelverse.in'})`,
       publishedDate: editingId 
         ? (existingBlog?.publishedDate || 'Jul 24, 2026') 
@@ -627,7 +629,13 @@ export default function BlogSection({ currentRole, userEmail }: BlogSectionProps
           </div>
 
           <div className="my-8 rounded-2xl overflow-hidden aspect-video border border-neutral-200 dark:border-white/5 bg-black">
-            <img src={selectedBlog.imageUrl} alt={selectedBlog.title} referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+            <img 
+              src={selectedBlog.imageUrl || selectedBlog.featuredImage || PRESET_IMAGES[0].url} 
+              alt={selectedBlog.title} 
+              onError={(e) => { (e.target as HTMLImageElement).src = PRESET_IMAGES[0].url; }}
+              referrerPolicy="no-referrer" 
+              className="h-full w-full object-cover" 
+            />
           </div>
 
           <div className="prose prose-neutral dark:prose-invert max-w-none text-xs sm:text-sm text-neutral-700 dark:text-zinc-350 leading-relaxed font-normal whitespace-pre-line">
@@ -714,7 +722,13 @@ export default function BlogSection({ currentRole, userEmail }: BlogSectionProps
                   } overflow-hidden shadow-lg dark:shadow-2xl transition duration-300 hover:border-[#D4AF37]/40 hover:-translate-y-1 transform text-left relative`}
                 >
                   <div className="relative aspect-video w-full overflow-hidden bg-black border-b border-neutral-250 dark:border-white/5">
-                    <img src={b.imageUrl} alt={b.title} referrerPolicy="no-referrer" className="h-full w-full object-cover transition duration-300 group-hover:scale-102" />
+                    <img 
+                      src={b.imageUrl || b.featuredImage || PRESET_IMAGES[0].url} 
+                      alt={b.title} 
+                      onError={(e) => { (e.target as HTMLImageElement).src = PRESET_IMAGES[0].url; }}
+                      referrerPolicy="no-referrer" 
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-102" 
+                    />
                     
                     <span className="absolute left-3 top-3 rounded-full bg-black/85 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-[#D4AF37] border border-white/10">
                       {b.category}

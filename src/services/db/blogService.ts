@@ -42,18 +42,20 @@ export const blogService = {
 
         const { data, error } = await query;
         if (!error && Array.isArray(data) && data.length > 0) {
-          const mapped: BlogItem[] = data.map((row: any) => ({
-            id: row.id,
-            title: row.title,
-            slug: row.slug,
-            category: row.category || 'Industry Tips',
-            categoryId: row.category_id || row.categoryId,
-            summary: row.brief_summary || row.summary || row.excerpt || '',
-            content: row.content || '',
-            excerpt: row.excerpt || row.brief_summary || row.summary || '',
-            imageUrl: row.featured_image || row.image_url || row.imageUrl,
-            featuredImage: row.featured_image || row.image_url || row.imageUrl,
-            author: row.author_name || row.author || 'Anonymous Author',
+          const mapped: BlogItem[] = data.map((row: any) => {
+            const resolvedImg = row.featured_image || row.image_url || row.image || row.imageUrl || 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800&auto=format&fit=crop';
+            return {
+              id: row.id,
+              title: row.title,
+              slug: row.slug,
+              category: row.category || 'Industry Tips',
+              categoryId: row.category_id || row.categoryId,
+              summary: row.brief_summary || row.summary || row.excerpt || '',
+              content: row.content || '',
+              excerpt: row.excerpt || row.brief_summary || row.summary || '',
+              imageUrl: resolvedImg,
+              featuredImage: resolvedImg,
+              author: row.author_name || row.author || 'Anonymous Author',
             authorName: row.author_name || row.author,
             authorId: row.author_id || row.userId,
             publishedDate: row.published_at 
@@ -69,7 +71,8 @@ export const blogService = {
             views: row.views || 0,
             likesCount: row.likes_count || 0,
             commentsCount: row.comments_count || 0
-          }));
+          };
+        });
           localStorage.setItem('mvi_blogs', JSON.stringify(mapped));
           return mapped;
         }
@@ -117,6 +120,7 @@ export const blogService = {
           excerpt: blog.excerpt || blog.summary,
           featured_image: blog.imageUrl,
           image_url: blog.imageUrl,
+          image: blog.imageUrl,
           author_name: blog.authorName || blog.author,
           author: blog.author,
           author_role: blog.authorRole || 'contributor',

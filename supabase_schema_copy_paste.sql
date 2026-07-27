@@ -526,6 +526,7 @@ CREATE TABLE IF NOT EXISTS public.blogs (
     excerpt TEXT,
     featured_image TEXT,
     image_url TEXT,
+    image TEXT,
     status TEXT DEFAULT 'published' CHECK (status IN ('draft', 'pending', 'published', 'rejected')),
     is_featured BOOLEAN DEFAULT false,
     read_time INTEGER DEFAULT 3,
@@ -541,6 +542,10 @@ CREATE TABLE IF NOT EXISTS public.blogs (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     deleted_at TIMESTAMP WITH TIME ZONE
 );
+
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS featured_image TEXT;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS image TEXT;
 
 GRANT ALL ON TABLE public.blogs TO anon, authenticated, service_role, postgres;
 GRANT ALL ON TABLE public.blog_categories TO anon, authenticated, service_role, postgres;

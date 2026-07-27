@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS public.blogs (
     excerpt TEXT,
     featured_image TEXT,
     image_url TEXT,
+    image TEXT,
     status TEXT DEFAULT 'published' CHECK (status IN ('draft', 'pending', 'published', 'rejected')),
     is_featured BOOLEAN DEFAULT false,
     read_time INTEGER DEFAULT 3,
@@ -113,6 +114,9 @@ CREATE TABLE IF NOT EXISTS public.blogs (
 -- Ensure columns exist if table was created previously with older schema
 ALTER TABLE public.blogs ALTER COLUMN category_id TYPE TEXT USING category_id::text;
 ALTER TABLE public.blogs ALTER COLUMN author_id TYPE TEXT USING author_id::text;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS featured_image TEXT;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS image TEXT;
 
 -- Create index for quick queries
 CREATE INDEX IF NOT EXISTS idx_blogs_status ON public.blogs(status);
