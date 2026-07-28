@@ -2972,12 +2972,36 @@ var AuthController = class {
       await emailService.sendOtpEmail(cleanEmail, otpCode, "password_reset");
       if (isSupabaseConfigured && supabaseAdmin) {
         try {
+          let authUser = null;
+          try {
+            const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+            authUser = authUsers?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+          } catch (e) {
+          }
+          if (!authUser) {
+            console.log(`[Auth] User ${cleanEmail} not found in Supabase Auth. Provisioning Supabase Auth user to enable reset email delivery...`);
+            try {
+              const { data: newUser } = await supabaseAdmin.auth.admin.createUser({
+                email: cleanEmail,
+                email_confirm: true,
+                password: import_crypto6.default.randomUUID(),
+                user_metadata: { role: "client" }
+              });
+              authUser = newUser?.user;
+            } catch (createErr) {
+              console.warn("[Auth] Supabase auth user creation note:", createErr?.message || createErr);
+            }
+          }
           const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || "https://www.modelverseindia.com";
           const redirectUrl = `${baseUrl.replace(/\/$/, "")}?reset_email=${encodeURIComponent(cleanEmail)}&otp=${otpCode}`;
-          await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
+          const { error: resetErr } = await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
             redirectTo: redirectUrl
           });
-          console.log(`[Auth] Dispatched Supabase password reset email to: ${cleanEmail}`);
+          if (resetErr) {
+            console.warn("[Auth] Supabase resetPasswordForEmail error:", resetErr.message);
+          } else {
+            console.log(`[Auth] Dispatched Supabase password reset email to: ${cleanEmail}`);
+          }
         } catch (sbErr) {
           console.warn("[Auth] Supabase reset password email notice:", sbErr?.message || sbErr);
         }

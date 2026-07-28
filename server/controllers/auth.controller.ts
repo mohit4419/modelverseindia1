@@ -238,13 +238,41 @@ export class AuthController {
       // 2. Trigger Supabase Auth reset email dispatch so user receives real email in inbox
       if (isSupabaseConfigured && supabaseAdmin) {
         try {
+          // Check if user exists in Supabase auth.users table
+          let authUser: any = null;
+          try {
+            const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+            authUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === cleanEmail);
+          } catch (e) {}
+
+          // If user does not exist in Supabase auth, provision user in Supabase auth so reset email CAN be delivered
+          if (!authUser) {
+            console.log(`[Auth] User ${cleanEmail} not found in Supabase Auth. Provisioning Supabase Auth user to enable reset email delivery...`);
+            try {
+              const { data: newUser } = await supabaseAdmin.auth.admin.createUser({
+                email: cleanEmail,
+                email_confirm: true,
+                password: crypto.randomUUID(),
+                user_metadata: { role: 'client' }
+              });
+              authUser = newUser?.user;
+            } catch (createErr: any) {
+              console.warn('[Auth] Supabase auth user creation note:', createErr?.message || createErr);
+            }
+          }
+
           const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://www.modelverseindia.com';
           const redirectUrl = `${baseUrl.replace(/\/$/, '')}?reset_email=${encodeURIComponent(cleanEmail)}&otp=${otpCode}`;
           
-          await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
+          const { error: resetErr } = await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
             redirectTo: redirectUrl
           });
-          console.log(`[Auth] Dispatched Supabase password reset email to: ${cleanEmail}`);
+
+          if (resetErr) {
+            console.warn('[Auth] Supabase resetPasswordForEmail error:', resetErr.message);
+          } else {
+            console.log(`[Auth] Dispatched Supabase password reset email to: ${cleanEmail}`);
+          }
         } catch (sbErr: any) {
           console.warn('[Auth] Supabase reset password email notice:', sbErr?.message || sbErr);
         }
