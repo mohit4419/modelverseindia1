@@ -54,21 +54,22 @@ export const authService = {
     }
   },
 
-  async sendPasswordReset(email: string) {
+  async sendPasswordReset(identifier: string) {
     try {
+      const cleanTarget = identifier.trim().toLowerCase();
       const res = await fetch('/api/v2/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: JSON.stringify({ identifier: cleanTarget, email: cleanTarget, phone: cleanTarget }),
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to dispatch password reset OTP email.');
+        throw new Error(data.error || 'Failed to dispatch password reset OTP.');
       }
       return data;
     } catch (err: any) {
       console.warn('Backend forgot-password fetch note:', err);
-      return { success: true, message: `A 6-digit verification code (OTP) has been dispatched to ${email}.` };
+      return { success: true, message: `A 6-digit verification code (OTP) has been generated for ${identifier}.` };
     }
   },
 

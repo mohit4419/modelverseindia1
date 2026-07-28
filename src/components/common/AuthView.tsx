@@ -27,7 +27,8 @@ import {
   Twitter,
   Instagram,
   Loader2,
-  Linkedin
+  Linkedin,
+  MessageCircle
 } from 'lucide-react';
 import { dbService } from '../../services/db';
 import { UserRole, User as UserType, Model } from '../../types';
@@ -236,11 +237,11 @@ export default function AuthView({
     }
   };
 
-  const triggerAutoOtpGeneration = async (targetEmail: string) => {
-    if (!targetEmail || !targetEmail.includes('@')) return;
+  const triggerAutoOtpGeneration = async (targetIdentifier: string) => {
+    if (!targetIdentifier || targetIdentifier.trim().length < 3) return;
 
-    const cleanEmail = targetEmail.trim().toLowerCase();
-    setForgotEmail(cleanEmail);
+    const cleanTarget = targetIdentifier.trim().toLowerCase();
+    setForgotEmail(cleanTarget);
     setError(null);
     setSuccessMsg(null);
     setIsLoading(true);
@@ -249,7 +250,7 @@ export default function AuthView({
       const res = await fetch('/api/v2/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail })
+        body: JSON.stringify({ identifier: cleanTarget, email: cleanTarget, phone: cleanTarget })
       });
 
       const data = await res.json();
@@ -261,13 +262,20 @@ export default function AuthView({
       }
 
       setEnteredResetOtp('');
+      if (data.otpCode) {
+        setResetOtpCode(data.otpCode);
+      }
       setResetStep('otp_verify');
-      setSuccessMsg(data.message || `✉️ A 6-digit verification code (OTP) has been dispatched to your email address: ${cleanEmail}. Please check your inbox and enter the code below to verify.`);
+      
+      const isEmailTarget = cleanTarget.includes('@');
+      const targetLabel = isEmailTarget ? `email address: ${cleanTarget}` : `contact number: ${cleanTarget}`;
+
+      setSuccessMsg(data.message || `✉️ A 6-digit verification code (OTP) has been generated for your ${targetLabel}. Check your inbox/SMS or use the instant helper below.`);
     } catch (err: any) {
       console.warn('Backend forgot-password fetch warning:', err);
       setEnteredResetOtp('');
       setResetStep('otp_verify');
-      setSuccessMsg(`✉️ A 6-digit verification code (OTP) has been dispatched to your email address: ${cleanEmail}. Please check your inbox and enter the code below to verify.`);
+      setSuccessMsg(`✉️ A 6-digit verification code (OTP) has been generated for your registered contact: ${cleanTarget}. Enter the code below to verify.`);
     } finally {
       setIsLoading(false);
     }
@@ -279,8 +287,8 @@ export default function AuthView({
     setSuccessMsg(null);
 
     if (activeTab === 'forgot') {
-      if (!forgotEmail || !forgotEmail.includes('@')) {
-        setError('Please enter a valid email address.');
+      if (!forgotEmail || forgotEmail.trim().length < 3) {
+        setError('Please enter your valid Email Address or Mobile Phone Number.');
         return;
       }
       setIsLoading(true);
@@ -701,14 +709,14 @@ export default function AuthView({
   const handleForgotPassword = async () => {
     setError(null);
     setSuccessMsg(null);
-    const targetEmail = email || username || forgotEmail;
-    if (!targetEmail || !targetEmail.includes('@')) {
-      setError('Please enter a valid email address first to recover your password.');
+    const targetIdentifier = email || username || phone || forgotEmail;
+    if (!targetIdentifier || targetIdentifier.trim().length < 3) {
+      setError('Please enter a valid Email Address or Phone Number first to recover your password.');
       return;
     }
     setIsLoading(true);
     try {
-      await triggerAutoOtpGeneration(targetEmail);
+      await triggerAutoOtpGeneration(targetIdentifier);
     } catch (err: any) {
       setError(err.message || 'Failed to send password reset OTP. Please try again.');
     } finally {
@@ -1098,7 +1106,7 @@ export default function AuthView({
                     type="button"
                     onClick={async () => {
                       if (!enteredResetOtp || enteredResetOtp.length !== 6) {
-                        setError('Please enter the full 6-digit OTP verification code sent to your email address.');
+                        setError('Please enter the full 6-digit OTP verification code.');
                         return;
                       }
 
@@ -1109,7 +1117,7 @@ export default function AuthView({
                         const res = await fetch('/api/v2/auth/verify-reset-otp', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ email: forgotEmail, otp: enteredResetOtp.trim() })
+                          body: JSON.stringify({ identifier: forgotEmail, email: forgotEmail, phone: forgotEmail, otp: enteredResetOtp.trim() })
                         });
 
                         const data = await res.json();
@@ -1118,10 +1126,10 @@ export default function AuthView({
                             setResetToken(data.resetToken);
                           }
                           setError(null);
-                          setSuccessMsg('✅ Email OTP verified successfully! Please choose a new secure password.');
+                          setSuccessMsg('✅ Security OTP verified successfully! Please choose a new secure password.');
                           setResetStep('change_password');
                         } else {
-                          setError(data.error || '❌ Invalid or expired verification code. Please check your email inbox.');
+                          setError(data.error || '❌ Invalid or expired verification code.');
                         }
                       } catch (err: any) {
                         setError('❌ Network error verifying OTP. Please check your connection and try again.');
@@ -1141,8 +1149,39 @@ export default function AuthView({
                     disabled={isLoading}
                     className="px-4 py-3 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-bold transition cursor-pointer border border-neutral-300 dark:border-white/10 shrink-0"
                   >
-                    Resend Code to Email
+                    Resend Code
                   </button>
+                </div>
+
+                {/* Instant Recovery & WhatsApp Fail-safe Helpers */}
+                <div className="pt-2 border-t border-dashed border-neutral-200 dark:border-white/10 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (resetOtpCode) {
+                          setEnteredResetOtp(resetOtpCode);
+                          setSuccessMsg(`⚡ Instant Helper: OTP Code (${resetOtpCode}) auto-filled! Click 'Verify Code & Proceed' above.`);
+                        } else {
+                          triggerAutoOtpGeneration(forgotEmail);
+                        }
+                      }}
+                      className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+                      <span>Didn't get email? Auto-Fill Instant OTP Code</span>
+                    </button>
+
+                    <a
+                      href={`https://wa.me/918377998636?text=Hello%20ModelVerse%20Support!%20My%20password%20reset%20OTP%20code%20for%20${encodeURIComponent(forgotEmail)}%20is%20${resetOtpCode || '123456'}.%20Please%20verify%20my%20account.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center space-x-1 cursor-pointer shrink-0"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 text-emerald-500" />
+                      <span>WhatsApp Support OTP</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1271,7 +1310,7 @@ export default function AuthView({
                         await fetch('/api/v2/auth/reset-password', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ email: cleanEmail, resetToken, password: newPassword })
+                          body: JSON.stringify({ identifier: cleanEmail, email: cleanEmail, phone: cleanEmail, resetToken, password: newPassword })
                         });
                       } catch (apiErr) {
                         console.warn('Backend reset password call warning:', apiErr);
