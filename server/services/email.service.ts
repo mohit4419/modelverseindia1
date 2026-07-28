@@ -20,36 +20,95 @@ class EmailService {
     this.initTransporter();
   }
 
-  private initTransporter() {
+  private getTransporter(): nodemailer.Transporter | null {
     const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const smtpPort = Number(process.env.SMTP_PORT || 587);
+    const smtpPort = Number(process.env.SMTP_PORT || 465);
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_PASS || '';
+
+    if (!smtpUser || !smtpPass) {
+      return null;
+    }
+
+    const isGmail = smtpHost.includes('gmail') || smtpUser.endsWith('@gmail.com');
+
+    if (isGmail) {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: smtpUser,
+          pass: smtpPass.replace(/\s+/g, ''), // Strip spaces from Gmail App Password
+        },
+        tls: { rejectUnauthorized: false }
+      });
+    }
+
+    return nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+      tls: { rejectUnauthorized: false }
+    });
+  }
+
+  private initTransporter() {
     const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';
     const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_PASS || '';
 
     if (smtpUser && smtpPass) {
-      this.transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
-      console.log(`[EmailService] Configured real SMTP Transporter (${smtpHost}:${smtpPort}) for user: ${smtpUser}`);
+      console.log(`[EmailService] ✅ Configured SMTP Transporter for user: ${smtpUser}`);
     } else {
-      console.warn('[EmailService] ⚠️ SMTP_USER / SMTP_PASS not set in .env. Real email delivery via SMTP requires SMTP_USER and SMTP_PASS (e.g. Gmail App Password).');
-      this.transporter = null;
+      console.warn('[EmailService] ⚠️ SMTP_USER / SMTP_PASS not set in .env file.');
+      console.warn('[EmailService] 💡 To receive emails in inbox (e.g. Gmail), set SMTP_USER="your-email@gmail.com" and SMTP_PASS="your-16-digit-app-password" in .env');
     }
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
-    try {
-      const from = process.env.SMTP_FROM || process.env.SMTP_USER || process.env.EMAIL_USER || 'no-reply@modelverseindia.com';
-      
-      if (this.transporter) {
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_PASS || '';
+    const from = process.env.SMTP_FROM || smtpUser || 'no-reply@modelverseindia.com';
+    const resendApiKey = process.env.RESEND_API_KEY || '';
+
+    // 1. Try Resend HTTP API if configured
+    if (resendApiKey) {
+      try {
+        console.log(`[EmailService] Dispatching email via Resend API to: ${options.to}...`);
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: `ModelVerse Security <${from.includes('@') ? from : 'onboarding@resend.dev'}>`,
+            to: [options.to],
+            subject: options.subject,
+            html: options.html
+          })
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          console.log(`[EmailService] ✅ Resend API email dispatched to ${options.to}. ID: ${resData.id}`);
+          return true;
+        } else {
+          const errText = await res.text();
+          console.warn(`[EmailService] Resend API notice (${res.status}):`, errText);
+        }
+      } catch (rErr: any) {
+        console.warn(`[EmailService] Resend API error:`, rErr?.message || rErr);
+      }
+    }
+
+    // 2. Try Nodemailer SMTP Transporter
+    const transporter = this.getTransporter();
+    if (transporter) {
+      try {
         console.log(`[EmailService] Dispatching SMTP email to: ${options.to}...`);
-        const info = await this.transporter.sendMail({
+        const info = await transporter.sendMail({
           from: `"ModelVerse Security" <${from}>`,
           to: options.to,
           subject: options.subject,
@@ -57,14 +116,15 @@ class EmailService {
           html: options.html,
         });
 
-        console.log(`[EmailService] Successfully dispatched email to ${options.to}. MessageId: ${info.messageId}`);
+        console.log(`[EmailService] ✅ SMTP Email delivered to ${options.to}. MessageId: ${info.messageId}`);
         return true;
-      } else {
-        console.log(`[EmailService] Notice: SMTP Transporter is not configured with real credentials.`);
+      } catch (err: any) {
+        console.warn(`[EmailService] ❌ SMTP Email dispatch error for ${options.to}:`, err?.message || err);
       }
-    } catch (err: any) {
-      console.warn(`[EmailService] SMTP dispatch notice for ${options.to}:`, err?.message || err);
+    } else {
+      console.warn(`[EmailService] ⚠️ Cannot send SMTP email to ${options.to}: SMTP_USER or SMTP_PASS is missing in .env`);
     }
+
     return false;
   }
 
