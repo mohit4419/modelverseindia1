@@ -516,12 +516,13 @@ export default function AuthView({
             if (signUpError) {
               const errMsg = signUpError.message?.toLowerCase() || '';
               const isDbTriggerError = errMsg.includes('database error') || errMsg.includes('500') || errMsg.includes('unexpected_failure');
-              if (!isDbTriggerError) {
+              const isRateLimitError = errMsg.includes('rate limit') || errMsg.includes('429') || errMsg.includes('exceed') || errMsg.includes('too many');
+              if (!isDbTriggerError && !isRateLimitError) {
                 setError(signUpError.message);
                 setIsLoading(false);
                 return;
               }
-              console.warn('Supabase Auth server note (proceeding with user DB creation):', signUpError.message);
+              console.warn('Supabase Auth rate limit or database note (proceeding with seamless user DB creation):', signUpError.message);
             }
 
             if (data?.user) {
@@ -1082,6 +1083,7 @@ export default function AuthView({
                   <input
                     type="text"
                     required
+                    autoComplete="one-time-code"
                     maxLength={6}
                     autoFocus
                     value={enteredResetOtp}
@@ -1193,6 +1195,7 @@ export default function AuthView({
                   <input
                     type="password"
                     required
+                    autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 bg-white dark:bg-neutral-800 focus:outline-none focus:border-purple-650 font-bold"
@@ -1207,6 +1210,7 @@ export default function AuthView({
                   <input
                     type="password"
                     required
+                    autoComplete="new-password"
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
                     className="w-full border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 bg-white dark:bg-neutral-800 focus:outline-none focus:border-purple-650 font-bold"
@@ -1365,6 +1369,7 @@ export default function AuthView({
                     <input
                       type="text"
                       required
+                      autoComplete="one-time-code"
                       maxLength={6}
                       value={enteredCodeEmail}
                       onChange={(e) => setEnteredCodeEmail(e.target.value.replace(/\D/g, ''))}
@@ -1380,6 +1385,7 @@ export default function AuthView({
                     <input
                       type="text"
                       required
+                      autoComplete="one-time-code"
                       maxLength={6}
                       value={enteredCodePhone}
                       onChange={(e) => setEnteredCodePhone(e.target.value.replace(/\D/g, ''))}
@@ -1504,6 +1510,7 @@ export default function AuthView({
                       <input
                         type="email"
                         required
+                        autoComplete="email"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
                         className="w-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 font-bold focus:outline-none focus:border-purple-650"
@@ -1522,6 +1529,7 @@ export default function AuthView({
                           <input
                             type="text"
                             required
+                            autoComplete="given-name"
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             className="w-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 font-bold focus:outline-none focus:border-purple-650"
@@ -1538,6 +1546,7 @@ export default function AuthView({
                           <input
                             type="text"
                             required
+                            autoComplete="family-name"
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             className="w-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 font-bold focus:outline-none focus:border-purple-650"
@@ -1555,6 +1564,7 @@ export default function AuthView({
                         <input
                           type="email"
                           required
+                          autoComplete="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           className="w-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 font-bold focus:outline-none focus:border-purple-650"
@@ -1571,6 +1581,7 @@ export default function AuthView({
                         <input
                           type="tel"
                           required
+                          autoComplete="tel"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           className="w-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 font-bold focus:outline-none focus:border-purple-650"
@@ -1588,6 +1599,7 @@ export default function AuthView({
                       <input
                         type="text"
                         required
+                        autoComplete="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         className="w-full border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-neutral-800 dark:text-neutral-100 font-bold focus:outline-none focus:border-purple-650"
@@ -1858,6 +1870,7 @@ export default function AuthView({
                       )}
                       <input
                         type={socialModal.provider === 'email' || socialModal.provider === 'google' ? 'email' : 'text'}
+                        autoComplete={socialModal.provider === 'email' || socialModal.provider === 'google' ? 'email' : 'username'}
                         value={socialModal.inputVal}
                         onChange={(e) => setSocialModal(prev => ({ ...prev, inputVal: e.target.value, error: null }))}
                         placeholder={

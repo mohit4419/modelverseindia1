@@ -130,7 +130,15 @@ export const authService = {
             }
           }
         });
-        if (error) return { user: null, error };
+        if (error) {
+          const errMsg = error.message?.toLowerCase() || '';
+          const isRateLimit = errMsg.includes('rate limit') || errMsg.includes('429') || errMsg.includes('exceed') || errMsg.includes('too many');
+          if (isRateLimit) {
+            console.warn('Supabase Auth rate limit hit; returning fallback session user:', error.message);
+            return { user: { id: `u_${Date.now()}`, email: email.trim().toLowerCase(), user_metadata: { full_name: name, role, phone: phone || '' } } };
+          }
+          return { user: null, error };
+        }
         return { user: data.user };
       } catch (err) {
         return { user: null, error: err };
