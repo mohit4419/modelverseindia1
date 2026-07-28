@@ -7,7 +7,19 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { AuthService } from '../services/auth.service';
+import { emailService } from '../services/email.service';
+import { supabaseAdmin, isSupabaseConfigured } from '../config/supabase';
 import { Profile } from '../types';
+
+interface OtpRecord {
+  code: string;
+  expiresAt: number;
+  verified: boolean;
+  resetToken?: string;
+}
+
+const resetOtpStore = new Map<string, OtpRecord>();
+const signupOtpStore = new Map<string, OtpRecord>();
 
 const authService = new AuthService();
 
@@ -131,6 +143,63 @@ export class AuthController {
       }
       // Simple simulation of token refreshing
       return res.status(200).json({ success: true, token, message: 'Token refreshed successfully.' });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async sendSignupOtp(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: 'A valid email address is required.' });
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes expiry
+
+      signupOtpStore.set(cleanEmail, { code: otpCode, expiresAt, verified: false });
+
+      await emailService.sendOtpEmail(cleanEmail, otpCode, 'registration');
+
+      console.log(`[EmailService] Dispatched signup OTP to email: ${cleanEmail}`);
+
+      return res.status(200).json({
+        success: true,
+        message: `Verification code (OTP) has been dispatched to ${cleanEmail}. Please check your email inbox.`
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async verifySignupOtp(req: Request, res: Response) {
+    try {
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        return res.status(400).json({ error: 'Email address and 6-digit OTP code are required.' });
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+      const record = signupOtpStore.get(cleanEmail);
+
+      if (!record) {
+        return res.status(400).json({ error: 'No active signup OTP request found for this email. Please request a new OTP code.' });
+      }
+
+      if (Date.now() > record.expiresAt) {
+        signupOtpStore.delete(cleanEmail);
+        return res.status(400).json({ error: 'The OTP code has expired. Please request a new verification code.' });
+      }
+
+      if (record.code !== otp.trim()) {
+        return res.status(400).json({ error: 'Invalid verification code. Please check the 6-digit OTP sent to your email address.' });
+      }
+
+      record.verified = true;
+
+      return res.status(200).json({ success: true, message: 'Signup OTP verified successfully.' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
