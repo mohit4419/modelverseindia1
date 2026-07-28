@@ -2915,7 +2915,18 @@ var AuthController = class {
       const expiresAt = Date.now() + 15 * 60 * 1e3;
       signupOtpStore.set(cleanEmail, { code: otpCode, expiresAt, verified: false });
       await emailService.sendOtpEmail(cleanEmail, otpCode, "registration");
-      console.log(`[EmailService] Dispatched signup OTP to email: ${cleanEmail}`);
+      if (isSupabaseConfigured && supabaseAdmin) {
+        try {
+          await supabaseAdmin.auth.signInWithOtp({
+            email: cleanEmail,
+            options: { shouldCreateUser: true }
+          });
+          console.log(`[Auth] Supabase auth signInWithOtp dispatched to: ${cleanEmail}`);
+        } catch (sbErr) {
+          console.warn("[Auth] Supabase signup OTP email notice:", sbErr?.message || sbErr);
+        }
+      }
+      console.log(`[EmailService] Dispatched signup OTP (${otpCode}) to email: ${cleanEmail}`);
       return res.status(200).json({
         success: true,
         message: `Verification code (OTP) has been dispatched to ${cleanEmail}. Please check your email inbox.`
@@ -2959,6 +2970,18 @@ var AuthController = class {
       const expiresAt = Date.now() + 15 * 60 * 1e3;
       resetOtpStore.set(cleanEmail, { code: otpCode, expiresAt, verified: false });
       await emailService.sendOtpEmail(cleanEmail, otpCode, "password_reset");
+      if (isSupabaseConfigured && supabaseAdmin) {
+        try {
+          const baseUrl = process.env.FRONTEND_URL || process.env.APP_URL || "https://www.modelverseindia.com";
+          const redirectUrl = `${baseUrl.replace(/\/$/, "")}?reset_email=${encodeURIComponent(cleanEmail)}&otp=${otpCode}`;
+          await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
+            redirectTo: redirectUrl
+          });
+          console.log(`[Auth] Dispatched Supabase password reset email to: ${cleanEmail}`);
+        } catch (sbErr) {
+          console.warn("[Auth] Supabase reset password email notice:", sbErr?.message || sbErr);
+        }
+      }
       console.log(`[EmailService] Dispatched 6-digit password reset OTP (${otpCode}) to email: ${cleanEmail}`);
       return res.status(200).json({
         success: true,
