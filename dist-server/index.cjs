@@ -2960,15 +2960,7 @@ var AuthController = class {
       const expiresAt = Date.now() + 15 * 60 * 1e3;
       resetOtpStore.set(cleanEmail, { code: otpCode, expiresAt, verified: false });
       await emailService.sendOtpEmail(cleanEmail, otpCode, "password_reset");
-      if (isSupabaseConfigured && supabaseAdmin) {
-        try {
-          await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail);
-          console.log(`[Auth] Supabase auth resetPasswordForEmail dispatched to: ${cleanEmail}`);
-        } catch (sbErr) {
-          console.warn("[Auth] Supabase reset password email notice:", sbErr?.message || sbErr);
-        }
-      }
-      console.log(`[EmailService] Dispatched password reset OTP to email: ${cleanEmail}`);
+      console.log(`[EmailService] Dispatched 6-digit password reset OTP (${otpCode}) to email: ${cleanEmail}`);
       return res.status(200).json({
         success: true,
         message: `Password reset verification code (OTP) has been dispatched to ${cleanEmail}. Please check your email inbox.`

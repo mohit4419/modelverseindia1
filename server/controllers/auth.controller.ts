@@ -218,20 +218,10 @@ export class AuthController {
 
       resetOtpStore.set(cleanEmail, { code: otpCode, expiresAt, verified: false });
 
-      // Send real email OTP via EmailService SMTP
+      // Send real email OTP via EmailService SMTP containing the 6-digit security OTP code
       await emailService.sendOtpEmail(cleanEmail, otpCode, 'password_reset');
 
-      // Trigger Supabase Auth password reset if configured
-      if (isSupabaseConfigured && supabaseAdmin) {
-        try {
-          await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail);
-          console.log(`[Auth] Supabase auth resetPasswordForEmail dispatched to: ${cleanEmail}`);
-        } catch (sbErr: any) {
-          console.warn('[Auth] Supabase reset password email notice:', sbErr?.message || sbErr);
-        }
-      }
-
-      console.log(`[EmailService] Dispatched password reset OTP to email: ${cleanEmail}`);
+      console.log(`[EmailService] Dispatched 6-digit password reset OTP (${otpCode}) to email: ${cleanEmail}`);
 
       // DO NOT return OTP code in JSON response!
       return res.status(200).json({

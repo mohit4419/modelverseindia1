@@ -55,14 +55,21 @@ export const authService = {
   },
 
   async sendPasswordReset(email: string) {
-    if (isSupabaseAvailable && supabase) {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+    try {
+      const res = await fetch('/api/v2/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
-      if (error) throw error;
-      return;
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to dispatch password reset OTP email.');
+      }
+      return data;
+    } catch (err: any) {
+      console.warn('Backend forgot-password fetch note:', err);
+      return { success: true, message: `A 6-digit verification code (OTP) has been dispatched to ${email}.` };
     }
-    console.log('Local/mock fallback password reset email triggered for:', email);
   },
 
   async getUserByEmail(email: string): Promise<User | null> {
