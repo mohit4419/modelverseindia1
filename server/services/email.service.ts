@@ -23,8 +23,8 @@ class EmailService {
   private initTransporter() {
     const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
     const smtpPort = Number(process.env.SMTP_PORT || 587);
-    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || '';
-    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
+    const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';
+    const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_PASS || '';
 
     if (smtpUser && smtpPass) {
       this.transporter = nodemailer.createTransport({
@@ -38,25 +38,17 @@ class EmailService {
       });
       console.log(`[EmailService] Configured real SMTP Transporter (${smtpHost}:${smtpPort}) for user: ${smtpUser}`);
     } else {
-      console.log('[EmailService] SMTP credentials initialized. Creating direct nodemailer transporter fallback...');
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: 'no-reply@modelverseindia.com',
-          pass: 'secure-smtp-pass',
-        },
-      });
+      console.warn('[EmailService] ⚠️ SMTP_USER / SMTP_PASS not set in .env. Real email delivery via SMTP requires SMTP_USER and SMTP_PASS (e.g. Gmail App Password).');
+      this.transporter = null;
     }
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      const from = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@modelverseindia.com';
-      console.log(`[EmailService] Dispatching real email to registered address: ${options.to}...`);
-
+      const from = process.env.SMTP_FROM || process.env.SMTP_USER || process.env.EMAIL_USER || 'no-reply@modelverseindia.com';
+      
       if (this.transporter) {
+        console.log(`[EmailService] Dispatching SMTP email to: ${options.to}...`);
         const info = await this.transporter.sendMail({
           from: `"ModelVerse Security" <${from}>`,
           to: options.to,
@@ -67,6 +59,8 @@ class EmailService {
 
         console.log(`[EmailService] Successfully dispatched email to ${options.to}. MessageId: ${info.messageId}`);
         return true;
+      } else {
+        console.log(`[EmailService] Notice: SMTP Transporter is not configured with real credentials.`);
       }
     } catch (err: any) {
       console.warn(`[EmailService] SMTP dispatch notice for ${options.to}:`, err?.message || err);
@@ -75,6 +69,10 @@ class EmailService {
   }
 
   async sendOtpEmail(toEmail: string, otpCode: string, type: 'registration' | 'password_reset' = 'password_reset'): Promise<boolean> {
+    console.log(`\n========================================================================`);
+    console.log(`[SECURITY OTP DISPATCH] 🔑 6-Digit OTP Code for ${toEmail}: ${otpCode} (Type: ${type})`);
+    console.log(`========================================================================\n`);
+
     const subject = type === 'registration'
       ? 'ModelVerse India - Your Email Verification Code (OTP)'
       : 'ModelVerse India - Password Reset Security Code (OTP)';
