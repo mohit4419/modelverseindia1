@@ -640,6 +640,12 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       return;
     }
 
+    if (!portfolioLink1) {
+      setActiveSectionId(8);
+      alert('Portfolio Image 1 is mandatory! Please upload at least one portfolio image in Section 8.');
+      return;
+    }
+
     if (!biography) {
       setActiveSectionId(11);
       alert('Please fill out Section 11: Professional Biography!');
@@ -652,9 +658,8 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       return;
     }
 
-    // Prepare portfolio URLs
     const portfolioUrls = [
-      portfolioLink1 || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600',
+      portfolioLink1,
       portfolioLink2 || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600',
       portfolioLink3 || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600',
     ];
@@ -775,6 +780,8 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
         return !!(name && phone && email && city && state);
       case 2:
         return !!(height && weight && bust && waist && hips);
+      case 8:
+        return !!portfolioLink1;
       case 11:
         return !!biography;
       case 15:
@@ -835,18 +842,15 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
               type="button"
               onClick={() => {
                 setRegistrationSuccess(false);
-                setName('');
-                setBiography('');
-                setAgreedToTerms(false);
-                setAccuracyDeclaration(false);
-                setDigitalSignature('');
-                setActiveSectionId(1);
               }}
-              className="w-full sm:w-auto rounded-full border border-white/10 px-6 py-2.5 text-xs font-bold text-white hover:bg-white/5 transition cursor-pointer"
+              className="w-full sm:w-auto rounded-full border border-emerald-500/30 bg-emerald-500/10 px-6 py-2.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition cursor-pointer"
             >
-              Register Another Profile
+              ✏️ Edit Your Profile
             </button>
           </div>
+          <p className="text-[10px] text-zinc-600 mt-2 font-mono">
+            You can edit and update your profile anytime. Profile deletion is managed by admin only.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1505,11 +1509,15 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
                     <p className="text-xs text-zinc-400 mb-2 leading-relaxed">
                       Please supply high-resolution image links or use our client-side canvas compressor tool to upload and optimize your images below.
                     </p>
+                    <p className="text-[10px] font-bold text-[#EA3838] mb-3 flex items-center gap-1.5">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      Portfolio Image 1 is mandatory. You must upload at least one image to proceed.
+                    </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       {/* Slot 1 */}
                       <div className="space-y-2">
-                        <label className="block text-xs font-bold text-zinc-300">Portfolio Image 1 *</label>
+                        <label className="block text-xs font-bold text-[#EA3838]">Portfolio Image 1 * (Mandatory)</label>
                         <input
                           type="text"
                           placeholder="Image URL or Base64"

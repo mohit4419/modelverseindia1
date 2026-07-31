@@ -7,6 +7,8 @@ import { Router } from 'express';
 import { ModelController } from '../controllers/model.controller';
 import { validateBody } from '../middleware/validate';
 import { modelSchema } from '../validators/model.validator';
+import { verifyToken } from '../middleware/auth';
+import { requireAdmin } from '../middleware/admin';
 
 const router = Router();
 
@@ -23,7 +25,7 @@ router.get('/models/:id', ModelController.getModelById);
 router.post('/models', validateBody(modelSchema), ModelController.saveModel);
 router.patch('/models/:id', ModelController.updateModel);
 router.put('/models/:id', ModelController.updateModel);
-router.delete('/models/:id', ModelController.deleteModel);
+router.delete('/models/:id', verifyToken as any, requireAdmin as any, ModelController.deleteModel);
 
 router.patch('/models/:id/status', ModelController.updateStatus);
 router.patch('/models/:id/availability', ModelController.updateAvailability);
