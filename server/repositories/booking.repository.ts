@@ -29,6 +29,47 @@ function saveLocalBookings(bookings: Booking[]) {
   }
 }
 
+// Map Supabase snake_case row → app camelCase Booking object
+function fromSupabaseRow(b: any): Booking {
+  return {
+    id: b.id,
+    clientId: b.client_id || b.clientId || '',
+    clientName: b.client_name || b.clientName || '',
+    modelId: b.model_id || b.modelId || '',
+    modelName: b.model_name || b.modelName || '',
+    modelImage: b.model_image || b.modelImage || '',
+    projectDetails: b.project_details || b.projectDetails || {},
+    status: b.status || 'pending',
+    createdAt: b.created_at || b.createdAt || new Date().toISOString(),
+    priceAmount: Number(b.price_amount || b.priceAmount || b.amount || 0),
+    pdfSummaryUrl: b.pdf_summary_url || b.pdfSummaryUrl,
+    pdfGeneratedAt: b.pdf_generated_at || b.pdfGeneratedAt,
+    isSharedWithClient: b.is_shared_with_client || b.isSharedWithClient || false,
+  };
+}
+
+// Map app camelCase Booking → Supabase snake_case row for upsert
+function toSupabaseRow(booking: Booking): Record<string, any> {
+  const row: Record<string, any> = {
+    id: booking.id,
+    client_id: booking.clientId,
+    client_name: booking.clientName,
+    model_id: booking.modelId,
+    model_name: booking.modelName,
+    model_image: booking.modelImage,
+    project_details: booking.projectDetails,
+    status: booking.status || 'pending',
+    created_at: booking.createdAt,
+    price_amount: booking.priceAmount,
+    amount: booking.priceAmount,
+  };
+  // Optional fields
+  if (booking.pdfSummaryUrl !== undefined) row.pdf_summary_url = booking.pdfSummaryUrl;
+  if (booking.pdfGeneratedAt !== undefined) row.pdf_generated_at = booking.pdfGeneratedAt;
+  if (booking.isSharedWithClient !== undefined) row.is_shared_with_client = booking.isSharedWithClient;
+  return row;
+}
+
 export class BookingRepository {
   async findAll(): Promise<Booking[]> {
     let dbBookings: Booking[] = [];
@@ -39,21 +80,7 @@ export class BookingRepository {
           2500
         );
         if (!error && data) {
-          dbBookings = data.map((b: any) => ({
-            id: b.id,
-            clientId: b.clientId,
-            clientName: b.clientName,
-            modelId: b.modelId,
-            modelName: b.modelName,
-            modelImage: b.modelImage,
-            projectDetails: b.projectDetails || {},
-            status: b.status,
-            createdAt: b.createdAt,
-            priceAmount: b.priceAmount,
-            pdfSummaryUrl: b.pdfSummaryUrl,
-            pdfGeneratedAt: b.pdfGeneratedAt,
-            isSharedWithClient: b.isSharedWithClient,
-          })) as Booking[];
+          dbBookings = data.map(fromSupabaseRow);
         }
       } catch (e) {
         console.error('Supabase booking query failed:', e);
@@ -76,21 +103,7 @@ export class BookingRepository {
           2500
         );
         if (!error && data) {
-          return {
-            id: data.id,
-            clientId: data.clientId,
-            clientName: data.clientName,
-            modelId: data.modelId,
-            modelName: data.modelName,
-            modelImage: data.modelImage,
-            projectDetails: data.projectDetails || {},
-            status: data.status,
-            createdAt: data.createdAt,
-            priceAmount: data.priceAmount,
-            pdfSummaryUrl: data.pdfSummaryUrl,
-            pdfGeneratedAt: data.pdfGeneratedAt,
-            isSharedWithClient: data.isSharedWithClient,
-          } as Booking;
+          return fromSupabaseRow(data);
         }
       } catch (e) {
         console.error(`Supabase query for booking ${id} failed:`, e);
@@ -113,22 +126,9 @@ export class BookingRepository {
 
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
+        const row = toSupabaseRow(booking);
         const { error } = await withTimeout(
-          supabaseAdmin.from('bookings').upsert({
-            id: booking.id,
-            clientId: booking.clientId,
-            clientName: booking.clientName,
-            modelId: booking.modelId,
-            modelName: booking.modelName,
-            modelImage: booking.modelImage,
-            projectDetails: booking.projectDetails,
-            status: booking.status,
-            createdAt: booking.createdAt,
-            priceAmount: booking.priceAmount,
-            pdfSummaryUrl: booking.pdfSummaryUrl || null,
-            pdfGeneratedAt: booking.pdfGeneratedAt || null,
-            isSharedWithClient: booking.isSharedWithClient || false,
-          }),
+          supabaseAdmin.from('bookings').upsert(row),
           2500
         );
         if (error) throw error;

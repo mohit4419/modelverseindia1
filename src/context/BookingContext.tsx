@@ -119,22 +119,33 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     );
 
     try {
+      // 1. Save via backend API (primary channel)
       await bookingService.createBooking(freshBooking);
+
+      // 2. Also save directly to Supabase via dbService (dual-channel for reliability)
+      try {
+        await dbService.addBooking(freshBooking);
+      } catch (dbErr) {
+        console.warn('Direct DB booking save note (API already handled):', dbErr);
+      }
+
       const updatedBookings = await bookingService.getBookings({ clientId });
       setBookings(updatedBookings);
 
       const modelObj = models.find(m => m.id === bookingData.modelId);
       const modelUserId = modelObj ? modelObj.userId : bookingData.modelId;
       
+      // Notification for client
       const systemMsg: Message = {
         id: `msg_sys_${Date.now()}`,
         senderId: 'system',
         receiverId: clientId,
-        content: `🎉 Casting Proposal Submitted! Your booking request for ${bookingData.modelName} has been recorded (ID: ${freshBooking.id}). Status is currently PENDING.`,
+        content: `🎉 Casting Proposal Submitted! Your booking request for ${bookingData.modelName} has been recorded (ID: ${freshBooking.id}). Status is currently PENDING. Admin will review and approve it shortly.`,
         timestamp: new Date().toISOString(),
         isRead: false
       };
 
+      // Notification for model
       const modelNotificationMsg: Message = {
         id: `msg_model_notif_${Date.now()}`,
         senderId: 'system',
@@ -144,8 +155,19 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         isRead: false
       };
 
+      // Notification for admin — so admin sees the booking for approval
+      const adminNotificationMsg: Message = {
+        id: `msg_admin_notif_${Date.now()}`,
+        senderId: 'system',
+        receiverId: 'a_admin',
+        content: `📋 NEW BOOKING APPROVAL REQUIRED: Client "${freshBooking.clientName}" wants to book model "${freshBooking.modelName}" for campaign "${freshBooking.projectDetails.brandName}". Budget: ₹${freshBooking.priceAmount?.toLocaleString()}. Please review in the Bookings section and approve or reject.`,
+        timestamp: new Date().toISOString(),
+        isRead: false
+      };
+
       await dbService.addMessage(systemMsg);
       await dbService.addMessage(modelNotificationMsg);
+      await dbService.addMessage(adminNotificationMsg);
       
       const updatedMessages = await dbService.getMessages();
       setMessages(updatedMessages);
@@ -168,6 +190,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       );
     }
   };
+
 
   const handleSendMessage = (content: string, imageUrl?: string, sendAsModel = false) => {
     if (!setChatModelUserId) return; // avoid type/stale issues
@@ -357,7 +380,19 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       const booking = bookings.find(b => b.id === bookingId);
       if (!booking) return;
 
+      // 1. Update via direct dbService (localStorage + Supabase)
       await dbService.updateBookingStatus(bookingId, status);
+
+      // 2. Also update via backend API for dual-channel reliability
+      try {
+        await fetch(`/api/v2/bookings/${bookingId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+      } catch (apiErr) {
+        console.warn('Backend API booking status update note:', apiErr);
+      }
       
       await dbService.addAuditLog({
         action: 'Booking Status Change',
@@ -373,19 +408,54 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       const updatedPayments = await dbService.getPayments();
       setPayments(updatedPayments);
 
+      // Send notification to model when admin approves (assigns) the booking
       if (status === 'assigned') {
+        const modelObj = models.find(m => m.id === booking.modelId);
+        const modelUserId = modelObj ? modelObj.userId : booking.modelId;
+        const modelApprovalMsg: Message = {
+          id: `msg_model_approved_${Date.now()}`,
+          senderId: 'system',
+          receiverId: modelUserId,
+          content: `✅ BOOKING APPROVED BY ADMIN: The booking from client "${booking.clientName}" for campaign "${booking.projectDetails.brandName}" has been approved by admin and assigned to you. Please review and accept or decline in your dashboard.`,
+          timestamp: new Date().toISOString(),
+          isRead: false
+        };
+        await dbService.addMessage(modelApprovalMsg);
+
         triggerToast(
           'Booking Assigned to Model',
           `Booking for ${booking.modelName} has been approved by admin and forwarded to the model for confirmation.`,
           'success'
         );
       } else if (status === 'accepted') {
+        // Notify client that model accepted
+        const clientAcceptMsg: Message = {
+          id: `msg_client_accepted_${Date.now()}`,
+          senderId: 'system',
+          receiverId: booking.clientId,
+          content: `🎉 BOOKING ACCEPTED: Model "${booking.modelName}" has accepted your booking for campaign "${booking.projectDetails.brandName}". Escrow budget of ₹${booking.priceAmount?.toLocaleString()} is now secured.`,
+          timestamp: new Date().toISOString(),
+          isRead: false
+        };
+        await dbService.addMessage(clientAcceptMsg);
+
         triggerToast(
           'Booking Accepted',
           `Booking proposal for ${booking.modelName} (${booking.projectDetails.brandName}) has been accepted. Escrow budget secured.`,
           'success'
         );
       } else if (status === 'rejected') {
+        // Notify client that booking was rejected
+        const clientRejectMsg: Message = {
+          id: `msg_client_rejected_${Date.now()}`,
+          senderId: 'system',
+          receiverId: booking.clientId,
+          content: `❌ BOOKING DECLINED: The booking for model "${booking.modelName}" for campaign "${booking.projectDetails.brandName}" has been declined. Your escrow budget has been returned.`,
+          timestamp: new Date().toISOString(),
+          isRead: false
+        };
+        await dbService.addMessage(clientRejectMsg);
+
         triggerToast(
           'Booking Declined',
           `Booking request for ${booking.modelName} has been declined. Escrow budget returned.`,
@@ -404,11 +474,16 @@ export function BookingProvider({ children }: { children: ReactNode }) {
           'success'
         );
       }
+
+      // Refresh messages after notifications
+      const updatedMessages = await dbService.getMessages();
+      setMessages(updatedMessages);
     } catch (error) {
       console.error('Failed to update booking status:', error);
       triggerToast('Update Failed', 'An error occurred while updating the booking request.', 'error');
     }
   };
+
 
   const handleModelRegisterSubmit = async (newModel: Model) => {
     const userSession = dbService.getCurrentSessionUser();

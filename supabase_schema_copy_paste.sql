@@ -303,6 +303,15 @@ CREATE TABLE IF NOT EXISTS public.bookings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
+-- Add extra booking columns needed by application
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS client_name TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS model_name TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS model_image TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS price_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS pdf_summary_url TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS pdf_generated_at TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS is_shared_with_client BOOLEAN DEFAULT false;
+
 -- 6. Create 'favorites' table
 CREATE TABLE IF NOT EXISTS public.favorites (
     id TEXT PRIMARY KEY,

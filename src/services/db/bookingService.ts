@@ -9,6 +9,45 @@ import { isSupabaseAvailable, removeUndefined, ensureUserExistsInDb, ensureModel
 import { SEED_BOOKINGS, SEED_USERS, SEED_MODELS } from './seedData';
 import { messageService } from './messageService';
 
+// Map Supabase snake_case row to app camelCase Booking
+function fromSupabaseBookingRow(row: any): Booking {
+  return {
+    id: row.id,
+    clientId: row.client_id || row.clientId || '',
+    clientName: row.client_name || row.clientName || '',
+    modelId: row.model_id || row.modelId || '',
+    modelName: row.model_name || row.modelName || '',
+    modelImage: row.model_image || row.modelImage || '',
+    projectDetails: row.project_details || row.projectDetails || {},
+    status: row.status || 'pending',
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+    priceAmount: Number(row.price_amount || row.priceAmount || row.amount || 0),
+    pdfSummaryUrl: row.pdf_summary_url || row.pdfSummaryUrl,
+    pdfGeneratedAt: row.pdf_generated_at || row.pdfGeneratedAt,
+    isSharedWithClient: row.is_shared_with_client || row.isSharedWithClient || false,
+  };
+}
+
+// Map app camelCase Booking to Supabase snake_case row
+function toSupabaseBookingRow(booking: Booking): Record<string, any> {
+  return removeUndefined({
+    id: booking.id,
+    client_id: booking.clientId,
+    client_name: booking.clientName,
+    model_id: booking.modelId,
+    model_name: booking.modelName,
+    model_image: booking.modelImage,
+    project_details: booking.projectDetails,
+    status: booking.status || 'pending',
+    created_at: booking.createdAt,
+    price_amount: booking.priceAmount,
+    amount: booking.priceAmount,
+    pdf_summary_url: booking.pdfSummaryUrl || null,
+    pdf_generated_at: booking.pdfGeneratedAt || null,
+    is_shared_with_client: booking.isSharedWithClient || false,
+  });
+}
+
 export const bookingService = {
   subscribeToBookings(callback: (bookings: Booking[]) => void): () => void {
     if (isSupabaseAvailable && supabase) {
@@ -41,7 +80,7 @@ export const bookingService = {
       try {
         const { data, error } = await supabase.from('bookings').select('*');
         if (!error && data) {
-          dbBookings = data as Booking[];
+          dbBookings = data.map(fromSupabaseBookingRow);
         }
       } catch (e) {
         console.error('Supabase bookings fetch failed', e);
@@ -71,10 +110,12 @@ export const bookingService = {
       try {
         await ensureUserExistsInDb(booking.clientId, booking.clientName, undefined, SEED_USERS);
         await ensureModelExistsInDb(booking.modelId, SEED_MODELS);
+        const row = toSupabaseBookingRow(booking);
         const { error } = await supabase
           .from('bookings')
-          .insert(removeUndefined(booking));
+          .upsert(row);
         if (error) throw error;
+        console.log(`Booking ${booking.id} saved to Supabase successfully.`);
       } catch (e) {
         console.warn('Supabase bookings save failed (falling back to local):', e);
       }
@@ -119,7 +160,7 @@ export const bookingService = {
       try {
         const { error } = await supabase
           .from('bookings')
-          .update({ status })
+          .update({ status, updated_at: new Date().toISOString() })
           .eq('id', bookingId);
         if (error) throw error;
       } catch (e) {
@@ -146,10 +187,10 @@ export const bookingService = {
       try {
         const { error } = await supabase
           .from('bookings')
-          .update({ 
-            pdfSummaryUrl, 
-            pdfGeneratedAt: new Date().toISOString(), 
-            isSharedWithClient 
+          .update({
+            pdf_summary_url: pdfSummaryUrl,
+            pdf_generated_at: new Date().toISOString(),
+            is_shared_with_client: isSharedWithClient
           })
           .eq('id', bookingId);
         if (error) throw error;
