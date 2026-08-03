@@ -139,57 +139,97 @@ export default function AgentDashboard({
     reader.readAsDataURL(file);
   };
 
-  const applyCropAndRotate = () => {
-    if (!editingImage) return;
+  const applyCropAndRotate = async () => {
+    if (!editingImage || !activeModel) return;
     setIsApplyingCrop(true);
 
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const targetWidth = 600;
-      const targetHeight = 800; // 3:4 aspect ratio
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        // Clear background with rich dark palette
-        ctx.fillStyle = '#121212';
-        ctx.fillRect(0, 0, targetWidth, targetHeight);
+    const commitImageToModel = async (imageDataUrl: string) => {
+      editingImage.callback(imageDataUrl);
 
-        ctx.save();
-        // Translate to canvas center
-        ctx.translate(targetWidth / 2, targetHeight / 2);
-        // Apply rotation
-        ctx.rotate((rotation * Math.PI) / 180);
-        // Apply zoom scale
-        ctx.scale(zoom, zoom);
-        // Apply offsets in translated space
-        ctx.translate(offsetX, offsetY);
+      let p1 = portfolio1;
+      let p2 = portfolio2;
+      let p3 = portfolio3;
+      if (editingImage.key === 'port1') p1 = imageDataUrl;
+      if (editingImage.key === 'port2') p2 = imageDataUrl;
+      if (editingImage.key === 'port3') p3 = imageDataUrl;
 
-        // Aspect-fill image within 3:4 container
-        const imgRatio = img.width / img.height;
-        const targetRatio = targetWidth / targetHeight;
-        let drawWidth = targetWidth;
-        let drawHeight = targetHeight;
+      const portfolioArray = [p1, p2, p3].filter(Boolean);
+      const updatedModel: Model = {
+        ...activeModel,
+        portfolio: portfolioArray
+      };
 
-        if (imgRatio > targetRatio) {
-          drawHeight = targetHeight;
-          drawWidth = targetHeight * imgRatio;
-        } else {
-          drawWidth = targetWidth;
-          drawHeight = targetWidth / imgRatio;
-        }
-
-        ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
-        ctx.restore();
-
-        const croppedBase64 = canvas.toDataURL('image/jpeg', 0.85);
-        editingImage.callback(croppedBase64);
+      try {
+        await dbService.saveModel(updatedModel);
+        onUpdateModel(updatedModel);
+        triggerToast(
+          'Image Saved & Profile Updated!',
+          'Your portfolio photo has been saved directly to your model profile in the database.',
+          'success'
+        );
+      } catch (err) {
+        console.error('Failed to auto-save model portfolio photo:', err);
+        triggerToast('Upload Note', 'Image attached to form state. Remember to click Save Profile Details below.', 'info');
+      } finally {
+        setIsApplyingCrop(false);
+        setEditingImage(null);
       }
-      setIsApplyingCrop(false);
-      setEditingImage(null);
     };
-    img.src = editingImage.src;
+
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const targetWidth = 600;
+          const targetHeight = 800; // 3:4 aspect ratio
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#121212';
+            ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+            ctx.save();
+            ctx.translate(targetWidth / 2, targetHeight / 2);
+            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.scale(zoom, zoom);
+            ctx.translate(offsetX, offsetY);
+
+            const imgRatio = img.width / img.height;
+            const targetRatio = targetWidth / targetHeight;
+            let drawWidth = targetWidth;
+            let drawHeight = targetHeight;
+
+            if (imgRatio > targetRatio) {
+              drawHeight = targetHeight;
+              drawWidth = targetHeight * imgRatio;
+            } else {
+              drawWidth = targetWidth;
+              drawHeight = targetWidth / imgRatio;
+            }
+
+            ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+            ctx.restore();
+
+            const croppedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            commitImageToModel(croppedBase64);
+          } else {
+            commitImageToModel(editingImage.src);
+          }
+        } catch (canvasErr) {
+          console.error('Canvas processing error:', canvasErr);
+          commitImageToModel(editingImage.src);
+        }
+      };
+      img.onerror = () => {
+        commitImageToModel(editingImage.src);
+      };
+      img.src = editingImage.src;
+    } catch (err) {
+      console.error('applyCropAndRotate exception:', err);
+      commitImageToModel(editingImage.src);
+    }
   };
 
   // Image compression utility
@@ -2126,29 +2166,68 @@ export default function AgentDashboard({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <button
                 type="button"
                 onClick={() => setEditingImage(null)}
-                className="flex-1 py-2 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black border border-white/5 transition active:scale-97 cursor-pointer"
+                className="py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black border border-white/5 transition active:scale-97 cursor-pointer"
               >
                 Cancel
               </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (editingImage && activeModel) {
+                    setIsApplyingCrop(true);
+                    editingImage.callback(editingImage.src);
+
+                    let p1 = portfolio1;
+                    let p2 = portfolio2;
+                    let p3 = portfolio3;
+                    if (editingImage.key === 'port1') p1 = editingImage.src;
+                    if (editingImage.key === 'port2') p2 = editingImage.src;
+                    if (editingImage.key === 'port3') p3 = editingImage.src;
+
+                    const portfolioArray = [p1, p2, p3].filter(Boolean);
+                    const updatedModel: Model = {
+                      ...activeModel,
+                      portfolio: portfolioArray
+                    };
+
+                    try {
+                      await dbService.saveModel(updatedModel);
+                      onUpdateModel(updatedModel);
+                      triggerToast('Image Uploaded & Saved!', 'Original photo saved directly to model profile.', 'success');
+                    } catch (e) {
+                      console.error('Failed to save original image:', e);
+                    } finally {
+                      setIsApplyingCrop(false);
+                      setEditingImage(null);
+                    }
+                  }
+                }}
+                disabled={isApplyingCrop}
+                className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-black border border-white/10 transition active:scale-97 cursor-pointer disabled:opacity-50"
+              >
+                Use Original
+              </button>
+
               <button
                 type="button"
                 onClick={applyCropAndRotate}
                 disabled={isApplyingCrop}
-                className="flex-1 py-2 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-md hover:brightness-110 active:scale-97 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-md hover:brightness-110 active:scale-97 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1"
               >
                 {isApplyingCrop ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Processing...</span>
+                    <span>Saving to Profile...</span>
                   </>
                 ) : (
                   <>
                     <Check className="h-3.5 w-3.5" />
-                    <span>Save & Apply</span>
+                    <span>Save & Upload Profile</span>
                   </>
                 )}
               </button>
