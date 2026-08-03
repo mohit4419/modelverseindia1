@@ -3,14 +3,17 @@ import BecomeModelForm from '../../components/profile/BecomeModelForm';
 import { useModels } from '../../hooks/useModels';
 import { useAuth } from '../../hooks/useAuth';
 
+import { dbService } from '../../services/db';
+
 export default function BecomeModelIndex() {
   const { models, handleModelRegisterSubmit } = useModels();
-  const { clientId, currentUser } = useAuth();
+  const { clientId, userEmail } = useAuth();
+  const currentUser = dbService.getCurrentSessionUser();
 
   const existingModel = models.find(m => 
     (clientId && m.userId === clientId) || 
     (currentUser?.id && m.userId === currentUser.id) || 
-    (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
+    (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase())
   );
 
   return (

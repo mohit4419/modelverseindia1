@@ -222,10 +222,11 @@ function AppContent() {
             </div>
           );
         }
+        const currentUser = dbService.getCurrentSessionUser();
         const existingModelForUser = models.find(m => 
           (clientId && m.userId === clientId) || 
           (currentUser?.id && m.userId === currentUser.id) || 
-          (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
+          (userEmail && m.email && m.email.toLowerCase() === userEmail.toLowerCase())
         );
 
         return (

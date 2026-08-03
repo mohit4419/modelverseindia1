@@ -65,7 +65,8 @@ export default function AgentDashboard({
   triggerToast,
   onUpdateBooking
 }: AgentDashboardProps) {
-  // Find registered model or default to first approved model (Priya Sharma is 'm1')
+  // Find registered model or default to first approved model
+  const currentUser = dbService.getCurrentSessionUser();
   const defaultModel = (currentUser && models.find(m => m.userId === currentUser.id || m.email?.toLowerCase() === currentUser.email?.toLowerCase())) || models[0];
   const [selectedModelId, setSelectedModelId] = useState<string>(defaultModel?.id || '');
   const [bookingFilter, setBookingFilter] = useState<'all' | 'pending' | 'accepted' | 'completed'>('all');
