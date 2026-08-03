@@ -16,6 +16,8 @@ import { PaymentProvider } from './context/PaymentContext';
 // Custom Hooks
 import { useModels } from './hooks/useModels';
 import { useBookings } from './hooks/useBookings';
+import { usePayments } from './hooks/usePayments';
+
 // Services & DB
 import { dbService } from './services/db';
 
