@@ -710,8 +710,8 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
 
     const newModel: Model = {
       id: initialModel ? initialModel.id : `model_${Date.now()}`,
-      userId,
-      name,
+      userId: initialModel ? initialModel.userId : userId,
+      name: initialModel ? initialModel.name : name,
       gender: (gender === 'male' || gender === 'female' || gender === 'non-binary') ? gender : 'female',
       age: Number(age),
       height,
@@ -946,16 +946,21 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="block text-xs font-bold text-zinc-300">Full Name *</label>
+                          <label className="block text-xs font-bold text-zinc-300">
+                            Full Name * {Boolean(initialModel) && <span className="text-[10px] text-amber-400 font-mono font-semibold ml-1.5">(Locked - 1 profile per account)</span>}
+                          </label>
                           {renderValidationIcon('name', name)}
                         </div>
                         <input
                           type="text"
                           required
+                          disabled={Boolean(initialModel)}
                           placeholder="e.g. Priya Sharma"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-[#EA3838]"
+                          className={`w-full rounded-xl border border-white/10 px-3 py-2 text-xs font-medium text-white focus:outline-none ${
+                            initialModel ? 'bg-white/10 cursor-not-allowed opacity-80' : 'bg-white/5 focus:border-[#EA3838]'
+                          }`}
                         />
                       </div>
 

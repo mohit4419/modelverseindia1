@@ -222,12 +222,23 @@ function AppContent() {
             </div>
           );
         }
+        const existingModelForUser = models.find(m => 
+          (clientId && m.userId === clientId) || 
+          (currentUser?.id && m.userId === currentUser.id) || 
+          (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
+        );
+
         return (
           <BecomeModelForm
             userId={clientId}
+            initialModel={existingModelForUser}
             onRegisterSubmit={(newModel) => {
               handleModelRegisterSubmit(newModel);
-              triggerToast('Profile Submitted', 'Your profile details have been registered successfully and are pending admin verification.', 'success');
+              triggerToast(
+                existingModelForUser ? 'Profile Updated' : 'Profile Registered',
+                existingModelForUser ? 'Your model profile and portfolio images have been updated in the database.' : 'Your model profile details have been registered successfully.',
+                'success'
+              );
               setCurrentTab('home');
             }}
             onGoHome={() => setCurrentTab('home')}

@@ -4,13 +4,20 @@ import { useModels } from '../../hooks/useModels';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function BecomeModelIndex() {
-  const { handleModelRegisterSubmit } = useModels();
-  const { clientId } = useAuth();
+  const { models, handleModelRegisterSubmit } = useModels();
+  const { clientId, currentUser } = useAuth();
+
+  const existingModel = models.find(m => 
+    (clientId && m.userId === clientId) || 
+    (currentUser?.id && m.userId === currentUser.id) || 
+    (currentUser?.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
+  );
 
   return (
     <div className="py-10 max-w-4xl mx-auto px-4">
       <BecomeModelForm
         userId={clientId}
+        initialModel={existingModel}
         onRegisterSubmit={async (newModel) => {
           await handleModelRegisterSubmit(newModel);
         }}

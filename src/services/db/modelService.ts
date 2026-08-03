@@ -322,5 +322,16 @@ export const modelService = {
     }
 
     return savedModel;
+  },
+
+  // GET MODEL BY USER ID OR EMAIL (For 1 model profile per user enforcement)
+  async getModelByUserId(userId: string, email?: string): Promise<Model | null> {
+    if (!userId && !email) return null;
+    const all = await this.getModels();
+    const found = all.find(m => 
+      (userId && m.userId === userId) || 
+      (email && m.email && m.email.toLowerCase() === email.toLowerCase())
+    );
+    return found || null;
   }
 };
