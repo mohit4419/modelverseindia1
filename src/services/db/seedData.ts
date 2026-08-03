@@ -68,7 +68,18 @@ export const SEED_USERS: User[] = [
   }
 ];
 
-export const MODEL_IMAGES: Record<string, string[]> = {};
+export const MODEL_IMAGES: Record<string, string[]> = {
+  priya: [
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800',
+    'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=800',
+    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=800'
+  ],
+  kabir: [
+    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800',
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=800',
+    'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800'
+  ]
+};
 
 export const SEED_MODELS: Model[] = [];
 
@@ -135,7 +146,7 @@ export const SEED_BOOKINGS: Booking[] = [
     clientName: 'Manish Kumar (Sabyasachi)',
     modelId: 'm1',
     modelName: 'Priya Sharma',
-    modelImage: MODEL_IMAGES.priya[0],
+    modelImage: MODEL_IMAGES.priya?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800',
     projectDetails: {
       brandName: 'Sabyasachi Couture',
       companyName: 'Sabyasachi India Private Limited',
@@ -157,7 +168,7 @@ export const SEED_BOOKINGS: Booking[] = [
     clientName: 'Aman Deep (Cult.fit)',
     modelId: 'm2',
     modelName: 'Kabir Mehra',
-    modelImage: MODEL_IMAGES.kabir[0],
+    modelImage: MODEL_IMAGES.kabir?.[0] || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800',
     projectDetails: {
       brandName: 'Cult.Sport Athleisure',
       companyName: 'Cult.sport India',
@@ -179,7 +190,7 @@ export const SEED_BOOKINGS: Booking[] = [
     clientName: 'Premium Agency (Test Client)',
     modelId: 'm1',
     modelName: 'Priya Sharma',
-    modelImage: MODEL_IMAGES.priya[0],
+    modelImage: MODEL_IMAGES.priya?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800',
     projectDetails: {
       brandName: 'Vogue India Cover Shoot',
       companyName: 'Condé Nast India',
