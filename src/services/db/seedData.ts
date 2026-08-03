@@ -408,7 +408,7 @@ export function initializeLocalStorage() {
     localStorage.setItem('mvi_blogs', JSON.stringify(SEED_BLOGS));
   }
   if (!localStorage.getItem('mvi_bookings')) {
-    localStorage.setItem('mvi_bookings', JSON.stringify(SEED_BOOKINGS));
+    localStorage.setItem('mvi_bookings', JSON.stringify([]));
   }
   if (!localStorage.getItem('mvi_payments')) {
     localStorage.setItem('mvi_payments', JSON.stringify(SEED_PAYMENTS));

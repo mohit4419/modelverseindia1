@@ -86,13 +86,22 @@ export const bookingService = {
         console.error('Supabase bookings fetch failed', e);
       }
     }
-    const local = localStorage.getItem('mvi_bookings');
-    const localBookings: Booking[] = local ? JSON.parse(local) : SEED_BOOKINGS;
+    let localBookings: Booking[] = [];
+    try {
+      const local = localStorage.getItem('mvi_bookings');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed)) {
+          localBookings = parsed.filter(b => !['b1', 'b2', 'b3', 'b4'].includes(b.id));
+        }
+      }
+    } catch (e) {
+      console.warn('LocalStorage read note:', e);
+    }
 
     const mergedMap = new Map<string, Booking>();
-    SEED_BOOKINGS.forEach(b => mergedMap.set(b.id, b));
     localBookings.forEach(b => mergedMap.set(b.id, b));
-    dbBookings.forEach(b => mergedMap.set(b.id, b));
+    dbBookings.forEach(b => mergedMap.set(b.id, b)); // Supabase Database takes precedence
 
     return Array.from(mergedMap.values());
   },

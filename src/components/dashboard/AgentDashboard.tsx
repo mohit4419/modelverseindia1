@@ -352,8 +352,13 @@ export default function AgentDashboard({
     );
   }
 
-  // Model-specific bookings
-  const modelBookings = bookings.filter(b => b.modelId === activeModel.id && b.status !== 'pending');
+  // Model-specific bookings: Only include bookings approved/assigned by Admin (exclude pending, rejected, and cancelled)
+  const modelBookings = bookings.filter(b => 
+    (b.modelId === activeModel.id || (b.projectDetails && (b.projectDetails as any)?.modelId === activeModel.id)) && 
+    b.status !== 'pending' && 
+    b.status !== 'rejected' && 
+    b.status !== 'cancelled'
+  );
   const pendingBookings = modelBookings.filter(b => b.status === 'assigned');
   const acceptedBookings = modelBookings.filter(b => b.status === 'accepted');
   const completedBookings = modelBookings.filter(b => b.status === 'completed');
