@@ -185,9 +185,7 @@ export const modelService = {
       ...m,
       approved: m.approved !== undefined ? m.approved : true,
       category: m.category || 'Fashion Models',
-      portfolio: Array.isArray(m.portfolio) && m.portfolio.length > 0 
-        ? m.portfolio 
-        : ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop'],
+      portfolio: Array.isArray(m.portfolio) ? m.portfolio : [],
       startingPrice: m.startingPrice || 15000,
       available: m.available !== undefined ? m.available : (m.availabilityStatus === 'Available')
     }));

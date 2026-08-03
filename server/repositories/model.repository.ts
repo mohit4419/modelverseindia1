@@ -10,109 +10,7 @@ import { Model } from '../types';
 
 const LOCAL_MODELS_FILE = path.join(process.cwd(), 'local_models.json');
 
-const INITIAL_SERVER_MODELS: Model[] = [
-  {
-    id: 'm1',
-    userId: 'u_p_sharma',
-    name: 'Priya Sharma',
-    gender: 'female',
-    age: 24,
-    height: "5'10\"",
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    languages: ['English', 'Hindi', 'Marathi'],
-    experience: '5+ years',
-    category: 'Fashion Models',
-    portfolio: [
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600&auto=format&fit=crop'
-    ],
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    availabilityStatus: 'Available',
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 35000,
-    rating: 4.9,
-    reviewsCount: 48,
-    biography: "Lakme Fashion Week regular, worked with Sabyasachi, Manish Malhotra, and numerous editor campaigns for Vogue India."
-  },
-  {
-    id: 'm2',
-    userId: 'u_k_mehra',
-    name: 'Kabir Mehra',
-    gender: 'male',
-    age: 26,
-    height: "6'2\"",
-    city: 'Delhi',
-    state: 'NCR',
-    languages: ['English', 'Hindi', 'Punjabi'],
-    experience: '2-5 years',
-    category: 'Fitness Models',
-    portfolio: [
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600&auto=format&fit=crop'
-    ],
-    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-    availabilityStatus: 'Booked',
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 28000,
-    rating: 4.8,
-    reviewsCount: 32,
-    biography: 'Professional athletic model, fitness influencer, and print commercial face. Worked with major sports brands.'
-  },
-  {
-    id: 'm3',
-    userId: 'u_a_rao',
-    name: 'Anjali Rao',
-    gender: 'female',
-    age: 22,
-    height: "5'7\"",
-    city: 'Bangalore',
-    state: 'Karnataka',
-    languages: ['English', 'Kannada', 'Hindi', 'Tamil'],
-    experience: '2-5 years',
-    category: 'UGC Creators',
-    portfolio: [
-      'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=600&auto=format&fit=crop'
-    ],
-    availabilityStatus: 'Available',
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 15000,
-    rating: 4.7,
-    reviewsCount: 21,
-    biography: 'Full-time UGC creator, digital storyteller, and lifestyle influencer with over 150K followers on social media.'
-  },
-  {
-    id: 'm4',
-    userId: 'u_v_singh',
-    name: 'Vikram Singh',
-    gender: 'male',
-    age: 28,
-    height: "6'0\"",
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    languages: ['English', 'Hindi', 'Gujarati'],
-    experience: '5+ years',
-    category: 'Actors',
-    portfolio: [
-      'https://images.unsplash.com/photo-1488161628813-04466f872be2?q=80&w=600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600&auto=format&fit=crop'
-    ],
-    availabilityStatus: 'Available',
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 45000,
-    rating: 4.9,
-    reviewsCount: 54,
-    biography: 'Screen actor seen in popular OTT series, national television advertisements, and dynamic commercial theater.'
-  }
-];
+const INITIAL_SERVER_MODELS: Model[] = [];
 
 function getLocalModels(): Model[] {
   try {
@@ -313,26 +211,5 @@ export class ModelRepository {
     return model;
   }
 
-  async delete(id: string): Promise<boolean> {
-    const localModels = getLocalModels();
-    const filtered = localModels.filter((m) => m.id !== id);
-    if (filtered.length !== localModels.length) {
-      saveLocalModels(filtered);
-    }
-
-    if (isSupabaseConfigured && supabaseAdmin) {
-      try {
-        const { error } = await withTimeout(
-          supabaseAdmin.from('models').delete().eq('id', id),
-          2500
-        );
-        if (error) throw error;
-        return true;
-      } catch (e) {
-        console.error(`Supabase delete failed for model ${id}:`, e);
-      }
-    }
-
-    return filtered.length !== localModels.length;
-  }
+  // Delete method removed — models cannot be deleted, only edited
 }

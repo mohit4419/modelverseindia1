@@ -72,14 +72,4 @@ export const modelsApi = {
     return result.data;
   },
 
-  async deleteModel(id: string): Promise<boolean> {
-    const response = await fetch(`/api/v2/models/${id}`, {
-      method: 'DELETE',
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to delete model');
-    }
-    return result.success;
-  }
 };

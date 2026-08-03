@@ -26,7 +26,7 @@ const AI_LAB_MODEL: Model = {
   languages: ['English', 'Hindi'],
   experience: 'Unlimited',
   category: 'AI Creative Suite',
-  portfolio: ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400'],
+  portfolio: [],
   startingPrice: 399,
   rating: 5.0,
   reviewsCount: 150,

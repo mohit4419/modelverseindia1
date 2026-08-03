@@ -448,9 +448,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
 
   const captureLivenessSelfie = () => {
     if (isSimulatingCamera) {
-      const mockImage = gender === 'female' 
-        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600'
-        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600';
+      const mockImage = '';
       setCapturedImage(mockImage);
       setLivenessResult('processing');
       setLivenessScanningProgress(0);
@@ -640,9 +638,9 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       return;
     }
 
-    if (!portfolioLink1) {
+    if (!portfolioLink1 || !portfolioLink2 || !portfolioLink3) {
       setActiveSectionId(8);
-      alert('Portfolio Image 1 is mandatory! Please upload at least one portfolio image in Section 8.');
+      alert('All 3 Portfolio Images are mandatory! Please upload all 3 portfolio images in Section 8.');
       return;
     }
 
@@ -660,9 +658,9 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
 
     const portfolioUrls = [
       portfolioLink1,
-      portfolioLink2 || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600',
-      portfolioLink3 || 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600',
-    ];
+      portfolioLink2,
+      portfolioLink3,
+    ].filter(Boolean);
 
     // Build the additional details JSON package matching the 15 sections
     const additionalDetails = {
@@ -2044,15 +2042,10 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
                     </div>
                   ) : isSimulatingCamera ? (
                     <div className="relative rounded-xl overflow-hidden aspect-video border border-white/10 bg-black">
-                      <img 
-                        src={gender === 'female' 
-                          ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600'
-                          : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600'
-                        } 
-                        alt="Simulated Webcam Feed" 
-                        className="w-full h-full object-cover brightness-[0.85] contrast-[1.05]"
-                        referrerPolicy="no-referrer"
-                      />
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400 p-4 text-center">
+                        <Camera className="w-12 h-12 mb-2 text-red-500 animate-pulse" />
+                        <span className="text-xs font-mono">Live Camera Feed Ready</span>
+                      </div>
                       {/* High-tech HUD overlays */}
                       <div className="absolute inset-0 border-[2px] border-dashed border-red-500/30 m-3 rounded-lg pointer-events-none animate-pulse" />
                       

@@ -369,36 +369,33 @@ export default function AdminDashboard({
       if (!knownModelIdsRef.current.has(model.id)) {
         knownModelIdsRef.current.add(model.id);
 
-        if (!model.approved) {
-          const newAlert: CastingSignal = {
-            id: `alert_model_${model.id}_${Date.now()}`,
-            type: 'model_reg',
-            title: 'New Talent Registration',
-            message: `${model.name} (${model.city}) applied for casting registry. Verify credentials now.`,
-            timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            item: model,
-            isRead: false
-          };
-          setNotifications(prev => [newAlert, ...prev]);
-          if (soundEnabled) {
-            playAlertChime();
-          }
+        const newAlert: CastingSignal = {
+          id: `alert_model_${model.id}_${Date.now()}`,
+          type: 'model_reg',
+          title: 'New Talent Registration',
+          message: `${model.name} (${model.city}) registered for casting registry. Verify portfolio & credentials.`,
+          timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          item: model,
+          isRead: false
+        };
+        setNotifications(prev => [newAlert, ...prev]);
+        if (soundEnabled) {
+          playAlertChime();
         }
       }
     });
 
-    // Scan for new high-value bookings (budget/priceAmount >= ₹50,000)
+    // Scan for all new pending bookings requiring approval
     bookings.forEach(booking => {
       if (!knownBookingIdsRef.current.has(booking.id)) {
         knownBookingIdsRef.current.add(booking.id);
 
-        const isHighValue = booking.priceAmount >= 50000;
-        if (booking.status === 'pending' && isHighValue) {
+        if (booking.status === 'pending') {
           const newAlert: CastingSignal = {
             id: `alert_booking_${booking.id}_${Date.now()}`,
             type: 'high_value_booking',
-            title: '👑 High-Value Contract',
-            message: `New escrow contract for ${booking.projectDetails.brandName} (₹${booking.priceAmount.toLocaleString('en-IN')}) is pending review.`,
+            title: '📋 New Booking Approval Required',
+            message: `Booking for ${booking.modelName} by ${booking.clientName} (${booking.projectDetails?.brandName || 'Campaign'}, ₹${(booking.priceAmount || 0).toLocaleString('en-IN')}) requires approval.`,
             timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             item: booking,
             isRead: false
@@ -425,62 +422,7 @@ export default function AdminDashboard({
   };
 
   // Simulated live casting signals on real database collections
-  const simulateModelRegistration = () => {
-    const randId = `mock_reg_${Date.now()}`;
-    const nameList = ['Rohan Malhotra', 'Ananya Sen', 'Vikram Rathore', 'Zoya Akhtar', 'Aditya Roy'];
-    const cityList = ['Mumbai', 'Delhi', 'Bangalore', 'Kolkata', 'Hyderabad'];
-    const mockModel: Model = {
-      id: randId,
-      userId: `user_mock_${Date.now()}`,
-      name: `${nameList[Math.floor(Math.random() * nameList.length)]} (Simulated)`,
-      gender: Math.random() > 0.5 ? 'female' : 'male',
-      age: 20 + Math.floor(Math.random() * 8),
-      height: "5'11\"",
-      city: cityList[Math.floor(Math.random() * cityList.length)],
-      state: 'India',
-      languages: ['English', 'Hindi'],
-      experience: 'Fresh Face',
-      category: 'Fashion Models',
-      portfolio: ['https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600'],
-      selfieVerified: true,
-      approved: false, // Pending!
-      startingPrice: 45000,
-      rating: 5.0,
-      reviewsCount: 0,
-      biography: 'This is a live simulated model application to verify the dashboard alert listeners.'
-    };
 
-    dbService.saveModel(mockModel).catch(console.error);
-  };
-
-  const simulateHighValueBooking = () => {
-    const randId = `mock_book_${Date.now()}`;
-    const brandName = ['Tata Play', 'Sabyasachi Couture', 'Reliance Trends', 'GQ India', 'FabIndia'][Math.floor(Math.random() * 5)];
-    const mockBooking: Booking = {
-      id: randId,
-      clientId: `client_mock_${Date.now()}`,
-      clientName: 'Premium Brand Representative',
-      modelId: 'u_p_sharma',
-      modelName: 'Priya Sharma',
-      modelImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600',
-      projectDetails: {
-        brandName,
-        companyName: `${brandName} India Ltd`,
-        campaignType: 'Autumn Festival Campaign',
-        shootType: 'Couture Lookbook',
-        location: 'Goa Coastline',
-        date: '2026-08-12',
-        duration: '3 Days',
-        budgetRange: '₹75,000 - ₹1,50,000',
-        notes: 'Premium high-value test contract.'
-      },
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      priceAmount: 85000 // High value!
-    };
-
-    dbService.addBooking(mockBooking).catch(console.error);
-  };
 
   // MOCK SYSTEM CLIENTS LIST
   const [systemUsers, setSystemUsers] = useState<User[]>([

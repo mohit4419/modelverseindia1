@@ -15,7 +15,7 @@ export default function ModelCard({ model, onClick }: ModelCardProps) {
     >
       <div className="aspect-[3/4] w-full overflow-hidden bg-neutral-100 relative">
         <img
-          src={model.portfolio[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80'}
+          src={model.portfolio?.[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='667' fill='%23e5e7eb'%3E%3Crect width='500' height='667'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='18' font-family='sans-serif'%3ENo Photo%3C/text%3E%3C/svg%3E"}
           alt={model.name}
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover transition duration-500 group-hover:scale-105"

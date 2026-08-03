@@ -38,9 +38,7 @@ export class ModelService {
     return this.modelRepository.save(updatedModel);
   }
 
-  async deleteModel(id: string): Promise<boolean> {
-    return this.modelRepository.delete(id);
-  }
+  // Delete method removed — models cannot be deleted, only edited
 
   async approveModel(id: string): Promise<Model | null> {
     return this.updateModel(id, { approved: true });

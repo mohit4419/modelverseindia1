@@ -108,12 +108,9 @@ export default function TestimonialSlider() {
             {/* Reviewer Headshot */}
             <div className="relative shrink-0 mx-auto md:mx-0">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#D4AF37] to-purple-600 blur opacity-40" />
-              <img
-                src={active.avatarUrl}
-                alt={active.reviewerName}
-                referrerPolicy="no-referrer"
-                className="relative h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover border-2 border-white/10 shadow-xl"
-              />
+              <div className="relative h-24 w-24 sm:h-32 sm:w-32 rounded-full border-2 border-white/10 bg-gradient-to-tr from-purple-900 to-indigo-900 text-white font-black text-xl sm:text-2xl flex items-center justify-center shadow-xl">
+                {active.reviewerName.split(' ').map(n => n[0]).join('')}
+              </div>
               <div className="absolute -bottom-2 -right-2 bg-neutral-950 border border-white/10 rounded-full px-2 py-0.5 flex items-center space-x-1 shadow-md">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/20" />
                 <span className="text-[8px] font-bold text-emerald-400 font-mono">VERIFIED</span>

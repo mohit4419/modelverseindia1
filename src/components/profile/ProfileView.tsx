@@ -130,12 +130,7 @@ export default function ProfileView({
   const [isCompressingPhoto, setIsCompressingPhoto] = useState(false);
   const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
 
-  const PRESET_PHOTOS = [
-    { name: '👗 Fashion Couture', url: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=400&auto=format&fit=crop' },
-    { name: '💄 Cosmetics Glam', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400&auto=format&fit=crop' },
-    { name: '👟 Streetwear', url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400&auto=format&fit=crop' },
-    { name: '💎 Fine Jewelry', url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=400&auto=format&fit=crop' },
-  ];
+  const PRESET_PHOTOS: { name: string; url: string }[] = [];
 
   const handlePhotoUpload = (file: File) => {
     setIsCompressingPhoto(true);
@@ -374,7 +369,7 @@ export default function ProfileView({
         id: `rev_${Date.now()}`,
         clientId: currentUserId || 'client_active_id',
         clientName: currentUserName || reviewerName.trim() || 'Premium Talent Partner',
-        clientAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop',
+        clientAvatar: '',
         modelId: model.id,
         rating: reviewRating,
         review: reviewComment.trim(),
@@ -1392,7 +1387,7 @@ export default function ProfileView({
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <img
-                      src={rev.clientAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150'}
+                      src={rev.clientAvatar || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' fill='%23e5e7eb'%3E%3Crect width='150' height='150' rx='75'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='40' font-family='sans-serif'%3E👤%3C/text%3E%3C/svg%3E"}
                       alt={rev.clientName}
                       referrerPolicy="no-referrer"
                       className="h-10 w-10 rounded-full object-cover border border-neutral-200"

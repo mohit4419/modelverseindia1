@@ -296,77 +296,55 @@ export default function Hero({ onSearch, onBrowseClick, onBecomeModelClick, onHi
               </div>
             </motion.div>
 
-            {/* 2. TOP-LEFT FLOATING HEADSHOT: PRIYA */}
+            {/* 2. TOP-LEFT FLOATING BADGE */}
             <motion.div
               whileHover={{ scale: 1.05 }}
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute left-4 top-10 z-20"
             >
-              <div className="relative group p-1 bg-white rounded-2xl shadow-xl border border-purple-500/20">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop"
-                  alt="Priya"
-                  referrerPolicy="no-referrer"
-                  className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover"
-                />
-                <span className="absolute bottom-1 right-1 h-5 w-5 bg-purple-600 text-white flex items-center justify-center rounded-full text-[9px] shadow border border-white">
-                  <Mic className="h-2.5 w-2.5" />
-                </span>
+              <div className="relative group p-3 bg-gradient-to-tr from-pink-600 to-rose-500 rounded-2xl shadow-xl border border-white/20 text-white flex items-center space-x-2">
+                <Sparkles className="h-5 w-5 animate-pulse" />
+                <span className="text-xs font-mono font-bold">Verified Talent</span>
               </div>
             </motion.div>
 
-            {/* 3. TOP-RIGHT FLOATING HEADSHOT: KABIR */}
+            {/* 3. TOP-RIGHT FLOATING BADGE */}
             <motion.div
               whileHover={{ scale: 1.05 }}
               animate={{ y: [0, 8, 0] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute right-4 top-12 z-20"
             >
-              <div className="relative p-1 bg-white rounded-2xl shadow-xl border border-blue-500/20">
-                <img
-                  src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300&auto=format&fit=crop"
-                  alt="Kabir"
-                  referrerPolicy="no-referrer"
-                  className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover"
-                />
-                <span className="absolute bottom-1 right-1 h-5 w-5 bg-blue-500 text-white flex items-center justify-center rounded-full text-[9px] shadow border border-white">
-                  <Mic className="h-2.5 w-2.5" />
-                </span>
+              <div className="relative p-3 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-2xl shadow-xl border border-white/20 text-white flex items-center space-x-2">
+                <Mic className="h-5 w-5" />
+                <span className="text-xs font-mono font-bold">Casting Ready</span>
               </div>
             </motion.div>
 
-            {/* 4. BOTTOM-LEFT FLOATING HEADSHOT: ANJALI */}
+            {/* 4. BOTTOM-LEFT FLOATING BADGE */}
             <motion.div
               whileHover={{ scale: 1.05 }}
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute left-10 bottom-6 z-20"
             >
-              <div className="relative p-1 bg-white rounded-2xl shadow-xl border border-yellow-500/20">
-                <img
-                  src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=300&auto=format&fit=crop"
-                  alt="Anjali"
-                  referrerPolicy="no-referrer"
-                  className="h-16 w-16 sm:h-18 sm:w-18 rounded-xl object-cover"
-                />
+              <div className="relative p-2.5 bg-gradient-to-tr from-amber-500 to-orange-500 rounded-2xl shadow-xl border border-white/20 text-white flex items-center space-x-1.5">
+                <Star className="h-4 w-4 fill-current" />
+                <span className="text-[11px] font-bold">5.0 Rated</span>
               </div>
             </motion.div>
 
-            {/* 5. BOTTOM-RIGHT FLOATING HEADSHOT: VIKRAM */}
+            {/* 5. BOTTOM-RIGHT FLOATING BADGE */}
             <motion.div
               whileHover={{ scale: 1.05 }}
               animate={{ y: [0, 10, 0] }}
               transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute right-6 bottom-4 z-20"
             >
-              <div className="relative p-1 bg-white rounded-2xl shadow-xl border border-pink-500/20">
-                <img
-                  src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=300&auto=format&fit=crop"
-                  alt="Vikram"
-                  referrerPolicy="no-referrer"
-                  className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover"
-                />
+              <div className="relative p-2.5 bg-gradient-to-tr from-emerald-600 to-teal-500 rounded-2xl shadow-xl border border-white/20 text-white flex items-center space-x-1.5">
+                <Video className="h-4 w-4" />
+                <span className="text-[11px] font-bold">HD Portfolio</span>
               </div>
             </motion.div>
 

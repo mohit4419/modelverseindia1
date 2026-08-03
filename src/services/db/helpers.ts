@@ -216,22 +216,6 @@ export function fromSupabaseModelRow(row: any): Model {
 }
 
 export function sanitizeValue(value: any, keyName?: string): any {
-  if (isUploadUrl(value)) {
-    if (keyName?.toLowerCase().includes('pdf') || value.toLowerCase().endsWith('.pdf')) {
-      return 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
-    }
-    return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop';
-  }
-  if (Array.isArray(value)) {
-    return value.map(item => sanitizeValue(item, keyName));
-  }
-  if (value !== null && typeof value === 'object') {
-    const copy = { ...value };
-    for (const key of Object.keys(copy)) {
-      copy[key] = sanitizeValue(copy[key], key);
-    }
-    return copy;
-  }
   return value;
 }
 

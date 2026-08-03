@@ -109,9 +109,9 @@ Please output exactly the following JSON structure containing details parsed fro
   "langs": "Comma-separated spoken languages e.g. 'English, Hindi, Marathi'",
   "experience": "One of these exact values: 'Fresh Face', '1-2 years', '2-5 years', '5+ years'",
   "biography": "A professionally written, premium fashion biography (40-65 words) highlighting their aesthetic strengths and focus.",
-  "portfolioLink1": "A premium high-resolution Unsplash model portrait URL (from fashion, modeling, or portrait category, e.g., https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&amp;w=600 or another professional-looking portrait image link. Must be a valid image URL)",
-  "portfolioLink2": "A matching high-resolution Unsplash fashion model image URL (from fashion/modeling, e.g. https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&amp;w=600)",
-  "portfolioLink3": "Another matching high-resolution Unsplash campaign or portrait image URL (e.g. https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&amp;w=600)"
+  "portfolioLink1": "Leave empty — model will upload their own portfolio images",
+  "portfolioLink2": "Leave empty — model will upload their own portfolio images",
+  "portfolioLink3": "Leave empty — model will upload their own portfolio images"
 }
 
 Ensure your entire output is simply raw JSON. No markdown backticks or block formatting whatsoever.
@@ -181,9 +181,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Punjabi",
       experience: "5+ years",
       biography: "Rohan is a premium editorial couture fashion model working out of Mumbai. He features sharp angular features and exquisite runway presence. Has walked for leading Indian designers at Lakme Fashion Week and featured heavily in Mens Luxury apparel campaigns.",
-      portfolioLink1: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1488161628813-04466f872be2?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   } else if (nameToUse.includes('ModelVerse_Digital_Portfolio_Composite')) {
     return {
@@ -197,9 +197,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Bengali",
       experience: "2-5 years",
       biography: "Aanya is a digital influencer, travel blogger, and creator of aesthetically premium lifestyle reels. Based in Bangalore, she collaborates with premium cosmetic and urban leisure fashion labels, delivering rich high-engagement audience interactions.",
-      portfolioLink1: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   } else if (nameToUse.includes('Commercial_Acting_Resume_Grid')) {
     return {
@@ -213,9 +213,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Urdu",
       experience: "5+ years",
       biography: "Aditya is a versatile commercial actor and brand campaign model based in Mumbai. With an academic background in dramatic arts, he has starred in 12 major TV commercial spots for Indian banking, automotive, and apparel brands. Sharp, expressive, and premium camera presence.",
-      portfolioLink1: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   } else {
     return {
@@ -229,9 +229,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Gujarati",
       experience: "1-2 years",
       biography: "Karan is an energetic commercial model based in Mumbai. He excels in ethnic wear, lifestyle digital shoots, and casual brand representations. Always reliable with standard professional punctuality.",
-      portfolioLink1: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   }
 }

@@ -23,7 +23,7 @@ const DEFAULT_SAMPLE_MODEL: Model = {
   experience: '3-5 years',
   category: 'Fashion & Runway',
   startingPrice: 25000,
-  portfolio: ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800'],
+  portfolio: [],
   selfieVerified: true,
   approved: true,
   rating: 4.9,

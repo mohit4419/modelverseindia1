@@ -165,7 +165,7 @@ export default function ClientDashboard({
                 {/* Header Information */}
                 <div className="p-5 flex items-start gap-4 border-b border-black/5 dark:border-white/5">
                   <img 
-                    src={bk.modelImage || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150"} 
+                    src={bk.modelImage || ""} 
                     alt={bk.modelName}
                     className="h-12 w-12 rounded-xl object-cover shrink-0 border border-black/5 dark:border-white/10"
                     referrerPolicy="no-referrer"

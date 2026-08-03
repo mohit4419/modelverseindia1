@@ -16,7 +16,7 @@ export default function DynamicMetadata({ currentTab, focusedModel }: DynamicMet
     // 1. Determine metadata values based on current active state
     let title = " MODELVERSE INDIA |  Core Cast | India's Premium Casting & Talent Ecosystem |Shoots ";
     let description = "Directly hire verified professional models, actors, and fresh faces across India. Features real-time campaign discussions, secure escrow, and live portfolios.";
-    let ogImage = "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=800"; // default premium brand hero banner
+    let ogImage = ""; // Will be set by specific page context
     let url = window.location.href;
     
     // JSON-LD structured schema object

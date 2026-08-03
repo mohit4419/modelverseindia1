@@ -25,7 +25,7 @@ router.get('/models/:id', ModelController.getModelById);
 router.post('/models', validateBody(modelSchema), ModelController.saveModel);
 router.patch('/models/:id', ModelController.updateModel);
 router.put('/models/:id', ModelController.updateModel);
-router.delete('/models/:id', verifyToken as any, requireAdmin as any, ModelController.deleteModel);
+// Delete route removed — models cannot be deleted, only edited
 
 router.patch('/models/:id/status', ModelController.updateStatus);
 router.patch('/models/:id/availability', ModelController.updateAvailability);

@@ -7,7 +7,7 @@ export const staticModels: Record<string, any> = {
     experience: "5+ Years",
     rating: "4.9",
     reviews: "48",
-    imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m2: {
     name: "Kabir Mehra",
@@ -17,7 +17,7 @@ export const staticModels: Record<string, any> = {
     experience: "2-5 Years",
     rating: "4.8",
     reviews: "32",
-    imageUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m3: {
     name: "Anjali Rao",
@@ -27,7 +27,7 @@ export const staticModels: Record<string, any> = {
     experience: "2-5 Years",
     rating: "4.7",
     reviews: "21",
-    imageUrl: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m4: {
     name: "Vikram Singh",
@@ -37,7 +37,7 @@ export const staticModels: Record<string, any> = {
     experience: "5+ Years",
     rating: "4.9",
     reviews: "54",
-    imageUrl: "https://images.unsplash.com/photo-1488161628813-04466f872be2?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m5: {
     name: "Rhea Kapoor",
@@ -47,7 +47,7 @@ export const staticModels: Record<string, any> = {
     experience: "2-5 Years",
     rating: "4.6",
     reviews: "15",
-    imageUrl: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m6: {
     name: "Divya Nair",
@@ -57,6 +57,6 @@ export const staticModels: Record<string, any> = {
     experience: "Fresh Face",
     rating: "4.5",
     reviews: "9",
-    imageUrl: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   }
 };

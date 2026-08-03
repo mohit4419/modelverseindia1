@@ -269,12 +269,6 @@ export default function ModelCard({
           <>
             {!hasPortfolio ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-950 p-6 text-center select-none overflow-hidden">
-                <img
-                  src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400"
-                  alt="No Profile Image"
-                  referrerPolicy="no-referrer"
-                  className="absolute inset-0 w-full h-full object-cover opacity-15 dark:opacity-10 grayscale filter blur-[1px]"
-                />
                 <div className="absolute inset-0 bg-gradient-to-t from-neutral-50 via-neutral-50/90 to-neutral-50/50 dark:from-neutral-950 dark:via-neutral-950/90 dark:to-neutral-950/40" />
                 <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-500 border border-neutral-200 dark:border-neutral-800 shadow-sm mb-4">
                   <CameraOff className="h-6 w-6" />
@@ -296,7 +290,7 @@ export default function ModelCard({
                   {portfolioList.map((imgUrl, idx) => (
                     <img
                       key={idx}
-                      src={imgUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400'}
+                      src={imgUrl || ''}
                       alt={`${model.name} Portfolio ${idx + 1}`}
                       referrerPolicy="no-referrer"
                       className="h-full w-full object-cover shrink-0 select-none"
@@ -364,7 +358,7 @@ export default function ModelCard({
                           }`}
                         >
                           <img 
-                            src={imgUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100'} 
+                            src={imgUrl || ''} 
                             alt="" 
                             className="h-full w-full object-cover" 
                             referrerPolicy="no-referrer"

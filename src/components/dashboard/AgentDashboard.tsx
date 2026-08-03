@@ -940,7 +940,7 @@ export default function AgentDashboard({
           <div className="flex gap-4 items-center">
             <div className="relative h-20 w-20 rounded-2xl border-2 border-[#D4AF37] overflow-hidden shadow-xl shrink-0">
               <img 
-                src={activeModel.portfolio[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600'} 
+                src={activeModel.portfolio[0] || ''} 
                 alt={activeModel.name} 
                 className="h-full w-full object-cover"
               />

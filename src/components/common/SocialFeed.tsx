@@ -158,7 +158,7 @@ export default function SocialFeed({ modelId, currentModel, currentUser }: Socia
       // Determine author metadata
       const authorId = currentModel?.id || modelId || 'unknown_model';
       const authorName = currentModel?.name || currentUser?.name || 'Anonymous Model';
-      const authorAvatar = currentModel?.portfolio?.[0] || currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150';
+      const authorAvatar = currentModel?.portfolio?.[0] || currentUser?.avatarUrl || '';
 
       const newPost: Post = {
         id: `post_${Date.now()}`,
@@ -328,7 +328,7 @@ export default function SocialFeed({ modelId, currentModel, currentUser }: Socia
               <div className="flex items-center justify-between p-4 border-b border-neutral-100 dark:border-white/5">
                 <div className="flex items-center space-x-2.5">
                   <img
-                    src={post.modelAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150"}
+                    src={post.modelAvatar || ""}
                     alt={post.modelName}
                     className="h-8.5 w-8.5 rounded-full object-cover border border-purple-500/20"
                     referrerPolicy="no-referrer"

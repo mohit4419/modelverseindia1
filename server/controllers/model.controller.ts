@@ -125,19 +125,7 @@ export class ModelController {
     }
   }
 
-  static async deleteModel(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const success = await modelService.deleteModel(id);
-      if (!success) {
-        return res.status(404).json({ success: false, error: 'Model not found' });
-      }
-      return res.status(200).json({ success: true, message: 'Model deleted successfully' });
-    } catch (err: any) {
-      console.error('Error in deleteModel controller:', err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-  }
+  // Delete method removed — models cannot be deleted, only edited
 
   static async updateStatus(req: Request, res: Response) {
     try {
