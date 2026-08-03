@@ -480,7 +480,7 @@ function AppContent() {
               <div className="flex flex-col sm:flex-row gap-6">
                 <div className="w-full sm:w-1/2 h-64 rounded-2xl overflow-hidden border border-white/10 relative shrink-0">
                   <img
-                    src={eliteModelForModal.portfolio?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800'}
+                    src={eliteModelForModal.portfolio?.[0] || eliteModelForModal.selfieUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='667' fill='%2318181b'%3E%3Crect width='500' height='667'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2371717a' font-size='18' font-family='sans-serif'%3ENo Photo%3C/text%3E%3C/svg%3E"}
                     alt={eliteModelForModal.name}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"

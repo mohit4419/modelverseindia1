@@ -177,9 +177,79 @@ export function isUploadUrl(url: any): boolean {
   return url.includes('/_/upload/') || url.includes('/file/6ea31f5f') || url.includes('/file/346c80dd') || url.includes('/file/85890f64');
 }
 
+export function extractPortfolioFromRow(row: any): string[] {
+  if (!row) return [];
+  const extra = typeof row.measurements === 'object' && row.measurements ? row.measurements : {};
+  const addDetails = typeof row.additionalDetails === 'object' && row.additionalDetails ? row.additionalDetails : {};
+  
+  const candidates: any[] = [
+    extra.portfolio,
+    row.portfolio,
+    row.portfolio_urls,
+    row.portfolioUrls,
+    row.portfolio_images,
+    row.portfolioImages,
+    row.images,
+    addDetails.portfolioLink1,
+    addDetails.portfolioLink2,
+    addDetails.portfolioLink3,
+    extra.portfolioLink1,
+    extra.portfolioLink2,
+    extra.portfolioLink3,
+    row.portfolioLink1,
+    row.portfolioLink2,
+    row.portfolioLink3,
+    row.image_url,
+    row.imageUrl,
+    row.selfieUrl,
+    row.selfie_url,
+    extra.selfieUrl,
+    row.avatarUrl,
+    row.avatar_url,
+    row.photo,
+    row.photos
+  ];
+
+  const result: string[] = [];
+
+  const processItem = (item: any) => {
+    if (!item) return;
+    if (Array.isArray(item)) {
+      item.forEach(sub => processItem(sub));
+    } else if (typeof item === 'string' && item.trim()) {
+      const trimmed = item.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(sub => processItem(sub));
+            return;
+          }
+        } catch {}
+      }
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        const cleaned = trimmed.slice(1, -1).split(',').map(s => s.replace(/^"|"$/g, '').trim()).filter(Boolean);
+        cleaned.forEach(c => processItem(c));
+        return;
+      }
+      if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
+        trimmed.split(',').forEach(s => processItem(s));
+      } else {
+        result.push(trimmed);
+      }
+    }
+  };
+
+  candidates.forEach(c => processItem(c));
+
+  return Array.from(new Set(result.filter(url => typeof url === 'string' && url.length > 5)));
+}
+
 export function fromSupabaseModelRow(row: any): Model {
   if (!row) return row;
   const extra = row.measurements || {};
+  const extractedPortfolio = extractPortfolioFromRow(row);
+
   return {
     id: extra.originalId || row.id,
     userId: extra.originalUserId || row.userId || row.user_id || row.userid,
@@ -192,7 +262,7 @@ export function fromSupabaseModelRow(row: any): Model {
     languages: Array.isArray(row.languages) ? row.languages : (typeof row.languages === 'string' ? row.languages.split(',').map((s: string) => s.trim()) : ['English', 'Hindi']),
     experience: row.experience || '2-5 years',
     category: extra.category || row.category || 'Fashion Models',
-    portfolio: Array.isArray(extra.portfolio) ? extra.portfolio : (Array.isArray(row.portfolio) ? row.portfolio : []),
+    portfolio: extractedPortfolio,
     videoUrl: row.videoUrl || row.video_url,
     availabilityStatus: row.availabilityStatus || row.availability_status || 'Available',
     selfieVerified: extra.selfieVerified !== undefined ? extra.selfieVerified : (row.selfieVerified !== undefined ? row.selfieVerified : true),

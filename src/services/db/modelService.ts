@@ -5,7 +5,7 @@
 
 import { supabase } from '../../supabaseClient';
 import { Model } from '../../types';
-import { isSupabaseAvailable, removeUndefined, sanitizeValue, fromSupabaseModelRow, isUUID, ensureUserExistsInDb, getValidUserIdForModel } from './helpers';
+import { isSupabaseAvailable, removeUndefined, sanitizeValue, fromSupabaseModelRow, isUUID, ensureUserExistsInDb, getValidUserIdForModel, extractPortfolioFromRow } from './helpers';
 
 function ensureUuidFormat(id?: string): string {
   if (isUUID(id)) return id!;
@@ -185,7 +185,7 @@ export const modelService = {
       ...m,
       approved: m.approved !== undefined ? m.approved : true,
       category: m.category || 'Fashion Models',
-      portfolio: Array.isArray(m.portfolio) ? m.portfolio : [],
+      portfolio: extractPortfolioFromRow(m),
       startingPrice: m.startingPrice || 15000,
       available: m.available !== undefined ? m.available : (m.availabilityStatus === 'Available')
     }));
