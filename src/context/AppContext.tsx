@@ -166,7 +166,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const updatedPrev = data.find(m => m.id === prev.id);
           return updatedPrev || prev;
         }
-        return data.find(m => m.approved) || data[0];
+        return (data && data.length > 0) ? (data.find(m => m.approved) || data[0]) : null;
       });
     });
 
@@ -270,7 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const handleOpenEliteModal = () => {
-    const elite = models.find(m => m.approved && m.rating >= 4.8) || models.find(m => m.approved) || models[0];
+    const elite = (models && models.length > 0) ? (models.find(m => m.approved && m.rating >= 4.8) || models.find(m => m.approved) || models[0]) : null;
     if (elite) {
       setEliteModelForModal(elite);
       setShowEliteModal(true);
@@ -313,7 +313,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (searchCategory && m.category?.toLowerCase() !== searchCategory.toLowerCase()) return false;
       if (searchGender && m.gender !== searchGender) return false;
-      if (m.age && (m.age < searchAgeRange[0] || m.age > searchAgeRange[1])) return false;
+      if (m.age && searchAgeRange && searchAgeRange.length >= 2 && (m.age < searchAgeRange[0] || m.age > searchAgeRange[1])) return false;
       
       if (searchHeightClass) {
         let heightCm = 170;
@@ -324,8 +324,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             heightCm = parseInt(m.height) || 170;
           } else {
             const parts = m.height.replace(/['"]/g, ' ').trim().split(/\s+/);
-            const feet = parseInt(parts[0]) || 5;
-            const inches = parseInt(parts[1]) || 0;
+            const feet = (parts && parts[0]) ? (parseInt(parts[0]) || 5) : 5;
+            const inches = (parts && parts[1]) ? (parseInt(parts[1]) || 0) : 0;
             heightCm = Math.round((feet * 12 + inches) * 2.54);
           }
         }

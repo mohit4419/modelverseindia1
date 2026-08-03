@@ -39,7 +39,7 @@ export default function HomePage() {
   const { setTargetModelForPremium, setShowPremiumModal } = useBooking();
 
   const handleOpenEliteModal = () => {
-    const elite = models.find(m => m.approved && m.rating >= 4.8) || models.find(m => m.approved) || models[0];
+    const elite = (models && models.length > 0) ? (models.find(m => m.approved && m.rating >= 4.8) || models.find(m => m.approved) || models[0]) : null;
     if (elite) {
       setTargetModelForPremium(elite);
       setShowPremiumModal(true);

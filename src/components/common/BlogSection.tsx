@@ -624,7 +624,7 @@ export default function BlogSection({ currentRole, userEmail }: BlogSectionProps
           <div className="mt-4 flex items-center space-x-4 border-y border-neutral-150 dark:border-white/5 py-3.5 text-xs text-neutral-500 dark:text-zinc-400">
             <div className="flex items-center space-x-1.5">
               <User className="h-4 w-4 text-neutral-400 dark:text-zinc-500" />
-              <strong>By: {selectedBlog.author.split('(')[0]}</strong>
+              <strong>By: {selectedBlog?.author ? selectedBlog.author.split('(')[0] : 'ModelVerse Team'}</strong>
             </div>
           </div>
 
@@ -811,7 +811,7 @@ export default function BlogSection({ currentRole, userEmail }: BlogSectionProps
                     </div>
 
                     <div className="mt-5 pt-4 border-t border-neutral-150 dark:border-white/5 flex items-center justify-between text-xs text-neutral-500 dark:text-zinc-400">
-                      <span className="font-semibold text-neutral-700 dark:text-zinc-300 font-sans">By: {b.author.split('(')[0]}</span>
+                      <span className="font-semibold text-neutral-700 dark:text-zinc-300 font-sans">By: {b?.author ? b.author.split('(')[0] : 'ModelVerse Team'}</span>
                       <span className="font-extrabold text-[#D4AF37] group-hover:underline flex items-center gap-1 hover:brightness-110">
                         <span>Read Article</span>
                         <BookOpen className="h-3.5 w-3.5" />

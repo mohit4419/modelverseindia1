@@ -1654,9 +1654,9 @@ Please output exactly the following JSON structure containing details parsed fro
   "langs": "Comma-separated spoken languages e.g. 'English, Hindi, Marathi'",
   "experience": "One of these exact values: 'Fresh Face', '1-2 years', '2-5 years', '5+ years'",
   "biography": "A professionally written, premium fashion biography (40-65 words) highlighting their aesthetic strengths and focus.",
-  "portfolioLink1": "A premium high-resolution Unsplash model portrait URL (from fashion, modeling, or portrait category, e.g., https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&amp;w=600 or another professional-looking portrait image link. Must be a valid image URL)",
-  "portfolioLink2": "A matching high-resolution Unsplash fashion model image URL (from fashion/modeling, e.g. https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&amp;w=600)",
-  "portfolioLink3": "Another matching high-resolution Unsplash campaign or portrait image URL (e.g. https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&amp;w=600)"
+  "portfolioLink1": "Leave empty \u2014 model will upload their own portfolio images",
+  "portfolioLink2": "Leave empty \u2014 model will upload their own portfolio images",
+  "portfolioLink3": "Leave empty \u2014 model will upload their own portfolio images"
 }
 
 Ensure your entire output is simply raw JSON. No markdown backticks or block formatting whatsoever.
@@ -1720,9 +1720,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Punjabi",
       experience: "5+ years",
       biography: "Rohan is a premium editorial couture fashion model working out of Mumbai. He features sharp angular features and exquisite runway presence. Has walked for leading Indian designers at Lakme Fashion Week and featured heavily in Mens Luxury apparel campaigns.",
-      portfolioLink1: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1488161628813-04466f872be2?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   } else if (nameToUse.includes("ModelVerse_Digital_Portfolio_Composite")) {
     return {
@@ -1736,9 +1736,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Bengali",
       experience: "2-5 years",
       biography: "Aanya is a digital influencer, travel blogger, and creator of aesthetically premium lifestyle reels. Based in Bangalore, she collaborates with premium cosmetic and urban leisure fashion labels, delivering rich high-engagement audience interactions.",
-      portfolioLink1: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   } else if (nameToUse.includes("Commercial_Acting_Resume_Grid")) {
     return {
@@ -1752,9 +1752,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Urdu",
       experience: "5+ years",
       biography: "Aditya is a versatile commercial actor and brand campaign model based in Mumbai. With an academic background in dramatic arts, he has starred in 12 major TV commercial spots for Indian banking, automotive, and apparel brands. Sharp, expressive, and premium camera presence.",
-      portfolioLink1: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   } else {
     return {
@@ -1768,9 +1768,9 @@ If pdfBase64 is passed, analyze the base64 document content to pull exact names,
       langs: "English, Hindi, Gujarati",
       experience: "1-2 years",
       biography: "Karan is an energetic commercial model based in Mumbai. He excels in ethnic wear, lifestyle digital shoots, and casual brand representations. Always reliable with standard professional punctuality.",
-      portfolioLink1: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600",
-      portfolioLink2: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=600",
-      portfolioLink3: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600"
+      portfolioLink1: "",
+      portfolioLink2: "",
+      portfolioLink3: ""
     };
   }
 }
@@ -2034,7 +2034,7 @@ var staticModels = {
     experience: "5+ Years",
     rating: "4.9",
     reviews: "48",
-    imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m2: {
     name: "Kabir Mehra",
@@ -2044,7 +2044,7 @@ var staticModels = {
     experience: "2-5 Years",
     rating: "4.8",
     reviews: "32",
-    imageUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m3: {
     name: "Anjali Rao",
@@ -2054,7 +2054,7 @@ var staticModels = {
     experience: "2-5 Years",
     rating: "4.7",
     reviews: "21",
-    imageUrl: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m4: {
     name: "Vikram Singh",
@@ -2064,7 +2064,7 @@ var staticModels = {
     experience: "5+ Years",
     rating: "4.9",
     reviews: "54",
-    imageUrl: "https://images.unsplash.com/photo-1488161628813-04466f872be2?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m5: {
     name: "Rhea Kapoor",
@@ -2074,7 +2074,7 @@ var staticModels = {
     experience: "2-5 Years",
     rating: "4.6",
     reviews: "15",
-    imageUrl: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   },
   m6: {
     name: "Divya Nair",
@@ -2084,7 +2084,7 @@ var staticModels = {
     experience: "Fresh Face",
     rating: "4.5",
     reviews: "9",
-    imageUrl: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?q=80&w=600&auto=format&fit=crop"
+    imageUrl: ""
   }
 };
 
@@ -3339,109 +3339,7 @@ var import_fs6 = __toESM(require("fs"), 1);
 var import_path6 = __toESM(require("path"), 1);
 init_supabase();
 var LOCAL_MODELS_FILE2 = import_path6.default.join(process.cwd(), "local_models.json");
-var INITIAL_SERVER_MODELS = [
-  {
-    id: "m1",
-    userId: "u_p_sharma",
-    name: "Priya Sharma",
-    gender: "female",
-    age: 24,
-    height: `5'10"`,
-    city: "Mumbai",
-    state: "Maharashtra",
-    languages: ["English", "Hindi", "Marathi"],
-    experience: "5+ years",
-    category: "Fashion Models",
-    portfolio: [
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600&auto=format&fit=crop"
-    ],
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    availabilityStatus: "Available",
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 35e3,
-    rating: 4.9,
-    reviewsCount: 48,
-    biography: "Lakme Fashion Week regular, worked with Sabyasachi, Manish Malhotra, and numerous editor campaigns for Vogue India."
-  },
-  {
-    id: "m2",
-    userId: "u_k_mehra",
-    name: "Kabir Mehra",
-    gender: "male",
-    age: 26,
-    height: `6'2"`,
-    city: "Delhi",
-    state: "NCR",
-    languages: ["English", "Hindi", "Punjabi"],
-    experience: "2-5 years",
-    category: "Fitness Models",
-    portfolio: [
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600&auto=format&fit=crop"
-    ],
-    videoUrl: "https://www.w3schools.com/html/movie.mp4",
-    availabilityStatus: "Booked",
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 28e3,
-    rating: 4.8,
-    reviewsCount: 32,
-    biography: "Professional athletic model, fitness influencer, and print commercial face. Worked with major sports brands."
-  },
-  {
-    id: "m3",
-    userId: "u_a_rao",
-    name: "Anjali Rao",
-    gender: "female",
-    age: 22,
-    height: `5'7"`,
-    city: "Bangalore",
-    state: "Karnataka",
-    languages: ["English", "Kannada", "Hindi", "Tamil"],
-    experience: "2-5 years",
-    category: "UGC Creators",
-    portfolio: [
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=600&auto=format&fit=crop"
-    ],
-    availabilityStatus: "Available",
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 15e3,
-    rating: 4.7,
-    reviewsCount: 21,
-    biography: "Full-time UGC creator, digital storyteller, and lifestyle influencer with over 150K followers on social media."
-  },
-  {
-    id: "m4",
-    userId: "u_v_singh",
-    name: "Vikram Singh",
-    gender: "male",
-    age: 28,
-    height: `6'0"`,
-    city: "Mumbai",
-    state: "Maharashtra",
-    languages: ["English", "Hindi", "Gujarati"],
-    experience: "5+ years",
-    category: "Actors",
-    portfolio: [
-      "https://images.unsplash.com/photo-1488161628813-04466f872be2?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600&auto=format&fit=crop"
-    ],
-    availabilityStatus: "Available",
-    selfieVerified: true,
-    approved: true,
-    startingPrice: 45e3,
-    rating: 4.9,
-    reviewsCount: 54,
-    biography: "Screen actor seen in popular OTT series, national television advertisements, and dynamic commercial theater."
-  }
-];
+var INITIAL_SERVER_MODELS = [];
 function getLocalModels2() {
   try {
     if (import_fs6.default.existsSync(LOCAL_MODELS_FILE2)) {
@@ -3618,26 +3516,7 @@ var ModelRepository = class {
     }
     return model;
   }
-  async delete(id) {
-    const localModels = getLocalModels2();
-    const filtered = localModels.filter((m) => m.id !== id);
-    if (filtered.length !== localModels.length) {
-      saveLocalModels2(filtered);
-    }
-    if (isSupabaseConfigured && supabaseAdmin) {
-      try {
-        const { error } = await withTimeout(
-          supabaseAdmin.from("models").delete().eq("id", id),
-          2500
-        );
-        if (error) throw error;
-        return true;
-      } catch (e) {
-        console.error(`Supabase delete failed for model ${id}:`, e);
-      }
-    }
-    return filtered.length !== localModels.length;
-  }
+  // Delete method removed — models cannot be deleted, only edited
 };
 
 // server/services/model.service.ts
@@ -3669,9 +3548,7 @@ var ModelService = class {
     };
     return this.modelRepository.save(updatedModel);
   }
-  async deleteModel(id) {
-    return this.modelRepository.delete(id);
-  }
+  // Delete method removed — models cannot be deleted, only edited
   async approveModel(id) {
     return this.updateModel(id, { approved: true });
   }
@@ -3805,19 +3682,7 @@ var ModelController = class {
       return res.status(500).json({ success: false, error: err.message });
     }
   }
-  static async deleteModel(req, res) {
-    try {
-      const { id } = req.params;
-      const success = await modelService.deleteModel(id);
-      if (!success) {
-        return res.status(404).json({ success: false, error: "Model not found" });
-      }
-      return res.status(200).json({ success: true, message: "Model deleted successfully" });
-    } catch (err) {
-      console.error("Error in deleteModel controller:", err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-  }
+  // Delete method removed — models cannot be deleted, only edited
   static async updateStatus(req, res) {
     try {
       const { id } = req.params;
@@ -3922,7 +3787,6 @@ router9.get("/models/:id", ModelController.getModelById);
 router9.post("/models", validateBody2(modelSchema), ModelController.saveModel);
 router9.patch("/models/:id", ModelController.updateModel);
 router9.put("/models/:id", ModelController.updateModel);
-router9.delete("/models/:id", ModelController.deleteModel);
 router9.patch("/models/:id/status", ModelController.updateStatus);
 router9.patch("/models/:id/availability", ModelController.updateAvailability);
 var models_routes_default = router9;
@@ -3952,6 +3816,42 @@ function saveLocalBookings(bookings) {
     console.error("Error writing local bookings file:", e);
   }
 }
+function fromSupabaseRow(b) {
+  return {
+    id: b.id,
+    clientId: b.client_id || b.clientId || "",
+    clientName: b.client_name || b.clientName || "",
+    modelId: b.model_id || b.modelId || "",
+    modelName: b.model_name || b.modelName || "",
+    modelImage: b.model_image || b.modelImage || "",
+    projectDetails: b.project_details || b.projectDetails || {},
+    status: b.status || "pending",
+    createdAt: b.created_at || b.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
+    priceAmount: Number(b.price_amount || b.priceAmount || b.amount || 0),
+    pdfSummaryUrl: b.pdf_summary_url || b.pdfSummaryUrl,
+    pdfGeneratedAt: b.pdf_generated_at || b.pdfGeneratedAt,
+    isSharedWithClient: b.is_shared_with_client || b.isSharedWithClient || false
+  };
+}
+function toSupabaseRow(booking) {
+  const row = {
+    id: booking.id,
+    client_id: booking.clientId,
+    client_name: booking.clientName,
+    model_id: booking.modelId,
+    model_name: booking.modelName,
+    model_image: booking.modelImage,
+    project_details: booking.projectDetails,
+    status: booking.status || "pending",
+    created_at: booking.createdAt,
+    price_amount: booking.priceAmount,
+    amount: booking.priceAmount
+  };
+  if (booking.pdfSummaryUrl !== void 0) row.pdf_summary_url = booking.pdfSummaryUrl;
+  if (booking.pdfGeneratedAt !== void 0) row.pdf_generated_at = booking.pdfGeneratedAt;
+  if (booking.isSharedWithClient !== void 0) row.is_shared_with_client = booking.isSharedWithClient;
+  return row;
+}
 var BookingRepository = class {
   async findAll() {
     let dbBookings = [];
@@ -3962,21 +3862,7 @@ var BookingRepository = class {
           2500
         );
         if (!error && data) {
-          dbBookings = data.map((b) => ({
-            id: b.id,
-            clientId: b.clientId,
-            clientName: b.clientName,
-            modelId: b.modelId,
-            modelName: b.modelName,
-            modelImage: b.modelImage,
-            projectDetails: b.projectDetails || {},
-            status: b.status,
-            createdAt: b.createdAt,
-            priceAmount: b.priceAmount,
-            pdfSummaryUrl: b.pdfSummaryUrl,
-            pdfGeneratedAt: b.pdfGeneratedAt,
-            isSharedWithClient: b.isSharedWithClient
-          }));
+          dbBookings = data.map(fromSupabaseRow);
         }
       } catch (e) {
         console.error("Supabase booking query failed:", e);
@@ -3996,21 +3882,7 @@ var BookingRepository = class {
           2500
         );
         if (!error && data) {
-          return {
-            id: data.id,
-            clientId: data.clientId,
-            clientName: data.clientName,
-            modelId: data.modelId,
-            modelName: data.modelName,
-            modelImage: data.modelImage,
-            projectDetails: data.projectDetails || {},
-            status: data.status,
-            createdAt: data.createdAt,
-            priceAmount: data.priceAmount,
-            pdfSummaryUrl: data.pdfSummaryUrl,
-            pdfGeneratedAt: data.pdfGeneratedAt,
-            isSharedWithClient: data.isSharedWithClient
-          };
+          return fromSupabaseRow(data);
         }
       } catch (e) {
         console.error(`Supabase query for booking ${id} failed:`, e);
@@ -4030,22 +3902,9 @@ var BookingRepository = class {
     saveLocalBookings(localBookings);
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
+        const row = toSupabaseRow(booking);
         const { error } = await withTimeout(
-          supabaseAdmin.from("bookings").upsert({
-            id: booking.id,
-            clientId: booking.clientId,
-            clientName: booking.clientName,
-            modelId: booking.modelId,
-            modelName: booking.modelName,
-            modelImage: booking.modelImage,
-            projectDetails: booking.projectDetails,
-            status: booking.status,
-            createdAt: booking.createdAt,
-            priceAmount: booking.priceAmount,
-            pdfSummaryUrl: booking.pdfSummaryUrl || null,
-            pdfGeneratedAt: booking.pdfGeneratedAt || null,
-            isSharedWithClient: booking.isSharedWithClient || false
-          }),
+          supabaseAdmin.from("bookings").upsert(row),
           2500
         );
         if (error) throw error;

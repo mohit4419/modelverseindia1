@@ -713,7 +713,7 @@ export default function AdminDashboard({
                       )}
                     </td>
                     <td className="p-4 flex items-center space-x-3">
-                      <img src={model.portfolio[0]} alt={model.name} referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover border border-white/10" />
+                      <img src={model.portfolio?.[0] || ''} alt={model.name} referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover border border-white/10" />
                       <div>
                         <strong className="block text-xs font-extrabold text-white">{model.name}</strong>
                         <span className="text-zinc-400">{model.city}, {model.state} • {model.age} yrs</span>

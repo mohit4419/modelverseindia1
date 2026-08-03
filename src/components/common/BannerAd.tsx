@@ -300,7 +300,7 @@ export default function BannerAd({ onClose }: BannerAdProps) {
             ) : (
               <div className="flex items-center gap-3 animate-fadeIn text-left w-full h-11">
                 <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-xs font-black uppercase shadow-inner shrink-0 ${campaign.logoBg}`}>
-                  {campaign.brand.split(' ').map(n => n[0]).join('')}
+                  {campaign?.brand ? campaign.brand.split(' ').map(n => n?.[0] || '').join('') : 'B'}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h5 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{campaign.brand}</h5>

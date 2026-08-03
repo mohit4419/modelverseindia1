@@ -45,7 +45,8 @@ export default function ProfileView({
   currentUserId,
   currentUserName
 }: ProfileViewProps) {
-  const [activeImage, setActiveImage] = useState(model.portfolio[0]);
+  const portfolioList = model.portfolio || [];
+  const [activeImage, setActiveImage] = useState(portfolioList[0] || '');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -62,9 +63,9 @@ export default function ProfileView({
     const slideWidth = container.clientWidth;
     if (slideWidth > 0) {
       const newIndex = Math.round(scrollPosition / slideWidth);
-      if (newIndex !== currentSlide && newIndex >= 0 && newIndex < model.portfolio.length) {
+      if (newIndex !== currentSlide && newIndex >= 0 && newIndex < portfolioList.length) {
         setCurrentSlide(newIndex);
-        setActiveImage(model.portfolio[newIndex]);
+        setActiveImage(portfolioList[newIndex]);
       }
     }
   };
@@ -78,7 +79,7 @@ export default function ProfileView({
       behavior: 'smooth'
     });
     setCurrentSlide(index);
-    setActiveImage(model.portfolio[index]);
+    setActiveImage(portfolioList[index]);
   };
 
   const [touchStartX, setTouchStartX] = useState(0);
@@ -94,7 +95,7 @@ export default function ProfileView({
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
         // swipe left -> next slide
-        const nextIdx = (currentSlide + 1) % model.portfolio.length;
+        const nextIdx = portfolioList.length > 0 ? (currentSlide + 1) % portfolioList.length : 0;
         scrollToSlide(nextIdx);
       } else {
         // swipe right -> prev slide
@@ -634,7 +635,7 @@ export default function ProfileView({
                 }`}
               >
                 <img
-                  src={model.portfolio[0]}
+                  src={portfolioList[0] || ''}
                   alt="Video Thumbnail"
                   className="absolute inset-0 h-full w-full object-cover opacity-50"
                 />
@@ -642,7 +643,7 @@ export default function ProfileView({
                 <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] font-black text-white uppercase tracking-wider bg-purple-600 px-1.5 py-0.5 rounded font-mono z-10">REEL</span>
               </button>
             )}
-            {model.portfolio.map((img, idx) => (
+            {portfolioList.map((img, idx) => (
               <button
                 key={idx}
                 type="button"

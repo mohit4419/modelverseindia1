@@ -948,7 +948,7 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
                             </div>
                             <div className="mt-2.5 pt-2 border-t border-neutral-100/10 flex items-center justify-between">
                               <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 font-mono">
-                                {coach.vibe.split(',')[0]}
+                                {coach?.vibe ? coach.vibe.split(',')[0] : ''}
                               </span>
                               {isSelected && (
                                 <span className="text-[9px] font-bold uppercase text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded font-mono">

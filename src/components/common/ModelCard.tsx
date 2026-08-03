@@ -103,13 +103,16 @@ export default function ModelCard({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setTouchStart({ x: touch.clientX, y: touch.clientY });
+    const touch = e.touches && e.touches[0];
+    if (touch) {
+      setTouchStart({ x: touch.clientX, y: touch.clientY });
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!touchStart) return;
-    const touch = e.touches[0];
+    const touch = e.touches && e.touches[0];
+    if (!touch) return;
     const diffX = touch.clientX - touchStart.x;
     const diffY = touch.clientY - touchStart.y;
 
