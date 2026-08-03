@@ -3418,11 +3418,20 @@ var ModelRepository = class {
         console.error("Supabase model query failed, falling back to local:", e);
       }
     }
-    const localModels = getLocalModels2();
     const mergedMap = /* @__PURE__ */ new Map();
-    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.id, m));
-    dbModels.forEach((m) => mergedMap.set(m.id, m));
-    localModels.forEach((m) => mergedMap.set(m.id, m));
+    if (dbModels.length > 0) {
+      dbModels.forEach((m) => {
+        const key = m.userId || m.id;
+        const existing = mergedMap.get(key);
+        if (!existing) {
+          mergedMap.set(key, m);
+        }
+      });
+      return Array.from(mergedMap.values());
+    }
+    const localModels = getLocalModels2();
+    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.userId || m.id, m));
+    localModels.forEach((m) => mergedMap.set(m.userId || m.id, m));
     return Array.from(mergedMap.values());
   }
   async findById(id) {

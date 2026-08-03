@@ -166,11 +166,25 @@ export class ModelRepository {
       }
     }
 
-    const localModels = getLocalModels();
     const mergedMap = new Map<string, Model>();
-    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.id, m));
-    dbModels.forEach((m) => mergedMap.set(m.id, m));
-    localModels.forEach((m) => mergedMap.set(m.id, m)); // Local models registered by user take priority
+
+    if (dbModels.length > 0) {
+      // Primary Source of Truth: Database models from Supabase
+      // Deduplicate by userId (or id) to ensure 1 model per user ID
+      dbModels.forEach((m) => {
+        const key = m.userId || m.id;
+        const existing = mergedMap.get(key);
+        if (!existing) {
+          mergedMap.set(key, m);
+        }
+      });
+      return Array.from(mergedMap.values());
+    }
+
+    // Fallback ONLY when database has 0 models
+    const localModels = getLocalModels();
+    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.userId || m.id, m));
+    localModels.forEach((m) => mergedMap.set(m.userId || m.id, m));
 
     return Array.from(mergedMap.values());
   }

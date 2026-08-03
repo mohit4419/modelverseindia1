@@ -162,23 +162,42 @@ export const modelService = {
         console.error('Supabase models fetch failed, using fallback', e);
       }
     }
-    let localModels: Model[] = SEED_MODELS;
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const local = localStorage.getItem('mvi_models');
-        if (local) localModels = JSON.parse(local);
-      }
-    } catch (e) {
-      console.warn('LocalStorage read note:', e);
-    }
 
+    // Determine primary database models
+    const databaseModels = backendModels.length > 0 ? backendModels : dbModels;
     const mergedMap = new Map<string, Model>();
-    // 1. Supabase Database Models (parsed)
-    dbModels.filter(m => !isDummyModel(m)).forEach(m => mergedMap.set(m.id, m));
-    // 2. LocalStorage Cached Models
-    localModels.filter(m => !isDummyModel(m)).forEach(m => mergedMap.set(m.id, m));
-    // 3. Express Server Backend Models (Highest Priority - Primary Source of Truth)
-    backendModels.filter(m => !isDummyModel(m)).forEach(m => mergedMap.set(m.id, m));
+
+    if (databaseModels.length > 0) {
+      // Real database models exist: Strictly deduplicate by userId (or id)
+      databaseModels.filter(m => !isDummyModel(m)).forEach(m => {
+        const userKey = m.userId || m.id;
+        const existing = mergedMap.get(userKey);
+        if (!existing) {
+          mergedMap.set(userKey, m);
+        }
+      });
+    } else {
+      // Fallback ONLY when database returns 0 models (offline or uninitialized DB)
+      let localModels: Model[] = SEED_MODELS;
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const local = localStorage.getItem('mvi_models');
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              localModels = parsed;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('LocalStorage read note:', e);
+      }
+
+      localModels.filter(m => !isDummyModel(m)).forEach(m => {
+        const userKey = m.userId || m.id;
+        mergedMap.set(userKey, m);
+      });
+    }
 
     const finalModels = Array.from(mergedMap.values())
       .filter(m => !isDummyModel(m))
