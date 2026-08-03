@@ -18,8 +18,8 @@ export default function DashboardPage() {
   const { bookings, setBookings, handleUpdateBookingStatus } = useBookings();
   const { triggerToast, currentTab, setModels } = useApp();
 
-  // Route to Model Dashboard if role is model or tab is explicitly set
-  if (currentTab === 'agent-dashboard' || currentRole === 'model') {
+  // Route to Model Dashboard if role is model or tab is explicitly set to a model dashboard tab
+  if (currentTab === 'agent-dashboard' || currentTab === 'model-dashboard' || (currentRole === 'model' && currentTab !== 'client-dashboard')) {
     return (
       <AgentDashboard
         models={models}

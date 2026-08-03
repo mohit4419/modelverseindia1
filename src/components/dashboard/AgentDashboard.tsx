@@ -47,6 +47,7 @@ import {
 import { jsPDF } from 'jspdf';
 import { Model, Booking, BookingStatus, PaymentRecord } from '../../types';
 import { dbService } from '../../services/db';
+import { useApp } from '../../context/AppContext';
 
 interface AgentDashboardProps {
   models: Model[];
@@ -65,6 +66,7 @@ export default function AgentDashboard({
   triggerToast,
   onUpdateBooking
 }: AgentDashboardProps) {
+  const { setCurrentTab } = useApp();
   // Find registered model or default to first approved model
   const currentUser = dbService.getCurrentSessionUser();
   const defaultModel = (currentUser && models.find(m => m.userId === currentUser.id || m.email?.toLowerCase() === currentUser.email?.toLowerCase())) || models[0];
@@ -256,10 +258,22 @@ export default function AgentDashboard({
 
   if (!activeModel) {
     return (
-      <div className="mx-auto max-w-7xl py-16 px-4 text-center text-white font-sans">
-        <AlertCircle className="h-12 w-12 text-[#EA3838] mx-auto mb-4 animate-bounce" />
-        <h3 className="text-xl font-black">No Active Model Profile</h3>
-        <p className="text-zinc-400 mt-2 text-sm">Please register a model profile or switch your testing role to see stats.</p>
+      <div className="mx-auto max-w-2xl py-20 px-6 text-center text-white font-sans animate-fadeIn">
+        <div className="inline-flex p-4 rounded-full bg-[#EA3838]/10 text-[#EA3838] border border-[#EA3838]/20 mb-6 shadow-xl">
+          <Sparkles className="h-10 w-10 text-[#D4AF37]" />
+        </div>
+        <h3 className="text-2xl font-black tracking-tight">No Registered Model Profile Found</h3>
+        <p className="text-zinc-400 mt-2 text-sm max-w-md mx-auto leading-relaxed font-medium">
+          You are logged in as a model, but haven't completed your model registration form yet. Submit your profile details to list yourself on ModelVerse India.
+        </p>
+        <div className="mt-8 flex justify-center gap-4">
+          <button
+            onClick={() => setCurrentTab('become-model')}
+            className="rounded-full bg-[#EA3838] hover:bg-[#c02424] text-white px-8 py-3 text-xs font-black uppercase tracking-wider shadow-lg shadow-[#EA3838]/20 transition active:scale-95 cursor-pointer"
+          >
+            Complete Model Registration
+          </button>
+        </div>
       </div>
     );
   }

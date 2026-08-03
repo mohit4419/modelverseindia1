@@ -16,7 +16,8 @@ import { PaymentProvider } from './context/PaymentContext';
 // Custom Hooks
 import { useModels } from './hooks/useModels';
 import { useBookings } from './hooks/useBookings';
-import { usePayments } from './hooks/usePayments';
+// Services & DB
+import { dbService } from './services/db';
 
 // Layout & Common Components
 import Navbar from './components/common/Navbar';
@@ -147,7 +148,9 @@ function AppContent() {
       case 'models':
         return focusedModelId ? <ProfilePage /> : <BookingPage />;
       case 'agent-dashboard':
+      case 'model-dashboard':
       case 'client-dashboard':
+      case 'dashboard':
         return <DashboardPage />;
       case 'admin':
         return <AdminPage />;
