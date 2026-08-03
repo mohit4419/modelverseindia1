@@ -3799,14 +3799,20 @@ function saveLocalBookings(bookings) {
   }
 }
 function fromSupabaseRow(b) {
+  const modelIdVal = b.model_id || b.modelId || "";
+  const clientIdVal = b.client_id || b.clientId || "";
   return {
     id: b.id,
-    clientId: b.client_id || b.clientId || "",
+    clientId: clientIdVal,
     clientName: b.client_name || b.clientName || "",
-    modelId: b.model_id || b.modelId || "",
+    modelId: modelIdVal,
     modelName: b.model_name || b.modelName || "",
     modelImage: b.model_image || b.modelImage || "",
-    projectDetails: b.project_details || b.projectDetails || {},
+    projectDetails: {
+      ...b.project_details || b.projectDetails || {},
+      modelId: modelIdVal,
+      clientId: clientIdVal
+    },
     status: b.status || "pending",
     createdAt: b.created_at || b.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
     priceAmount: Number(b.price_amount || b.priceAmount || b.amount || 0),
@@ -3823,7 +3829,11 @@ function toSupabaseRow(booking) {
     model_id: booking.modelId,
     model_name: booking.modelName,
     model_image: booking.modelImage,
-    project_details: booking.projectDetails,
+    project_details: {
+      ...booking.projectDetails,
+      modelId: booking.modelId,
+      clientId: booking.clientId
+    },
     status: booking.status || "pending",
     created_at: booking.createdAt,
     price_amount: booking.priceAmount,

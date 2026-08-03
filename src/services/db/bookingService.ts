@@ -11,14 +11,20 @@ import { messageService } from './messageService';
 
 // Map Supabase snake_case row to app camelCase Booking
 function fromSupabaseBookingRow(row: any): Booking {
+  const modelIdVal = row.model_id || row.modelId || row.model_id_val || '';
+  const clientIdVal = row.client_id || row.clientId || row.client_id_val || '';
   return {
     id: row.id,
-    clientId: row.client_id || row.clientId || '',
+    clientId: clientIdVal,
     clientName: row.client_name || row.clientName || '',
-    modelId: row.model_id || row.modelId || '',
+    modelId: modelIdVal,
     modelName: row.model_name || row.modelName || '',
     modelImage: row.model_image || row.modelImage || '',
-    projectDetails: row.project_details || row.projectDetails || {},
+    projectDetails: {
+      ...(row.project_details || row.projectDetails || {}),
+      modelId: modelIdVal,
+      clientId: clientIdVal
+    },
     status: row.status || 'pending',
     createdAt: row.created_at || row.createdAt || new Date().toISOString(),
     priceAmount: Number(row.price_amount || row.priceAmount || row.amount || 0),
@@ -37,7 +43,11 @@ function toSupabaseBookingRow(booking: Booking): Record<string, any> {
     model_id: booking.modelId,
     model_name: booking.modelName,
     model_image: booking.modelImage,
-    project_details: booking.projectDetails,
+    project_details: {
+      ...booking.projectDetails,
+      modelId: booking.modelId,
+      clientId: booking.clientId
+    },
     status: booking.status || 'pending',
     created_at: booking.createdAt,
     price_amount: booking.priceAmount,
@@ -45,6 +55,12 @@ function toSupabaseBookingRow(booking: Booking): Record<string, any> {
     pdf_summary_url: booking.pdfSummaryUrl || null,
     pdf_generated_at: booking.pdfGeneratedAt || null,
     is_shared_with_client: booking.isSharedWithClient || false,
+    clientId: booking.clientId,
+    clientName: booking.clientName,
+    modelId: booking.modelId,
+    modelName: booking.modelName,
+    modelImage: booking.modelImage,
+    priceAmount: booking.priceAmount
   });
 }
 

@@ -129,7 +129,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         console.warn('Direct DB booking save note (API already handled):', dbErr);
       }
 
-      const updatedBookings = await bookingService.getBookings({ clientId });
+      const updatedBookings = await dbService.getBookings();
       setBookings(updatedBookings);
 
       const modelObj = models.find(m => m.id === bookingData.modelId);
