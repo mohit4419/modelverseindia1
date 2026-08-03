@@ -508,14 +508,53 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
 
   // Cropping engine
   const handleUploadAndCrop = (file: File, key: string, callback: (base64: string) => void) => {
+    setIsCompressing(prev => ({ ...prev, [key]: true }));
     const reader = new FileReader();
     reader.onload = (event) => {
       const rawBase64 = event.target?.result as string;
-      setEditingImage({ src: rawBase64, key, callback });
-      setRotation(0);
-      setZoom(1.0);
-      setOffsetX(0);
-      setOffsetY(0);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_DIM = 900;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            } else {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.80);
+            setEditingImage({ src: compressedBase64, key, callback });
+          } else {
+            setEditingImage({ src: rawBase64, key, callback });
+          }
+        } catch (e) {
+          setEditingImage({ src: rawBase64, key, callback });
+        }
+        setRotation(0);
+        setZoom(1.0);
+        setOffsetX(0);
+        setOffsetY(0);
+        setIsCompressing(prev => ({ ...prev, [key]: false }));
+      };
+      img.onerror = () => {
+        setEditingImage({ src: rawBase64, key, callback });
+        setIsCompressing(prev => ({ ...prev, [key]: false }));
+      };
+      img.src = rawBase64;
+    };
+    reader.onerror = () => {
+      setIsCompressing(prev => ({ ...prev, [key]: false }));
     };
     reader.readAsDataURL(file);
   };

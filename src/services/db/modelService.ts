@@ -237,18 +237,36 @@ export const modelService = {
       }
     }
 
-    // 3. LocalStorage Cache
+    // 3. LocalStorage Cache (Resilient against QuotaExceededLimits)
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const currentLocal = localStorage.getItem('mvi_models');
-        const models: Model[] = currentLocal ? JSON.parse(currentLocal) : [];
+        let models: Model[] = currentLocal ? JSON.parse(currentLocal) : [];
         const idx = models.findIndex(m => m.id === savedModel.id);
         if (idx >= 0) {
           models[idx] = savedModel;
         } else {
           models.push(savedModel);
         }
-        localStorage.setItem('mvi_models', JSON.stringify(models));
+
+        try {
+          localStorage.setItem('mvi_models', JSON.stringify(models));
+        } catch (quotaErr) {
+          console.warn('LocalStorage quota reached, caching current model safely:', quotaErr);
+          // If storage quota exceeded, prune older models and trim large base64 fields if necessary
+          const prunedModels = models.slice(-5).map(m => {
+            if (m.id === savedModel.id) return savedModel;
+            return {
+              ...m,
+              portfolio: (m.portfolio || []).map(p => (p && p.length > 300000 ? p.substring(0, 100) + '...' : p))
+            };
+          });
+          try {
+            localStorage.setItem('mvi_models', JSON.stringify(prunedModels));
+          } catch (e) {
+            console.warn('Could not cache models array in localStorage, skipping cache.');
+          }
+        }
       }
     } catch (localErr) {
       console.error('Local storage saveModel failed:', localErr);
