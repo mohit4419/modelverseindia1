@@ -54,6 +54,7 @@ function AppContent() {
     isAuthenticated,
     clientId,
     currentRole,
+    setCurrentRole,
     currentUserName,
     userEmail,
     isGuestMode,
@@ -178,53 +179,7 @@ function AppContent() {
       case 'payments':
         return <CastingRatesPage />;
       
-      case 'become-model':
-        if (!isAuthenticated) {
-          return (
-            <div className="py-24 max-w-xl mx-auto px-6 text-center space-y-6 animate-fadeIn text-left">
-              <div className="inline-flex p-4 rounded-full bg-pink-50 dark:bg-pink-950/20 text-pink-500 border border-pink-100 dark:border-pink-900/30 shadow-sm mx-auto">
-                <Sparkles className="h-8 w-8 text-[#D4AF37]" />
-              </div>
-              <h2 className="text-2xl font-black text-neutral-900 dark:text-neutral-100 font-sans tracking-tight text-center">Become a Model in India</h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto leading-relaxed text-center font-medium">
-                Join ModelVerse India to showcase your portfolio, set daily casting rates, and receive verified coordinator contracts.
-              </p>
-              <div className="pt-4 text-center">
-                <button
-                  onClick={() => {
-                    setAuthTabHint('signup');
-                    setAuthRoleHint('model');
-                    setCurrentTab('auth');
-                  }}
-                  className="rounded-full bg-[#EA3838] hover:bg-[#c02424] text-white px-8 py-3 text-xs font-black uppercase tracking-wider shadow-lg shadow-[#EA3838]/20 transition active:scale-95 cursor-pointer"
-                >
-                  Create Model Account
-                </button>
-              </div>
-            </div>
-          );
-        }
-        if (currentRole === 'client') {
-          return (
-            <div className="py-24 max-w-xl mx-auto px-6 text-center space-y-6 animate-fadeIn">
-              <div className="inline-flex p-4 rounded-full bg-red-50 dark:bg-red-950/20 text-red-500 border border-red-100 dark:border-red-900/30 shadow-sm mx-auto">
-                <ShieldAlert className="h-8 w-8 text-red-550" />
-              </div>
-              <h2 className="text-2xl font-black text-neutral-900 dark:text-neutral-100 font-sans tracking-tight text-center">Access Restricted</h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto leading-relaxed text-center font-medium">
-                Clients are not permitted to register as models. If you wish to list yourself as a model, please register/log in with a dedicated Model account.
-              </p>
-              <div className="pt-4 text-center">
-                <button
-                  onClick={() => setCurrentTab('home')}
-                  className="rounded-full bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900 text-white px-8 py-3 text-xs font-black uppercase tracking-wider shadow-lg transition active:scale-95 cursor-pointer"
-                >
-                  Return to Home
-                </button>
-              </div>
-            </div>
-          );
-        }
+      case 'become-model': {
         const currentUser = dbService.getCurrentSessionUser();
         const existingModelForUser = models.find(m => 
           (clientId && m.userId === clientId) || 
@@ -234,20 +189,22 @@ function AppContent() {
 
         return (
           <BecomeModelForm
-            userId={clientId}
+            userId={clientId || 'm_guest_user'}
             initialModel={existingModelForUser}
-            onRegisterSubmit={(newModel) => {
-              handleModelRegisterSubmit(newModel);
+            onRegisterSubmit={async (newModel) => {
+              await handleModelRegisterSubmit(newModel);
+              setCurrentRole('model');
               triggerToast(
                 existingModelForUser ? 'Profile Updated' : 'Profile Registered',
                 existingModelForUser ? 'Your model profile and portfolio images have been updated in the database.' : 'Your model profile details have been registered successfully.',
                 'success'
               );
-              setCurrentTab('home');
+              setCurrentTab('agent-dashboard');
             }}
             onGoHome={() => setCurrentTab('home')}
           />
         );
+      }
 
       case 'chat':
         if (!chatModelUserId) {

@@ -15,6 +15,7 @@ interface AuthContextType {
   clientId: string;
   currentUserName: string;
   currentRole: UserRole;
+  setCurrentRole: (role: UserRole) => void;
   isEmailUnverified: boolean;
   authRoleHint: UserRole;
   authTabHint: 'login' | 'signup' | 'forgot';
@@ -217,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clientId,
         currentUserName,
         currentRole,
+        setCurrentRole,
         isEmailUnverified,
         authRoleHint,
         authTabHint,

@@ -607,7 +607,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
           city,
           experience,
           biography,
-          languages: langs.split(',').map(l => l.trim())
+          languages: (langs || '').split(',').map(l => l.trim()).filter(Boolean)
         })
       });
 
@@ -717,7 +717,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       height,
       city,
       state,
-      languages: langs.split(',').map(l => l.trim()),
+      languages: (langs || '').split(',').map(l => l.trim()).filter(Boolean),
       experience,
       category,
       portfolio: portfolioUrls,
