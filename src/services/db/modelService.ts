@@ -40,6 +40,7 @@ function parseHeightToInteger(val?: any): number {
 async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>> {
   const finalUuid = ensureUuidFormat(model.id);
   const validUserId = await getValidUserIdForModel(model.userId);
+  const portfolioArr = Array.isArray(model.portfolio) ? model.portfolio.filter(Boolean) : [];
   return removeUndefined({
     id: finalUuid,
     userId: validUserId,
@@ -59,16 +60,17 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
     reviews_count: Number(model.reviewsCount || (model as any).reviews_count) || 1,
     email: model.email || '',
     phone: model.phone || '',
-    portfolio: Array.isArray(model.portfolio) ? model.portfolio : [],
+    portfolio: portfolioArr,
     measurements: {
       ...(typeof model.measurements === 'object' ? model.measurements : {}),
+      portfolio: portfolioArr,
       originalId: model.id,
       originalUserId: model.userId,
       heightOriginal: model.height,
       archived: Boolean(model.archived)
     },
     biography: model.biography || '',
-    category: model.category || 'fashion'
+    category: model.category || 'Fashion Models'
   });
 }
 
@@ -252,19 +254,13 @@ export const modelService = {
         try {
           localStorage.setItem('mvi_models', JSON.stringify(models));
         } catch (quotaErr) {
-          console.warn('LocalStorage quota reached, caching current model safely:', quotaErr);
-          // If storage quota exceeded, prune older models and trim large base64 fields if necessary
-          const prunedModels = models.slice(-5).map(m => {
-            if (m.id === savedModel.id) return savedModel;
-            return {
-              ...m,
-              portfolio: (m.portfolio || []).map(p => (p && p.length > 300000 ? p.substring(0, 100) + '...' : p))
-            };
-          });
+          console.warn('LocalStorage quota reached, pruning older models safely:', quotaErr);
+          // If storage quota exceeded, keep only the latest 3 models with full portfolio intact
+          const prunedModels = models.slice(-3);
           try {
             localStorage.setItem('mvi_models', JSON.stringify(prunedModels));
           } catch (e) {
-            console.warn('Could not cache models array in localStorage, skipping cache.');
+            console.warn('Could not cache full models array in localStorage, skipping cache.');
           }
         }
       }
@@ -279,6 +275,12 @@ export const modelService = {
   async registerModel(model: Model): Promise<Model> {
     let savedModel: Model = { ...model };
     if (savedModel.approved === undefined) savedModel.approved = true;
+
+    // Check if a model profile already exists for this User ID / Email
+    const existing = await this.getModelByUserId(savedModel.userId, savedModel.email);
+    if (existing) {
+      savedModel.id = existing.id;
+    }
 
     // 1. Try Express backend API FIRST if available
     try {
@@ -326,13 +328,26 @@ export const modelService = {
       if (typeof window !== 'undefined' && window.localStorage) {
         const currentLocal = localStorage.getItem('mvi_models');
         const models: Model[] = currentLocal ? JSON.parse(currentLocal) : [];
-        const idx = models.findIndex(m => m.id === savedModel.id);
+        const idx = models.findIndex(
+          m => m.id === savedModel.id || (savedModel.userId && m.userId === savedModel.userId) || (savedModel.email && m.email && m.email.toLowerCase() === savedModel.email.toLowerCase())
+        );
         if (idx >= 0) {
-          models[idx] = savedModel;
+          savedModel.id = models[idx].id;
+          models[idx] = { ...models[idx], ...savedModel };
         } else {
           models.push(savedModel);
         }
-        localStorage.setItem('mvi_models', JSON.stringify(models));
+        try {
+          localStorage.setItem('mvi_models', JSON.stringify(models));
+        } catch (quotaErr) {
+          console.warn('LocalStorage quota reached on registerModel, pruning older models safely:', quotaErr);
+          const prunedModels = models.slice(-3);
+          try {
+            localStorage.setItem('mvi_models', JSON.stringify(prunedModels));
+          } catch (e) {
+            console.warn('Could not cache models array in localStorage, skipping cache.');
+          }
+        }
       }
     } catch (localErr) {
       console.error('Local storage registerModel failed:', localErr);

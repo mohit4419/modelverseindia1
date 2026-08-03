@@ -60,6 +60,7 @@ function toSupabaseModelRow(model: Model): Record<string, any> {
 
   row.city = model.city || 'Mumbai';
   row.state = model.state || 'Maharashtra';
+  row.category = model.category || 'Fashion Models';
   row.starting_price = typeof model.startingPrice === 'number' ? model.startingPrice : (parseFloat(String(model.startingPrice)) || 15000);
   row.rating = model.rating || 5.0;
   row.reviews_count = model.reviewsCount || 0;
@@ -70,6 +71,9 @@ function toSupabaseModelRow(model: Model): Record<string, any> {
   row.experience = model.experience || '';
   row.videoUrl = model.videoUrl || undefined;
   row.availabilityStatus = model.availabilityStatus || 'Available';
+  row.portfolio = Array.isArray(model.portfolio) ? model.portfolio : [];
+  row.portfolioCaptions = Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [];
+  row.portfolioCategories = Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [];
 
   // Store rich metadata in measurements JSONB
   row.measurements = {
@@ -96,6 +100,18 @@ function toSupabaseModelRow(model: Model): Record<string, any> {
 
 function fromSupabaseModelRow(row: any): Model {
   const extra = row.measurements || {};
+  let portfolioList: string[] = [];
+
+  if (Array.isArray(row.portfolio) && row.portfolio.length > 0) {
+    portfolioList = row.portfolio.filter(Boolean);
+  } else if (Array.isArray(extra.portfolio) && extra.portfolio.length > 0) {
+    portfolioList = extra.portfolio.filter(Boolean);
+  } else if (typeof row.portfolio === 'string' && row.portfolio) {
+    portfolioList = [row.portfolio];
+  } else if (typeof extra.portfolio === 'string' && extra.portfolio) {
+    portfolioList = [extra.portfolio];
+  }
+
   return {
     id: extra.originalId || row.id,
     userId: extra.originalUserId || row.userId || row.user_id || row.userid,
@@ -107,12 +123,14 @@ function fromSupabaseModelRow(row: any): Model {
     state: row.state || 'Maharashtra',
     languages: Array.isArray(row.languages) ? row.languages : ['English', 'Hindi'],
     experience: row.experience || '2-5 years',
-    category: extra.category || 'Fashion Models',
-    portfolio: Array.isArray(extra.portfolio) ? extra.portfolio : [],
+    category: extra.category || row.category || 'Fashion Models',
+    portfolio: portfolioList,
+    portfolioCaptions: Array.isArray(row.portfolioCaptions) ? row.portfolioCaptions : extra.portfolioCaptions,
+    portfolioCategories: Array.isArray(row.portfolioCategories) ? row.portfolioCategories : extra.portfolioCategories,
     videoUrl: row.videoUrl || row.video_url,
     availabilityStatus: row.availabilityStatus || row.availability_status || 'Available',
     selfieVerified: extra.selfieVerified !== undefined ? extra.selfieVerified : true,
-    selfieUrl: extra.selfieUrl,
+    selfieUrl: extra.selfieUrl || row.selfieUrl,
     approved: extra.approved !== undefined ? extra.approved : true,
     rejected: extra.rejected !== undefined ? extra.rejected : false,
     startingPrice: row.starting_price || row.startingPrice || 15000,
@@ -179,12 +197,31 @@ export class ModelRepository {
     return INITIAL_SERVER_MODELS.find((m) => m.id === id) || null;
   }
 
+  async findByUserId(userId: string, email?: string): Promise<Model | null> {
+    if (!userId && !email) return null;
+    const all = await this.findAll();
+    const match = all.find((m) =>
+      (userId && String(m.userId) === String(userId)) ||
+      (email && m.email && m.email.toLowerCase() === email.toLowerCase())
+    );
+    return match || null;
+  }
+
   async save(model: Model): Promise<Model> {
-    // Save locally
+    // Check if model already exists by id, userId, or email to prevent duplicate model creation
     const localModels = getLocalModels();
-    const idx = localModels.findIndex((m) => m.id === model.id);
-    if (idx >= 0) {
-      localModels[idx] = model;
+    const existingIdx = localModels.findIndex(
+      (m) =>
+        m.id === model.id ||
+        (model.userId && String(m.userId) === String(model.userId)) ||
+        (model.email && m.email && m.email.toLowerCase() === model.email.toLowerCase())
+    );
+
+    if (existingIdx >= 0) {
+      // Reuse existing model ID to update existing profile instead of duplicating
+      const existing = localModels[existingIdx];
+      model.id = existing.id;
+      localModels[existingIdx] = { ...existing, ...model, id: existing.id };
     } else {
       localModels.push(model);
     }

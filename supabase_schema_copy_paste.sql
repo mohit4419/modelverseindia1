@@ -238,6 +238,9 @@ ALTER TABLE public.models ADD COLUMN IF NOT EXISTS measurements JSONB DEFAULT '{
 ALTER TABLE public.models ADD COLUMN IF NOT EXISTS languages JSONB DEFAULT '["English", "Hindi"]'::jsonb;
 ALTER TABLE public.models ADD COLUMN IF NOT EXISTS experience TEXT DEFAULT 'Fresh Face';
 
+-- Ensure 1 model profile per user ID security constraint
+CREATE UNIQUE INDEX IF NOT EXISTS idx_models_user_id_unique ON public.models ("userId");
+
 -- 4. Create model-associated auxiliary child tables
 -- A. model_media
 CREATE TABLE IF NOT EXISTS public.model_media (

@@ -21,6 +21,10 @@ export class ModelService {
     return this.modelRepository.findById(id);
   }
 
+  async getModelByUserId(userId: string, email?: string): Promise<Model | null> {
+    return this.modelRepository.findByUserId(userId, email);
+  }
+
   async createModel(modelData: Model): Promise<Model> {
     return this.modelRepository.save(modelData);
   }

@@ -56,13 +56,17 @@ export class ModelController {
         });
       }
 
-      // Ensure an ID exists or generate a server ID
-      if (!modelData.id) {
-        modelData.id = 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-      }
       if (!modelData.userId) {
         const bodyAny = req.body as any;
         modelData.userId = bodyAny?.userId || bodyAny?.user_id || bodyAny?.userid || (req as any).user?.id || ('u_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7));
+      }
+
+      // Security Check: Enforce 1 model profile per User ID / Email
+      const existingModelProfile = await modelService.getModelByUserId(modelData.userId, modelData.email);
+      if (existingModelProfile) {
+        modelData.id = existingModelProfile.id;
+      } else if (!modelData.id) {
+        modelData.id = 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
       }
 
       // Default registration settings

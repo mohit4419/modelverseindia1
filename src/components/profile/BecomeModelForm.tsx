@@ -334,9 +334,12 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       setYoutube(initialModel.additionalDetails?.youtube || '');
       setPortfolioWebsite(initialModel.socialLinks?.portfolio || '');
       setFacebook(initialModel.additionalDetails?.facebook || '');
-      setPortfolioLink1(initialModel.portfolio?.[0] || '');
-      setPortfolioLink2(initialModel.portfolio?.[1] || '');
-      setPortfolioLink3(initialModel.portfolio?.[2] || '');
+      const existingPortfolio = Array.isArray(initialModel.portfolio) && initialModel.portfolio.length > 0
+        ? initialModel.portfolio
+        : (Array.isArray((initialModel.measurements as any)?.portfolio) ? (initialModel.measurements as any).portfolio : []);
+      setPortfolioLink1(existingPortfolio[0] || initialModel.additionalDetails?.portfolioLink1 || '');
+      setPortfolioLink2(existingPortfolio[1] || initialModel.additionalDetails?.portfolioLink2 || '');
+      setPortfolioLink3(existingPortfolio[2] || initialModel.additionalDetails?.portfolioLink3 || '');
       setVideoLink(initialModel.videoUrl || '');
       setBrandsWorkedWith(initialModel.additionalDetails?.brandsWorkedWith || '');
       setNotableShows(initialModel.additionalDetails?.notableShows || '');
@@ -566,8 +569,8 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const targetWidth = 600;
-      const targetHeight = 800; // 3:4 aspect ratio
+      const targetWidth = 500;
+      const targetHeight = 667; // 3:4 aspect ratio
       canvas.width = targetWidth;
       canvas.height = targetHeight;
       const ctx = canvas.getContext('2d');
@@ -597,7 +600,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
         ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
         ctx.restore();
 
-        const croppedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        const croppedBase64 = canvas.toDataURL('image/jpeg', 0.78);
 
         // Client-side compression statistics calculation
         const originalBytes = editingImage.src.length * 0.75;
@@ -750,7 +753,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
     const newModel: Model = {
       id: initialModel ? initialModel.id : `model_${Date.now()}`,
       userId: initialModel ? initialModel.userId : userId,
-      name: initialModel ? initialModel.name : name,
+      name: name || (initialModel ? initialModel.name : ''),
       gender: (gender === 'male' || gender === 'female' || gender === 'non-binary') ? gender : 'female',
       age: Number(age),
       height,
@@ -849,10 +852,23 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       {/* Dynamic Header */}
       <div className="mb-8 text-center">
         <h2 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-[#EA3838]">
-          Professional Artist & Model Registration Form
+          {initialModel ? 'Edit & Update Your Registered Model Profile' : 'Professional Artist & Model Registration Form'}
         </h2>
         <AnimatedTypingText text="Create your certified casting portfolio slate. Your submission stores instantly in our secure database. Normal visitors can only view your public photo card, name, and location." />
       </div>
+
+      {/* Existing Model Profile Notice Banner */}
+      {initialModel && (
+        <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center space-x-2.5">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+            <span className="leading-relaxed">
+              <strong>Editing Registered Profile:</strong> A model profile already exists for your User ID (<code className="font-mono text-[#D4AF37]">{initialModel.id}</code>). Updating details will edit your existing profile without creating duplicate entries.
+            </span>
+          </div>
+          <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-mono font-bold uppercase shrink-0">1 User = 1 Model</span>
+        </div>
+      )}
 
       {registrationSuccess ? (
         <div className="bg-[#121212] border border-white/5 rounded-2xl p-8 max-w-2xl mx-auto text-center space-y-5 shadow-2xl animate-fadeIn">

@@ -3320,6 +3320,7 @@ function toSupabaseModelRow(model) {
   }
   row.city = model.city || "Mumbai";
   row.state = model.state || "Maharashtra";
+  row.category = model.category || "Fashion Models";
   row.starting_price = typeof model.startingPrice === "number" ? model.startingPrice : parseFloat(String(model.startingPrice)) || 15e3;
   row.rating = model.rating || 5;
   row.reviews_count = model.reviewsCount || 0;
@@ -3330,6 +3331,9 @@ function toSupabaseModelRow(model) {
   row.experience = model.experience || "";
   row.videoUrl = model.videoUrl || void 0;
   row.availabilityStatus = model.availabilityStatus || "Available";
+  row.portfolio = Array.isArray(model.portfolio) ? model.portfolio : [];
+  row.portfolioCaptions = Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [];
+  row.portfolioCategories = Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [];
   row.measurements = {
     ...model.measurements || {},
     category: model.category,
@@ -3352,6 +3356,16 @@ function toSupabaseModelRow(model) {
 }
 function fromSupabaseModelRow(row) {
   const extra = row.measurements || {};
+  let portfolioList = [];
+  if (Array.isArray(row.portfolio) && row.portfolio.length > 0) {
+    portfolioList = row.portfolio.filter(Boolean);
+  } else if (Array.isArray(extra.portfolio) && extra.portfolio.length > 0) {
+    portfolioList = extra.portfolio.filter(Boolean);
+  } else if (typeof row.portfolio === "string" && row.portfolio) {
+    portfolioList = [row.portfolio];
+  } else if (typeof extra.portfolio === "string" && extra.portfolio) {
+    portfolioList = [extra.portfolio];
+  }
   return {
     id: extra.originalId || row.id,
     userId: extra.originalUserId || row.userId || row.user_id || row.userid,
@@ -3363,12 +3377,14 @@ function fromSupabaseModelRow(row) {
     state: row.state || "Maharashtra",
     languages: Array.isArray(row.languages) ? row.languages : ["English", "Hindi"],
     experience: row.experience || "2-5 years",
-    category: extra.category || "Fashion Models",
-    portfolio: Array.isArray(extra.portfolio) ? extra.portfolio : [],
+    category: extra.category || row.category || "Fashion Models",
+    portfolio: portfolioList,
+    portfolioCaptions: Array.isArray(row.portfolioCaptions) ? row.portfolioCaptions : extra.portfolioCaptions,
+    portfolioCategories: Array.isArray(row.portfolioCategories) ? row.portfolioCategories : extra.portfolioCategories,
     videoUrl: row.videoUrl || row.video_url,
     availabilityStatus: row.availabilityStatus || row.availability_status || "Available",
     selfieVerified: extra.selfieVerified !== void 0 ? extra.selfieVerified : true,
-    selfieUrl: extra.selfieUrl,
+    selfieUrl: extra.selfieUrl || row.selfieUrl,
     approved: extra.approved !== void 0 ? extra.approved : true,
     rejected: extra.rejected !== void 0 ? extra.rejected : false,
     startingPrice: row.starting_price || row.startingPrice || 15e3,
@@ -3428,11 +3444,23 @@ var ModelRepository = class {
     }
     return INITIAL_SERVER_MODELS.find((m) => m.id === id) || null;
   }
+  async findByUserId(userId, email) {
+    if (!userId && !email) return null;
+    const all = await this.findAll();
+    const match = all.find(
+      (m) => userId && String(m.userId) === String(userId) || email && m.email && m.email.toLowerCase() === email.toLowerCase()
+    );
+    return match || null;
+  }
   async save(model) {
     const localModels = getLocalModels2();
-    const idx = localModels.findIndex((m) => m.id === model.id);
-    if (idx >= 0) {
-      localModels[idx] = model;
+    const existingIdx = localModels.findIndex(
+      (m) => m.id === model.id || model.userId && String(m.userId) === String(model.userId) || model.email && m.email && m.email.toLowerCase() === model.email.toLowerCase()
+    );
+    if (existingIdx >= 0) {
+      const existing = localModels[existingIdx];
+      model.id = existing.id;
+      localModels[existingIdx] = { ...existing, ...model, id: existing.id };
     } else {
       localModels.push(model);
     }
@@ -3472,6 +3500,9 @@ var ModelService = class {
   }
   async getModelById(id) {
     return this.modelRepository.findById(id);
+  }
+  async getModelByUserId(userId, email) {
+    return this.modelRepository.findByUserId(userId, email);
   }
   async createModel(modelData) {
     return this.modelRepository.save(modelData);
@@ -3561,12 +3592,15 @@ var ModelController = class {
           error: "Validation Error: Full Name is required for model registration."
         });
       }
-      if (!modelData.id) {
-        modelData.id = "m_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-      }
       if (!modelData.userId) {
         const bodyAny = req.body;
         modelData.userId = bodyAny?.userId || bodyAny?.user_id || bodyAny?.userid || req.user?.id || "u_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+      }
+      const existingModelProfile = await modelService.getModelByUserId(modelData.userId, modelData.email);
+      if (existingModelProfile) {
+        modelData.id = existingModelProfile.id;
+      } else if (!modelData.id) {
+        modelData.id = "m_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
       }
       if (modelData.approved === void 0) {
         modelData.approved = true;

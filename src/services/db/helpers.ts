@@ -182,23 +182,19 @@ export function extractPortfolioFromRow(row: any): string[] {
   const extra = typeof row.measurements === 'object' && row.measurements ? row.measurements : {};
   const addDetails = typeof row.additionalDetails === 'object' && row.additionalDetails ? row.additionalDetails : {};
   
-  const candidates: any[] = [
+  const primaryCandidates: any[] = [
     row.portfolio,
     extra.portfolio,
     row.portfolio_urls,
     row.portfolioUrls,
     row.portfolio_images,
     row.portfolioImages,
-    row.images,
-    addDetails.portfolioLink1,
-    addDetails.portfolioLink2,
-    addDetails.portfolioLink3,
-    extra.portfolioLink1,
-    extra.portfolioLink2,
-    extra.portfolioLink3,
-    row.portfolioLink1,
-    row.portfolioLink2,
-    row.portfolioLink3,
+    [addDetails.portfolioLink1, addDetails.portfolioLink2, addDetails.portfolioLink3],
+    [extra.portfolioLink1, extra.portfolioLink2, extra.portfolioLink3],
+    [row.portfolioLink1, row.portfolioLink2, row.portfolioLink3],
+  ];
+
+  const fallbackCandidates: any[] = [
     row.image_url,
     row.imageUrl,
     row.selfieUrl,
@@ -226,13 +222,13 @@ export function extractPortfolioFromRow(row: any): string[] {
 
       // 1. Direct Data URL (e.g. data:image/jpeg;base64,...)
       if (trimmed.startsWith('data:image/')) {
-        result.push(trimmed);
+        if (!result.includes(trimmed)) result.push(trimmed);
         return;
       }
 
       // 2. Direct HTTP/HTTPS or absolute path URL
       if ((trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) && !trimmed.includes('{') && !trimmed.includes('[')) {
-        result.push(trimmed);
+        if (!result.includes(trimmed)) result.push(trimmed);
         return;
       }
 
@@ -262,7 +258,7 @@ export function extractPortfolioFromRow(row: any): string[] {
           return;
         }
 
-        // Unquoted Postgres array items: split on comma, BUT preserve data: URLs
+        // Unquoted Postgres array items: split on comma ONLY before a new URL/data protocol
         const items = inner.split(/,(?=(?:data:image|https?:\/\/|\/))/g);
         if (items.length > 1) {
           items.forEach(sub => processItem(sub.replace(/^"|"$/g, '').trim()));
@@ -287,15 +283,20 @@ export function extractPortfolioFromRow(row: any): string[] {
       }
 
       // Single fallback item
-      if (trimmed.length > 5) {
+      if (trimmed.length > 5 && !result.includes(trimmed)) {
         result.push(trimmed);
       }
     }
   };
 
-  candidates.forEach(c => processItem(c));
+  primaryCandidates.forEach(c => processItem(c));
 
-  return Array.from(new Set(result.filter(url => typeof url === 'string' && url.length > 10)));
+  // Only if no primary portfolio items were found, check fallbacks
+  if (result.length === 0) {
+    fallbackCandidates.forEach(c => processItem(c));
+  }
+
+  return result.filter(url => typeof url === 'string' && url.length > 10);
 }
 
 export function fromSupabaseModelRow(row: any): Model {
