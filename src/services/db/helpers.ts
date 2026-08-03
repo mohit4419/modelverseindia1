@@ -289,5 +289,24 @@ export function sanitizeValue(value: any, keyName?: string): any {
   return value;
 }
 
+const DUMMY_MODEL_IDS = new Set(['m1', 'm2', 'm3', 'm4', 'm5', 'm6']);
+const DUMMY_MODEL_NAMES = new Set([
+  'priya sharma', 
+  'kabir mehra', 
+  'anjali rao', 
+  'vikram singh', 
+  'rhea kapoor', 
+  'divya nair', 
+  'pooja hegde',
+  'priya sharma (model)'
+]);
+
+export function isDummyModel(model: any): boolean {
+  if (!model) return true;
+  if (model.id && DUMMY_MODEL_IDS.has(String(model.id).trim())) return true;
+  if (model.name && DUMMY_MODEL_NAMES.has(String(model.name).toLowerCase().trim())) return true;
+  return false;
+}
+
 
 

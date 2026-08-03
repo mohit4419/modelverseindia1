@@ -4,7 +4,7 @@
  */
 
 import { Model, Booking, PaymentRecord, Message, Review, User, BlogItem, AuditLog, Payout, Post, PREMIUM_UNLOCK_AMOUNT } from '../../types';
-import { sanitizeValue } from './helpers';
+import { sanitizeValue, isDummyModel } from './helpers';
 
 export const SEED_AUDIT_LOGS: AuditLog[] = [
   {
@@ -387,8 +387,19 @@ export const SEED_POSTS: Post[] = [
 export function initializeLocalStorage() {
   if (typeof window === 'undefined') return;
 
-  if (!localStorage.getItem('mvi_models')) {
-    localStorage.setItem('mvi_models', JSON.stringify(SEED_MODELS));
+  try {
+    const existingModelsStr = localStorage.getItem('mvi_models');
+    if (existingModelsStr) {
+      const parsed = JSON.parse(existingModelsStr);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter(m => !isDummyModel(m));
+        localStorage.setItem('mvi_models', JSON.stringify(cleaned));
+      }
+    } else {
+      localStorage.setItem('mvi_models', JSON.stringify([]));
+    }
+  } catch (e) {
+    localStorage.setItem('mvi_models', JSON.stringify([]));
   }
   if (!localStorage.getItem('mvi_reviews')) {
     localStorage.setItem('mvi_reviews', JSON.stringify(SEED_REVIEWS));

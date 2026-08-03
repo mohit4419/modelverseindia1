@@ -5,7 +5,7 @@
 
 import { supabase } from '../../supabaseClient';
 import { Model } from '../../types';
-import { isSupabaseAvailable, removeUndefined, sanitizeValue, fromSupabaseModelRow, isUUID, ensureUserExistsInDb, getValidUserIdForModel, extractPortfolioFromRow } from './helpers';
+import { isSupabaseAvailable, removeUndefined, sanitizeValue, fromSupabaseModelRow, isUUID, ensureUserExistsInDb, getValidUserIdForModel, extractPortfolioFromRow, isDummyModel } from './helpers';
 
 function ensureUuidFormat(id?: string): string {
   if (isUUID(id)) return id!;
@@ -171,24 +171,23 @@ export const modelService = {
     }
 
     const mergedMap = new Map<string, Model>();
-    // Priority sequence:
-    // 1. Seed Models
-    SEED_MODELS.forEach(m => mergedMap.set(m.id, m));
-    // 2. Supabase Database Models (parsed)
-    dbModels.forEach(m => mergedMap.set(m.id, m));
-    // 3. LocalStorage Cached Models
-    localModels.forEach(m => mergedMap.set(m.id, m));
-    // 4. Express Server Backend Models (Highest Priority - Primary Source of Truth)
-    backendModels.forEach(m => mergedMap.set(m.id, m));
+    // 1. Supabase Database Models (parsed)
+    dbModels.filter(m => !isDummyModel(m)).forEach(m => mergedMap.set(m.id, m));
+    // 2. LocalStorage Cached Models
+    localModels.filter(m => !isDummyModel(m)).forEach(m => mergedMap.set(m.id, m));
+    // 3. Express Server Backend Models (Highest Priority - Primary Source of Truth)
+    backendModels.filter(m => !isDummyModel(m)).forEach(m => mergedMap.set(m.id, m));
 
-    const finalModels = Array.from(mergedMap.values()).map(m => ({
-      ...m,
-      approved: m.approved !== undefined ? m.approved : true,
-      category: m.category || 'Fashion Models',
-      portfolio: extractPortfolioFromRow(m),
-      startingPrice: m.startingPrice || 15000,
-      available: m.available !== undefined ? m.available : (m.availabilityStatus === 'Available')
-    }));
+    const finalModels = Array.from(mergedMap.values())
+      .filter(m => !isDummyModel(m))
+      .map(m => ({
+        ...m,
+        approved: m.approved !== undefined ? m.approved : true,
+        category: m.category || 'Fashion Models',
+        portfolio: extractPortfolioFromRow(m),
+        startingPrice: m.startingPrice || 15000,
+        available: m.available !== undefined ? m.available : (m.availabilityStatus === 'Available')
+      }));
 
     return sanitizeValue(finalModels);
   },
