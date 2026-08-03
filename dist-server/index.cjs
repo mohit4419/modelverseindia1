@@ -3425,6 +3425,14 @@ var ModelRepository = class {
         const existing = mergedMap.get(key);
         if (!existing) {
           mergedMap.set(key, m);
+        } else {
+          const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
+          const newPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
+          const existingTime = new Date(existing.updated_at || existing.createdAt || 0).getTime();
+          const newTime = new Date(m.updated_at || m.createdAt || 0).getTime();
+          if (newTime >= existingTime || newPhotos >= existingPhotos && newPhotos > 0) {
+            mergedMap.set(key, m);
+          }
         }
       });
       return Array.from(mergedMap.values());

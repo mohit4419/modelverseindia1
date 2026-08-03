@@ -44,6 +44,8 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
   return removeUndefined({
     id: finalUuid,
     userId: validUserId,
+    user_id: validUserId,
+    userid: validUserId,
     name: model.name,
     gender: model.gender || 'female',
     age: Number(model.age) || 23,
@@ -61,6 +63,8 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
     email: model.email || '',
     phone: model.phone || '',
     portfolio: portfolioArr,
+    portfolioCaptions: Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [],
+    portfolioCategories: Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [],
     measurements: {
       ...(typeof model.measurements === 'object' ? model.measurements : {}),
       portfolio: portfolioArr,
@@ -70,7 +74,8 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
       archived: Boolean(model.archived)
     },
     biography: model.biography || '',
-    category: model.category || 'Fashion Models'
+    category: model.category || 'Fashion Models',
+    updated_at: new Date().toISOString()
   });
 }
 
@@ -80,31 +85,17 @@ async function mapModelToBaseSupabaseRow(model: Model): Promise<Record<string, a
   return removeUndefined({
     id: finalUuid,
     userId: validUserId,
+    user_id: validUserId,
+    userid: validUserId,
     name: model.name,
     gender: model.gender || 'female',
     age: Number(model.age) || 23,
     height: parseHeightToInteger(model.height),
     city: model.city || 'Mumbai',
     state: model.state || 'Maharashtra',
-    starting_price: Number(model.startingPrice || (model as any).starting_price) || 15000,
-    rating: Number(model.rating) || 5,
-    reviews_count: Number(model.reviewsCount || (model as any).reviews_count) || 1,
-    biography: model.biography || '',
-    phone: model.phone || '',
-    email: model.email || '',
-    measurements: {
-      ...(typeof model.measurements === 'object' ? model.measurements : {}),
-      originalId: model.id,
-      originalUserId: model.userId,
-      heightOriginal: model.height,
-      category: model.category,
-      portfolio: model.portfolio,
-      languages: model.languages,
-      experience: model.experience,
-      approved: model.approved !== undefined ? model.approved : true,
-      rejected: model.rejected !== undefined ? model.rejected : false,
-      selfieVerified: model.selfieVerified !== undefined ? model.selfieVerified : true
-    }
+    category: model.category || 'Fashion Models',
+    portfolio: Array.isArray(model.portfolio) ? model.portfolio.filter(Boolean) : [],
+    updated_at: new Date().toISOString()
   });
 }
 import { SEED_MODELS } from './seedData';
@@ -136,6 +127,15 @@ export const modelService = {
     }
   },
 
+  async getModelByUserId(userId: string, email?: string): Promise<Model | null> {
+    const models = await this.getModels();
+    const match = models.find(m => 
+      (userId && m.userId === userId) ||
+      (email && m.email && m.email.toLowerCase() === email.toLowerCase())
+    );
+    return match || null;
+  },
+
   // GET MODELS
   async getModels(): Promise<Model[]> {
     let backendModels: Model[] = [];
@@ -154,7 +154,7 @@ export const modelService = {
     let dbModels: Model[] = [];
     if (isSupabaseAvailable && supabase) {
       try {
-        const { data, error } = await supabase.from('models').select('*');
+        const { data, error } = await supabase.from('models').select('*').order('created_at', { ascending: false });
         if (!error && data && Array.isArray(data)) {
           dbModels = data.map(fromSupabaseModelRow);
         }
@@ -168,12 +168,22 @@ export const modelService = {
     const mergedMap = new Map<string, Model>();
 
     if (databaseModels.length > 0) {
-      // Real database models exist: Strictly deduplicate by userId (or id)
+      // Real database models exist: Strictly deduplicate by userId (or id), keeping latest updated model profile
       databaseModels.filter(m => !isDummyModel(m)).forEach(m => {
         const userKey = m.userId || m.id;
         const existing = mergedMap.get(userKey);
         if (!existing) {
           mergedMap.set(userKey, m);
+        } else {
+          const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
+          const newPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
+          const existingTime = new Date((existing as any).updated_at || existing.createdAt || 0).getTime();
+          const newTime = new Date((m as any).updated_at || m.createdAt || 0).getTime();
+
+          // Overwrite with newer model or profile with updated portfolio photos
+          if (newTime >= existingTime || (newPhotos >= existingPhotos && newPhotos > 0)) {
+            mergedMap.set(userKey, m);
+          }
         }
       });
     } else {
@@ -373,16 +383,5 @@ export const modelService = {
     }
 
     return savedModel;
-  },
-
-  // GET MODEL BY USER ID OR EMAIL (For 1 model profile per user enforcement)
-  async getModelByUserId(userId: string, email?: string): Promise<Model | null> {
-    if (!userId && !email) return null;
-    const all = await this.getModels();
-    const found = all.find(m => 
-      (userId && m.userId === userId) || 
-      (email && m.email && m.email.toLowerCase() === email.toLowerCase())
-    );
-    return found || null;
   }
 };

@@ -170,12 +170,21 @@ export class ModelRepository {
 
     if (dbModels.length > 0) {
       // Primary Source of Truth: Database models from Supabase
-      // Deduplicate by userId (or id) to ensure 1 model per user ID
+      // Deduplicate by userId (or id), keeping the latest updated profile with photos
       dbModels.forEach((m) => {
         const key = m.userId || m.id;
         const existing = mergedMap.get(key);
         if (!existing) {
           mergedMap.set(key, m);
+        } else {
+          const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
+          const newPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
+          const existingTime = new Date((existing as any).updated_at || existing.createdAt || 0).getTime();
+          const newTime = new Date((m as any).updated_at || m.createdAt || 0).getTime();
+
+          if (newTime >= existingTime || (newPhotos >= existingPhotos && newPhotos > 0)) {
+            mergedMap.set(key, m);
+          }
         }
       });
       return Array.from(mergedMap.values());
