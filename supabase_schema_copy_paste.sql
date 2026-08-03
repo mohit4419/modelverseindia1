@@ -238,7 +238,19 @@ ALTER TABLE public.models ADD COLUMN IF NOT EXISTS measurements JSONB DEFAULT '{
 ALTER TABLE public.models ADD COLUMN IF NOT EXISTS languages JSONB DEFAULT '["English", "Hindi"]'::jsonb;
 ALTER TABLE public.models ADD COLUMN IF NOT EXISTS experience TEXT DEFAULT 'Fresh Face';
 
--- Ensure 1 model profile per user ID security constraint
+-- 1. Safely remove older duplicate model profiles per userId before applying UNIQUE index
+DELETE FROM public.models m1
+USING public.models m2
+WHERE m1."userId" = m2."userId"
+  AND m1.created_at < m2.created_at;
+
+-- Fallback deduplication for any remaining duplicate userId rows (using ctid)
+DELETE FROM public.models m1
+USING public.models m2
+WHERE m1."userId" = m2."userId"
+  AND m1.ctid < m2.ctid;
+
+-- 2. Create 1 model profile per user ID unique index
 CREATE UNIQUE INDEX IF NOT EXISTS idx_models_user_id_unique ON public.models ("userId");
 
 -- 4. Create model-associated auxiliary child tables
