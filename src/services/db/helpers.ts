@@ -183,8 +183,8 @@ export function extractPortfolioFromRow(row: any): string[] {
   const addDetails = typeof row.additionalDetails === 'object' && row.additionalDetails ? row.additionalDetails : {};
   
   const candidates: any[] = [
-    extra.portfolio,
     row.portfolio,
+    extra.portfolio,
     row.portfolio_urls,
     row.portfolioUrls,
     row.portfolio_images,
@@ -214,10 +214,29 @@ export function extractPortfolioFromRow(row: any): string[] {
 
   const processItem = (item: any) => {
     if (!item) return;
+
     if (Array.isArray(item)) {
       item.forEach(sub => processItem(sub));
-    } else if (typeof item === 'string' && item.trim()) {
+      return;
+    }
+
+    if (typeof item === 'string') {
       const trimmed = item.trim();
+      if (!trimmed) return;
+
+      // 1. Direct Data URL (e.g. data:image/jpeg;base64,...)
+      if (trimmed.startsWith('data:image/')) {
+        result.push(trimmed);
+        return;
+      }
+
+      // 2. Direct HTTP/HTTPS or absolute path URL
+      if ((trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) && !trimmed.includes('{') && !trimmed.includes('[')) {
+        result.push(trimmed);
+        return;
+      }
+
+      // 3. JSON Array string: '["url1", "url2"]'
       if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
         try {
           const parsed = JSON.parse(trimmed);
@@ -227,14 +246,48 @@ export function extractPortfolioFromRow(row: any): string[] {
           }
         } catch {}
       }
+
+      // 4. Postgres Array format string: '{"url1", "url2"}' or '{url1, url2}'
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-        const cleaned = trimmed.slice(1, -1).split(',').map(s => s.replace(/^"|"$/g, '').trim()).filter(Boolean);
-        cleaned.forEach(c => processItem(c));
+        const inner = trimmed.slice(1, -1).trim();
+        if (!inner) return;
+
+        // Try extracting quoted strings first: "data:image/..." or "https://..."
+        const quotedMatches = inner.match(/"((?:[^"\\]|\\.)*)"/g);
+        if (quotedMatches && quotedMatches.length > 0) {
+          quotedMatches.forEach(q => {
+            const unquoted = q.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\').trim();
+            processItem(unquoted);
+          });
+          return;
+        }
+
+        // Unquoted Postgres array items: split on comma, BUT preserve data: URLs
+        const items = inner.split(/,(?=(?:data:image|https?:\/\/|\/))/g);
+        if (items.length > 1) {
+          items.forEach(sub => processItem(sub.replace(/^"|"$/g, '').trim()));
+          return;
+        }
+
+        // Fallback for simple comma list inside braces
+        const simpleItems = inner.split(',');
+        simpleItems.forEach(s => {
+          const cleaned = s.replace(/^"|"$/g, '').trim();
+          if (cleaned.startsWith('data:image/') || cleaned.startsWith('http') || cleaned.startsWith('/')) {
+            processItem(cleaned);
+          }
+        });
         return;
       }
-      if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
+
+      // 5. Plain comma-separated list of non-data URLs
+      if (trimmed.includes(',') && !trimmed.startsWith('data:image/')) {
         trimmed.split(',').forEach(s => processItem(s));
-      } else {
+        return;
+      }
+
+      // Single fallback item
+      if (trimmed.length > 5) {
         result.push(trimmed);
       }
     }
@@ -242,7 +295,7 @@ export function extractPortfolioFromRow(row: any): string[] {
 
   candidates.forEach(c => processItem(c));
 
-  return Array.from(new Set(result.filter(url => typeof url === 'string' && url.length > 5)));
+  return Array.from(new Set(result.filter(url => typeof url === 'string' && url.length > 10)));
 }
 
 export function fromSupabaseModelRow(row: any): Model {
