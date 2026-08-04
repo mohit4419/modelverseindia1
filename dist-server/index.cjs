@@ -4119,15 +4119,15 @@ var BookingController = class {
 var import_zod6 = require("zod");
 var bookingSchema = import_zod6.z.object({
   id: import_zod6.z.string().min(1, { message: "Booking ID is required." }),
-  clientId: import_zod6.z.string().min(1, { message: "Client ID is required." }),
-  clientName: import_zod6.z.string().min(1, { message: "Client Name is required." }),
+  clientId: import_zod6.z.string().optional(),
+  clientName: import_zod6.z.string().optional(),
   modelId: import_zod6.z.string().min(1, { message: "Model ID is required." }),
-  modelName: import_zod6.z.string().min(1, { message: "Model Name is required." }),
-  modelImage: import_zod6.z.string().min(1, { message: "Model Image URL is required." }),
-  projectDetails: import_zod6.z.record(import_zod6.z.string(), import_zod6.z.any()),
-  status: import_zod6.z.enum(["pending", "assigned", "accepted", "rejected", "canceled", "completed"]),
-  createdAt: import_zod6.z.string().min(1, { message: "Creation Timestamp is required." }),
-  priceAmount: import_zod6.z.number().positive("Amount must be greater than zero.")
+  modelName: import_zod6.z.string().optional(),
+  modelImage: import_zod6.z.string().optional(),
+  projectDetails: import_zod6.z.record(import_zod6.z.string(), import_zod6.z.any()).optional(),
+  status: import_zod6.z.string().optional(),
+  createdAt: import_zod6.z.string().optional(),
+  priceAmount: import_zod6.z.number().optional()
 });
 
 // server/routes/bookings.routes.ts

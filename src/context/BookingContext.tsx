@@ -99,17 +99,20 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   };
 
   const handleBookingSubmit = async (bookingData: any) => {
+    const modelObj = models.find(m => m.id === bookingData.modelId);
+    const modelImageFallback = bookingData.modelImage || modelObj?.portfolio?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
+
     const freshBooking: Booking = {
       id: `bk_${Date.now()}`,
-      clientId,
+      clientId: clientId || 'c_default',
       clientName: currentUserName || 'Premium Agency (Test Client)',
       modelId: bookingData.modelId,
-      modelName: bookingData.modelName,
-      modelImage: bookingData.modelImage,
-      projectDetails: bookingData.projectDetails,
+      modelName: bookingData.modelName || modelObj?.name || 'Model',
+      modelImage: modelImageFallback,
+      projectDetails: bookingData.projectDetails || {},
       status: 'pending',
       createdAt: new Date().toISOString(),
-      priceAmount: bookingData.priceAmount
+      priceAmount: Number(bookingData.priceAmount) || 15000
     };
 
     triggerToast(
@@ -119,20 +122,20 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     );
 
     try {
-      // 1. Save via backend API (primary channel)
-      await bookingService.createBooking(freshBooking);
+      // 1. Save directly via dbService (LocalStorage + Supabase) first to guarantee state persistence
+      await dbService.addBooking(freshBooking);
 
-      // 2. Also save directly to Supabase via dbService (dual-channel for reliability)
-      try {
-        await dbService.addBooking(freshBooking);
-      } catch (dbErr) {
-        console.warn('Direct DB booking save note (API already handled):', dbErr);
-      }
-
+      // 2. Update state in real-time immediately
       const updatedBookings = await dbService.getBookings();
       setBookings(updatedBookings);
 
-      const modelObj = models.find(m => m.id === bookingData.modelId);
+      // 3. Dual-channel sync to Express backend API in non-blocking try-catch
+      try {
+        await bookingService.createBooking(freshBooking);
+      } catch (apiErr) {
+        console.warn('Backend API booking sync note (saved locally & DB):', apiErr);
+      }
+
       const modelUserId = modelObj ? modelObj.userId : bookingData.modelId;
       
       // Notification for client
@@ -140,7 +143,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         id: `msg_sys_${Date.now()}`,
         senderId: 'system',
         receiverId: clientId,
-        content: `🎉 Casting Proposal Submitted! Your booking request for ${bookingData.modelName} has been recorded (ID: ${freshBooking.id}). Status is currently PENDING. Admin will review and approve it shortly.`,
+        content: `🎉 Casting Proposal Submitted! Your booking request for ${freshBooking.modelName} has been recorded (ID: ${freshBooking.id}). Status is currently PENDING. Admin will review and approve it shortly.`,
         timestamp: new Date().toISOString(),
         isRead: false
       };

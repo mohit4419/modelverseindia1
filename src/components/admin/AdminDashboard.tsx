@@ -199,6 +199,9 @@ export default function AdminDashboard({
     }
   };
 
+  // Bookings statistics
+  const pendingBookings = bookings.filter(b => b.status === 'pending');
+
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 p-4 sm:p-6 lg:p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -240,7 +243,7 @@ export default function AdminDashboard({
             { id: 'overview', label: 'Overview', icon: Activity, count: null },
             { id: 'talent', label: 'Talent Approvals', icon: Sparkles, count: pendingModels.length > 0 ? pendingModels.length : null },
             { id: 'users', label: 'User Directory', icon: Users, count: usersList.length },
-            { id: 'bookings', label: 'Bookings', icon: Calendar, count: bookings.length },
+            { id: 'bookings', label: 'Bookings', icon: Calendar, count: pendingBookings.length > 0 ? `🚨 ${pendingBookings.length} Pending` : bookings.length },
             { id: 'financials', label: 'Financials', icon: DollarSign, count: null },
             { id: 'database', label: 'System Health', icon: Database, count: null },
           ].map((tab) => {
@@ -273,6 +276,27 @@ export default function AdminDashboard({
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-fadeIn">
+            {/* Pending Bookings Notice Banner */}
+            {pendingBookings.length > 0 && (
+              <div className="bg-gradient-to-r from-purple-950/60 via-purple-900/30 to-neutral-900 border border-purple-500/40 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-purple-900/20">
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-6 h-6 text-purple-400 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-bold text-purple-200">Action Required: {pendingBookings.length} Booking Proposal{pendingBookings.length > 1 ? 's' : ''} Pending Approval</h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">Review client campaign requirements and approve or assign models to proposals.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setBookingStatusFilter('pending');
+                    setActiveTab('bookings');
+                  }}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl transition cursor-pointer whitespace-nowrap shadow-md"
+                >
+                  Review Pending Proposals ({pendingBookings.length}) &rarr;
+                </button>
+              </div>
+            )}
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-5 bg-neutral-900/80 border border-neutral-800 rounded-2xl space-y-2">

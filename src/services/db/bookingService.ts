@@ -91,6 +91,19 @@ export const bookingService = {
   },
 
   async getBookings(): Promise<Booking[]> {
+    let backendBookings: Booking[] = [];
+    try {
+      const res = await fetch('/api/v2/bookings');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data)) {
+          backendBookings = json.data.map(fromSupabaseBookingRow);
+        }
+      }
+    } catch (e) {
+      console.warn('Backend API bookings fetch note:', e);
+    }
+
     let dbBookings: Booking[] = [];
     if (isSupabaseAvailable && supabase) {
       try {
@@ -117,6 +130,7 @@ export const bookingService = {
 
     const mergedMap = new Map<string, Booking>();
     localBookings.forEach(b => mergedMap.set(b.id, b));
+    backendBookings.forEach(b => mergedMap.set(b.id, b));
     dbBookings.forEach(b => mergedMap.set(b.id, b)); // Supabase Database takes precedence
 
     return Array.from(mergedMap.values());
@@ -124,9 +138,15 @@ export const bookingService = {
 
   async addBooking(booking: Booking): Promise<void> {
     try {
-      const bookings = await this.getBookings();
-      bookings.push(booking);
-      localStorage.setItem('mvi_bookings', JSON.stringify(bookings));
+      const local = localStorage.getItem('mvi_bookings');
+      const existing: Booking[] = local ? JSON.parse(local) : [];
+      const idx = existing.findIndex(b => b.id === booking.id);
+      if (idx >= 0) {
+        existing[idx] = booking;
+      } else {
+        existing.push(booking);
+      }
+      localStorage.setItem('mvi_bookings', JSON.stringify(existing));
     } catch (localErr) {
       console.error('Local storage addBooking failed:', localErr);
     }
