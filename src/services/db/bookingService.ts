@@ -160,6 +160,38 @@ export const bookingService = {
           .from('bookings')
           .upsert(row);
         if (error) throw error;
+
+        // Sync role-specific booking tables
+        try {
+          await supabase.from('client_bookings').upsert({
+            id: booking.id,
+            booking_id: booking.id,
+            client_id: booking.clientId,
+            client_name: booking.clientName,
+            model_id: booking.modelId,
+            model_name: booking.modelName,
+            status: booking.status || 'pending',
+            price_amount: booking.priceAmount || 0,
+            project_details: booking.projectDetails || {},
+            updated_at: new Date().toISOString()
+          });
+        } catch (cbErr) {
+          console.warn('Client bookings table sync note:', cbErr);
+        }
+
+        try {
+          await supabase.from('admin_bookings').upsert({
+            id: booking.id,
+            booking_id: booking.id,
+            client_id: booking.clientId,
+            model_id: booking.modelId,
+            approval_status: booking.status === 'pending' ? 'pending_review' : booking.status,
+            updated_at: new Date().toISOString()
+          });
+        } catch (abErr) {
+          console.warn('Admin bookings table sync note:', abErr);
+        }
+
         console.log(`Booking ${booking.id} saved to Supabase successfully.`);
       } catch (e) {
         console.warn('Supabase bookings save failed (falling back to local):', e);
@@ -203,13 +235,36 @@ export const bookingService = {
 
     if (isSupabaseAvailable && supabase) {
       try {
-        const { error } = await supabase
+        await supabase
           .from('bookings')
           .update({ status, updated_at: new Date().toISOString() })
           .eq('id', bookingId);
-        if (error) throw error;
+
+        await supabase
+          .from('client_bookings')
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq('booking_id', bookingId);
+
+        await supabase
+          .from('admin_bookings')
+          .update({ approval_status: status === 'pending' ? 'pending_review' : status, updated_at: new Date().toISOString() })
+          .eq('booking_id', bookingId);
+
+        if (['assigned', 'accepted', 'completed', 'rejected'].includes(status)) {
+          const bookingObj = (await this.getBookings()).find(b => b.id === bookingId);
+          if (bookingObj) {
+            await supabase.from('model_bookings').upsert({
+              id: bookingId,
+              booking_id: bookingId,
+              model_id: bookingObj.modelId,
+              client_id: bookingObj.clientId,
+              response_status: status,
+              updated_at: new Date().toISOString()
+            });
+          }
+        }
       } catch (e) {
-        console.warn('Supabase bookings update status failed (falling back to local):', e);
+        console.warn('Supabase status update note:', e);
       }
     }
   },

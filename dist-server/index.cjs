@@ -3922,7 +3922,49 @@ var BookingRepository = class {
           2500
         );
         if (error) throw error;
-        console.log(`Booking ${booking.id} successfully saved to Supabase.`);
+        console.log(`Booking ${booking.id} successfully saved to Supabase bookings table.`);
+        try {
+          await supabaseAdmin.from("client_bookings").upsert({
+            id: booking.id,
+            booking_id: booking.id,
+            client_id: booking.clientId,
+            client_name: booking.clientName,
+            model_id: booking.modelId,
+            model_name: booking.modelName,
+            status: booking.status || "pending",
+            price_amount: booking.priceAmount || 0,
+            project_details: booking.projectDetails || {},
+            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          });
+        } catch (clientErr) {
+          console.warn("Client bookings table sync note:", clientErr);
+        }
+        try {
+          await supabaseAdmin.from("admin_bookings").upsert({
+            id: booking.id,
+            booking_id: booking.id,
+            client_id: booking.clientId,
+            model_id: booking.modelId,
+            approval_status: booking.status === "pending" ? "pending_review" : booking.status,
+            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          });
+        } catch (adminErr) {
+          console.warn("Admin bookings table sync note:", adminErr);
+        }
+        if (booking.status && ["assigned", "accepted", "completed", "rejected"].includes(booking.status)) {
+          try {
+            await supabaseAdmin.from("model_bookings").upsert({
+              id: booking.id,
+              booking_id: booking.id,
+              model_id: booking.modelId,
+              client_id: booking.clientId,
+              response_status: booking.status,
+              updated_at: (/* @__PURE__ */ new Date()).toISOString()
+            });
+          } catch (modelErr) {
+            console.warn("Model bookings table sync note:", modelErr);
+          }
+        }
       } catch (e) {
         console.warn(`Supabase upsert failed for booking ${booking.id}:`, e.message || e);
       }

@@ -484,3 +484,96 @@ END $$;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role, postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role, postgres;
 
+-- Role-Specific Booking Tables for Explicit Data Segregation
+CREATE TABLE IF NOT EXISTS public.client_bookings (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT REFERENCES public.bookings(id) ON DELETE CASCADE,
+    client_id TEXT NOT NULL,
+    client_name TEXT,
+    model_id TEXT NOT NULL,
+    model_name TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    price_amount NUMERIC DEFAULT 0,
+    project_details JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_bookings (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT REFERENCES public.bookings(id) ON DELETE CASCADE,
+    client_id TEXT NOT NULL,
+    model_id TEXT NOT NULL,
+    approval_status TEXT NOT NULL DEFAULT 'pending_review',
+    reviewed_by TEXT,
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE IF NOT EXISTS public.model_bookings (
+    id TEXT PRIMARY KEY,
+    booking_id TEXT REFERENCES public.bookings(id) ON DELETE CASCADE,
+    model_id TEXT NOT NULL,
+    client_id TEXT NOT NULL,
+    response_status TEXT NOT NULL DEFAULT 'assigned',
+    responded_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE POLICY "Allow write on client_bookings" ON public.client_bookings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow write on admin_bookings" ON public.admin_bookings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow write on model_bookings" ON public.model_bookings FOR ALL USING (true) WITH CHECK (true);
+
+-- Automatic PostgreSQL Trigger Function to sync role-specific bookings
+CREATE OR REPLACE FUNCTION public.sync_role_bookings_trigger()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.client_bookings (
+        id, booking_id, client_id, client_name, model_id, model_name, status, price_amount, project_details, created_at, updated_at
+    ) VALUES (
+        NEW.id, NEW.id, NEW.client_id, NEW.client_name, NEW.model_id, NEW.model_name, NEW.status, COALESCE(NEW.price_amount, NEW.amount, 0), NEW.project_details, NEW.created_at, NEW.updated_at
+    ) ON CONFLICT (id) DO UPDATE SET
+        status = EXCLUDED.status,
+        price_amount = EXCLUDED.price_amount,
+        project_details = EXCLUDED.project_details,
+        updated_at = EXCLUDED.updated_at;
+
+    INSERT INTO public.admin_bookings (
+        id, booking_id, client_id, model_id, approval_status, updated_at
+    ) VALUES (
+        NEW.id, NEW.id, NEW.client_id, NEW.model_id, 
+        CASE 
+            WHEN NEW.status = 'pending' THEN 'pending_review'
+            WHEN NEW.status = 'assigned' THEN 'assigned'
+            WHEN NEW.status = 'rejected' THEN 'rejected'
+            ELSE NEW.status
+        END,
+        NEW.updated_at
+    ) ON CONFLICT (id) DO UPDATE SET
+        approval_status = EXCLUDED.approval_status,
+        updated_at = EXCLUDED.updated_at;
+
+    IF NEW.status IN ('assigned', 'accepted', 'completed', 'rejected') THEN
+        INSERT INTO public.model_bookings (
+            id, booking_id, model_id, client_id, response_status, updated_at
+        ) VALUES (
+            NEW.id, NEW.id, NEW.model_id, NEW.client_id, NEW.status, NEW.updated_at
+        ) ON CONFLICT (id) DO UPDATE SET
+            response_status = EXCLUDED.response_status,
+            updated_at = EXCLUDED.updated_at;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS on_booking_upsert ON public.bookings;
+CREATE TRIGGER on_booking_upsert
+  AFTER INSERT OR UPDATE ON public.bookings
+  FOR EACH ROW EXECUTE FUNCTION public.sync_role_bookings_trigger();
+
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role, postgres;
+
