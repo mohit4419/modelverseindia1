@@ -130,3 +130,31 @@ export async function saveUserFavorites(userId: string, favorites: string[]): Pr
   }
 }
 
+export async function deleteUser(userId: string): Promise<void> {
+  // 1. Delete from LocalStorage
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const local = localStorage.getItem('mvi_users');
+      if (local) {
+        const users: User[] = JSON.parse(local);
+        const filtered = users.filter(u => u.id !== userId && u.email?.toLowerCase() !== userId.toLowerCase());
+        localStorage.setItem('mvi_users', JSON.stringify(filtered));
+      }
+    }
+  } catch (e) {
+    console.warn('LocalStorage deleteUser error:', e);
+  }
+
+  // 2. Delete from Supabase Database
+  if (isSupabaseAvailable && supabase) {
+    try {
+      if (isUUID(userId)) {
+        await supabase.from('profiles').delete().eq('id', userId);
+      }
+      await supabase.from('profiles').delete().eq('email', userId.trim().toLowerCase());
+    } catch (e) {
+      console.warn('Supabase deleteUser error:', e);
+    }
+  }
+}
+

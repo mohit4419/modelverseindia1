@@ -38,6 +38,7 @@ export const dbService = {
   getModels: modelService.getModels.bind(modelService),
   saveModel: modelService.saveModel.bind(modelService),
   registerModel: modelService.registerModel.bind(modelService),
+  deleteModel: modelService.deleteModel.bind(modelService),
 
   // Bookings
   subscribeToBookings: bookingService.subscribeToBookings.bind(bookingService),
@@ -58,6 +59,7 @@ export const dbService = {
   getUsers: userService.getUsers,
   saveUser: userService.saveUser,
   getUser: userService.getUser,
+  deleteUser: userService.deleteUser,
   getUserFavorites: userService.getUserFavorites,
   saveUserFavorites: userService.saveUserFavorites,
 

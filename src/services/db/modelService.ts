@@ -383,5 +383,43 @@ export const modelService = {
     }
 
     return savedModel;
+  },
+
+  async deleteModel(modelId: string): Promise<void> {
+    // 1. Delete from LocalStorage
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const local = localStorage.getItem('mvi_models');
+        if (local) {
+          const models: Model[] = JSON.parse(local);
+          const filtered = models.filter(
+            m => m.id !== modelId && m.userId !== modelId
+          );
+          localStorage.setItem('mvi_models', JSON.stringify(filtered));
+        }
+      }
+    } catch (e) {
+      console.warn('LocalStorage deleteModel error:', e);
+    }
+
+    // 2. Delete from Supabase Database
+    if (isSupabaseAvailable && supabase) {
+      try {
+        if (isUUID(modelId)) {
+          await supabase.from('models').delete().eq('id', modelId);
+        }
+        await supabase.from('models').delete().eq('userId', modelId);
+        await supabase.from('models').delete().eq('user_id', modelId);
+      } catch (e) {
+        console.warn('Supabase deleteModel error:', e);
+      }
+    }
+
+    // 3. Delete from backend API if endpoint exists
+    try {
+      await fetch(`/api/v2/models/${modelId}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Backend API model delete note:', e);
+    }
   }
 };

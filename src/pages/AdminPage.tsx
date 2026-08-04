@@ -19,7 +19,9 @@ export default function AdminPage() {
     handleAdminApproveModel,
     handleAdminRejectModel,
     handleAdminBatchApproveModels,
-    handleAdminSuspendUser
+    handleAdminSuspendUser,
+    handleAdminDeleteModel,
+    handleAdminDeleteUser
   } = useBooking();
   const { bookings, handleUpdateBookingStatus } = useBookings();
   const { payments } = usePayments();
@@ -43,6 +45,8 @@ export default function AdminPage() {
         onApproveModel={handleAdminApproveModel}
         onRejectModel={handleAdminRejectModel}
         onSuspendUser={handleAdminSuspendUser}
+        onDeleteModel={handleAdminDeleteModel}
+        onDeleteUser={handleAdminDeleteUser}
         onUpdateBookingStatus={handleUpdateBookingStatus}
         onBatchApproveModels={handleAdminBatchApproveModels}
         onImpersonateUser={(user: any) => {

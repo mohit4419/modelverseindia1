@@ -21,6 +21,8 @@ interface AdminDashboardProps {
   onApproveModel: (modelId: string) => void;
   onRejectModel: (modelId: string) => void;
   onSuspendUser: (userId: string) => void;
+  onDeleteModel?: (modelId: string) => void;
+  onDeleteUser?: (userId: string) => void;
   onUpdateBookingStatus?: (bookingId: string, status: BookingStatus) => void;
   onBatchApproveModels?: (modelIds: string[]) => void;
   onImpersonateUser?: (user: any) => void;
@@ -33,6 +35,8 @@ export default function AdminDashboard({
   onApproveModel,
   onRejectModel,
   onSuspendUser,
+  onDeleteModel,
+  onDeleteUser,
   onUpdateBookingStatus,
   onBatchApproveModels,
   onImpersonateUser
@@ -571,12 +575,26 @@ export default function AdminDashboard({
                             className={`p-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
                               isSuspended
                                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500 hover:text-neutral-950'
-                                : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-red-950 hover:text-red-400'
+                                : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-amber-950 hover:text-amber-400'
                             }`}
-                            title={isSuspended ? 'Reactivate Model' : 'Suspend Model Account'}
+                            title={isSuspended ? 'Reactivate Model Account' : 'Suspend Model Account'}
                           >
                             <Ban className="w-3.5 h-3.5" />
                           </button>
+
+                          {onDeleteModel && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to PERMANENTLY DELETE model profile "${model.name}" from the database? This action cannot be undone.`)) {
+                                  onDeleteModel(model.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-xs font-bold bg-neutral-800 text-red-400 border border-neutral-700 hover:bg-red-600 hover:text-white transition cursor-pointer"
+                              title="Permanently Delete Model Profile"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -700,11 +718,26 @@ export default function AdminDashboard({
                                 className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                                   isSuspended
                                     ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                                    : 'bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30'
+                                    : 'bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30'
                                 }`}
                               >
-                                {isSuspended ? 'Reactivate Account' : 'Suspend Account'}
+                                {isSuspended ? 'Reactivate' : 'Suspend'}
                               </button>
+
+                              {onDeleteUser && (
+                                <button
+                                  onClick={() => {
+                                    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE user account "${user.name || user.email}" (ID: ${user.id}) from database? This action cannot be undone.`)) {
+                                      onDeleteUser(user.id);
+                                      setTimeout(fetchUsers, 400);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-[11px] font-bold transition cursor-pointer"
+                                  title="Permanently Delete User Account"
+                                >
+                                  Delete
+                                </button>
+                              )}
                             </td>
                           </tr>
                         );
@@ -940,12 +973,27 @@ export default function AdminDashboard({
 
             {/* Modal Actions */}
             <div className="pt-4 border-t border-neutral-800 flex items-center justify-end gap-3">
+              {onDeleteModel && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE model profile "${selectedModelForView.name}" from database? This cannot be undone.`)) {
+                      onDeleteModel(selectedModelForView.id);
+                      setSelectedModelForView(null);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Model</span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   onRejectModel(selectedModelForView.id);
                   setSelectedModelForView(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 text-xs font-bold transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold transition cursor-pointer"
               >
                 Reject Application
               </button>
@@ -955,9 +1003,10 @@ export default function AdminDashboard({
                   onApproveModel(selectedModelForView.id);
                   setSelectedModelForView(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer shadow-lg shadow-emerald-600/20"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer shadow-lg shadow-emerald-600/20 flex items-center gap-1.5"
               >
-                Approve Model Profile
+                <Check className="w-4 h-4" />
+                <span>Approve Model Profile</span>
               </button>
             </div>
           </div>

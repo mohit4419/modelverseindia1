@@ -170,13 +170,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const handleAuthSuccess = (user: any, role: UserRole) => {
+  const handleAuthSuccess = async (user: any, role: UserRole) => {
+    // Check if account is suspended in DB
+    try {
+      const freshUser = await dbService.getUser(user.id || user.email);
+      if (freshUser && freshUser.status === 'suspended') {
+        await dbService.logOut();
+        setAuthenticatedState(false);
+        alert(`Account Suspended: The account "${user.email}" has been suspended by an Administrator. Login is not allowed.`);
+        return false;
+      }
+    } catch (e) {
+      console.warn('Suspension check error during auth success:', e);
+    }
+
     setAuthenticatedState(true);
     handleSetGuestMode(false);
     setUserEmail(user.email);
     setCurrentUserName(user.name);
     setClientId(user.id);
     setCurrentRole(role);
+    return true;
   };
 
   const handleChangePasswordClick = async () => {

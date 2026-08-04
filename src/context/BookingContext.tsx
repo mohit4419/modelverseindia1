@@ -47,6 +47,8 @@ interface BookingContextType {
   handleAdminApproveModel: (modelId: string) => Promise<void>;
   handleAdminRejectModel: (modelId: string) => Promise<void>;
   handleAdminSuspendUser: (userId: string) => Promise<void>;
+  handleAdminDeleteModel: (modelId: string) => Promise<void>;
+  handleAdminDeleteUser: (userId: string) => Promise<void>;
   handleUpdateBookingStatus: (bookingId: string, status: BookingStatus) => Promise<void>;
   handleModelRegisterSubmit: (newModel: Model) => Promise<void>;
 }
@@ -407,6 +409,58 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const handleAdminDeleteModel = async (modelId: string) => {
+    try {
+      const target = models.find(m => m.id === modelId || m.userId === modelId);
+      await dbService.deleteModel(modelId);
+      setModels(prev => prev.filter(m => m.id !== modelId && m.userId !== modelId));
+
+      await dbService.addAuditLog({
+        action: 'Permanent Model Profile Deletion',
+        performedBy: userEmail || 'admin@modelverse.in',
+        details: `Permanently deleted model profile for "${target?.name || modelId}".`,
+        entityId: modelId,
+        entityType: 'model'
+      });
+
+      triggerToast(
+        'Model Profile Deleted',
+        `Model profile "${target?.name || modelId}" has been permanently deleted from database.`,
+        'info'
+      );
+    } catch (err) {
+      console.error('Failed to delete model:', err);
+    }
+  };
+
+  const handleAdminDeleteUser = async (userId: string) => {
+    try {
+      const users = await dbService.getUsers();
+      const user = users.find(u => u.id === userId || u.email === userId);
+      const username = user?.name || user?.email || userId;
+
+      await dbService.deleteUser(userId);
+      await dbService.deleteModel(userId);
+      setModels(prev => prev.filter(m => m.id !== userId && m.userId !== userId && m.email?.toLowerCase() !== user?.email?.toLowerCase()));
+
+      await dbService.addAuditLog({
+        action: 'Permanent User Account Deletion',
+        performedBy: userEmail || 'admin@modelverse.in',
+        details: `Permanently deleted user account "${username}" (ID: ${userId}) from database.`,
+        entityId: userId,
+        entityType: 'user'
+      });
+
+      triggerToast(
+        'User Account Deleted',
+        `User account "${username}" and all associated listings have been permanently deleted from database.`,
+        'info'
+      );
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+    }
+  };
+
   const handleUpdateBookingStatus = async (bookingId: string, status: BookingStatus) => {
     try {
       const booking = bookings.find(b => b.id === bookingId);
@@ -610,6 +664,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         handleAdminApproveModel,
         handleAdminRejectModel,
         handleAdminSuspendUser,
+        handleAdminDeleteModel,
+        handleAdminDeleteUser,
         handleUpdateBookingStatus,
         handleModelRegisterSubmit
       }}
