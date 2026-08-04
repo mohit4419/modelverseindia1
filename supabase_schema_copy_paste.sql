@@ -328,10 +328,14 @@ ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS pdf_generated_at TEXT;
 ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS is_shared_with_client BOOLEAN DEFAULT false;
 
 -- 5A. Role-Specific Booking Tables for Explicit Data Segregation
+DROP TABLE IF EXISTS public.client_bookings CASCADE;
+DROP TABLE IF EXISTS public.admin_bookings CASCADE;
+DROP TABLE IF EXISTS public.model_bookings CASCADE;
+
 -- Client Bookings Table
 CREATE TABLE IF NOT EXISTS public.client_bookings (
     id TEXT PRIMARY KEY,
-    booking_id TEXT REFERENCES public.bookings(id) ON DELETE CASCADE,
+    booking_id TEXT NOT NULL,
     client_id TEXT NOT NULL,
     client_name TEXT,
     model_id TEXT NOT NULL,
@@ -346,7 +350,7 @@ CREATE TABLE IF NOT EXISTS public.client_bookings (
 -- Admin Bookings Table
 CREATE TABLE IF NOT EXISTS public.admin_bookings (
     id TEXT PRIMARY KEY,
-    booking_id TEXT REFERENCES public.bookings(id) ON DELETE CASCADE,
+    booking_id TEXT NOT NULL,
     client_id TEXT NOT NULL,
     model_id TEXT NOT NULL,
     approval_status TEXT NOT NULL DEFAULT 'pending_review',
@@ -359,7 +363,7 @@ CREATE TABLE IF NOT EXISTS public.admin_bookings (
 -- Model Bookings Table
 CREATE TABLE IF NOT EXISTS public.model_bookings (
     id TEXT PRIMARY KEY,
-    booking_id TEXT REFERENCES public.bookings(id) ON DELETE CASCADE,
+    booking_id TEXT NOT NULL,
     model_id TEXT NOT NULL,
     client_id TEXT NOT NULL,
     response_status TEXT NOT NULL DEFAULT 'assigned',
@@ -376,7 +380,7 @@ BEGIN
     INSERT INTO public.client_bookings (
         id, booking_id, client_id, client_name, model_id, model_name, status, price_amount, project_details, created_at, updated_at
     ) VALUES (
-        NEW.id, NEW.id, NEW.client_id, NEW.client_name, NEW.model_id, NEW.model_name, NEW.status, COALESCE(NEW.price_amount, NEW.amount, 0), NEW.project_details, NEW.created_at, NEW.updated_at
+        NEW.id::text, NEW.id::text, NEW.client_id::text, NEW.client_name, NEW.model_id::text, NEW.model_name, NEW.status, COALESCE(NEW.price_amount, NEW.amount, 0), NEW.project_details, NEW.created_at, NEW.updated_at
     ) ON CONFLICT (id) DO UPDATE SET
         status = EXCLUDED.status,
         price_amount = EXCLUDED.price_amount,
@@ -387,7 +391,7 @@ BEGIN
     INSERT INTO public.admin_bookings (
         id, booking_id, client_id, model_id, approval_status, updated_at
     ) VALUES (
-        NEW.id, NEW.id, NEW.client_id, NEW.model_id, 
+        NEW.id::text, NEW.id::text, NEW.client_id::text, NEW.model_id::text, 
         CASE 
             WHEN NEW.status = 'pending' THEN 'pending_review'
             WHEN NEW.status = 'assigned' THEN 'assigned'
@@ -404,7 +408,7 @@ BEGIN
         INSERT INTO public.model_bookings (
             id, booking_id, model_id, client_id, response_status, updated_at
         ) VALUES (
-            NEW.id, NEW.id, NEW.model_id, NEW.client_id, NEW.status, NEW.updated_at
+            NEW.id::text, NEW.id::text, NEW.model_id::text, NEW.client_id::text, NEW.status, NEW.updated_at
         ) ON CONFLICT (id) DO UPDATE SET
             response_status = EXCLUDED.response_status,
             updated_at = EXCLUDED.updated_at;
