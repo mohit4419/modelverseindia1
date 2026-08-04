@@ -1,8 +1,9 @@
 import { ai, geminiApiKey } from '../config/gemini';
 
 const mockVideos = [
-  'https://assets.mixkit.co/videos/preview/mixkit-fashion-woman-with-silver-glitter-makeup-40134-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-posing-for-photoshoots-32189-large.mp4'
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4'
 ];
 
 export function getRandomMockVideo(): string {

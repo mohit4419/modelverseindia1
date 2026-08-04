@@ -1498,8 +1498,9 @@ async function editAiImage(prompt, base64Image, mimeType) {
 
 // server/services/video.service.ts
 var mockVideos = [
-  "https://assets.mixkit.co/videos/preview/mixkit-fashion-woman-with-silver-glitter-makeup-40134-large.mp4",
-  "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-posing-for-photoshoots-32189-large.mp4"
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4"
 ];
 function getRandomMockVideo() {
   return mockVideos[Math.floor(Math.random() * mockVideos.length)];
@@ -1935,14 +1936,20 @@ router4.post("/video-download", async (req, res) => {
   const fallbackVideo = getRandomMockVideo();
   try {
     const uri = await getVideoUri(operationName);
-    if (!uri) {
-      return res.redirect(fallbackVideo);
+    const targetUrl = uri || fallbackVideo;
+    const headers = {};
+    if (uri && geminiApiKey) {
+      headers["x-goog-api-key"] = geminiApiKey;
     }
-    const videoRes = await fetch(uri, {
-      headers: { "x-goog-api-key": geminiApiKey }
-    });
+    const videoRes = await fetch(targetUrl, { headers });
+    if (!videoRes.ok) {
+      const backupRes = await fetch("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4");
+      res.setHeader("Content-Type", "video/mp4");
+      const buffer = await backupRes.arrayBuffer();
+      return res.send(Buffer.from(buffer));
+    }
     res.setHeader("Content-Type", "video/mp4");
-    if (videoRes.body) {
+    if (videoRes.body && typeof videoRes.body.pipeTo === "function") {
       videoRes.body.pipeTo(
         new WritableStream({
           write(chunk) {
@@ -1962,8 +1969,15 @@ router4.post("/video-download", async (req, res) => {
       res.send(Buffer.from(buffer));
     }
   } catch (err) {
-    console.warn("Video download streaming error, redirecting to showcase:", err);
-    return res.redirect(fallbackVideo);
+    console.warn("Video download streaming error, sending fallback stream:", err);
+    try {
+      const backupRes = await fetch("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4");
+      res.setHeader("Content-Type", "video/mp4");
+      const buffer = await backupRes.arrayBuffer();
+      return res.send(Buffer.from(buffer));
+    } catch (fallbackErr) {
+      return res.status(500).json({ success: false, error: "Failed to retrieve video stream" });
+    }
   }
 });
 router4.post("/ai/search-grounding", async (req, res) => {

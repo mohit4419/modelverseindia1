@@ -60,18 +60,26 @@ router.post('/video-download', async (req: Request, res: Response) => {
   const fallbackVideo = getRandomMockVideo();
   try {
     const uri = await getVideoUri(operationName);
-    if (!uri) {
-      return res.redirect(fallbackVideo);
+    const targetUrl = uri || fallbackVideo;
+
+    const headers: Record<string, string> = {};
+    if (uri && geminiApiKey) {
+      headers['x-goog-api-key'] = geminiApiKey;
     }
 
-    const videoRes = await fetch(uri, {
-      headers: { 'x-goog-api-key': geminiApiKey },
-    });
+    const videoRes = await fetch(targetUrl, { headers });
+    if (!videoRes.ok) {
+      // Fallback to sample video if primary fails
+      const backupRes = await fetch('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+      res.setHeader('Content-Type', 'video/mp4');
+      const buffer = await backupRes.arrayBuffer();
+      return res.send(Buffer.from(buffer));
+    }
 
     res.setHeader('Content-Type', 'video/mp4');
     
-    // Pipe response stream node compatibility
-    if (videoRes.body) {
+    // Pipe response stream for node compatibility
+    if (videoRes.body && typeof (videoRes.body as any).pipeTo === 'function') {
       (videoRes.body as any).pipeTo(
         new WritableStream({
           write(chunk) { res.write(chunk); },
@@ -84,8 +92,15 @@ router.post('/video-download', async (req: Request, res: Response) => {
       res.send(Buffer.from(buffer));
     }
   } catch (err: any) {
-    console.warn('Video download streaming error, redirecting to showcase:', err);
-    return res.redirect(fallbackVideo);
+    console.warn('Video download streaming error, sending fallback stream:', err);
+    try {
+      const backupRes = await fetch('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+      res.setHeader('Content-Type', 'video/mp4');
+      const buffer = await backupRes.arrayBuffer();
+      return res.send(Buffer.from(buffer));
+    } catch (fallbackErr) {
+      return res.status(500).json({ success: false, error: 'Failed to retrieve video stream' });
+    }
   }
 });
 
