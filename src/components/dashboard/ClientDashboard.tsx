@@ -38,8 +38,12 @@ export default function ClientDashboard({
 }: ClientDashboardProps) {
   const [activeStatusTab, setActiveStatusTab] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'cancelled'>('all');
 
-  // Filter bookings belonging to this client
-  const clientBookings = bookings.filter(b => b.clientId === clientId);
+  // Filter bookings belonging to this client (matching by clientId, projectDetails.clientId, or email)
+  const clientBookings = bookings.filter(b => 
+    b.clientId === clientId || 
+    (b.projectDetails && (b.projectDetails as any)?.clientId === clientId) ||
+    (b as any).clientEmail?.toLowerCase() === clientId?.toLowerCase()
+  );
 
   // Filter based on active status tab
   const filteredBookings = clientBookings.filter(b => {

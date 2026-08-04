@@ -140,11 +140,13 @@ export default function AgentDashboard({
     const mId = activeModel.id;
     const uId = activeModel.userId;
     const modelEmail = activeModel.email?.toLowerCase();
+    const modelName = activeModel.name?.toLowerCase();
 
     const matchId = b.modelId === mId || b.modelId === uId;
     const matchDetails = b.projectDetails && ((b.projectDetails as any)?.modelId === mId || (b.projectDetails as any)?.modelId === uId);
     const matchEmail = modelEmail && (b as any).modelEmail?.toLowerCase() === modelEmail;
-    return matchId || matchDetails || matchEmail;
+    const matchName = modelName && b.modelName?.toLowerCase() === modelName;
+    return matchId || matchDetails || matchEmail || matchName;
   };
 
   // Model Bookings: ONLY include bookings approved/assigned by Admin (exclude pending, rejected, and cancelled)
