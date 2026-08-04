@@ -101,13 +101,14 @@ export default function Hero({ onSearch, onBrowseClick, onBecomeModelClick, onHi
 
             {/* Image-Style Action Capsule Buttons */}
             <div className="flex flex-wrap items-center gap-4">
-              {/* Start Casting / Free Access */}
+              {/* Post Requirement Button */}
               <button
-                id="hero-browse-btn"
+                id="hero-post-requirement-btn"
                 onClick={onBrowseClick}
                 className="flex items-center space-x-2 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white px-7 py-3 text-xs sm:text-sm font-black shadow-lg shadow-purple-500/20 transition duration-200 hover:brightness-110 active:scale-98 cursor-pointer"
               >
-                <span>Browse Elite Talents</span>
+                <Sparkles className="h-4 w-4 text-purple-200" />
+                <span>Post Requirement</span>
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                   <ArrowRight className="h-3 w-3" />
                 </span>

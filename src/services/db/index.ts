@@ -15,6 +15,7 @@ import { postService } from './postService';
 import { payoutService } from './payoutService';
 import { auditService } from './auditService';
 import { blogService } from './blogService';
+import { jobRequirementService } from './jobRequirementService';
 import * as userService from './userService';
 
 export const dbService = {
@@ -76,6 +77,11 @@ export const dbService = {
   getPosts: postService.getPosts.bind(postService),
   savePost: postService.savePost.bind(postService),
   toggleLikePost: postService.toggleLikePost.bind(postService),
+
+  // Job Requirements & Casting Board
+  getJobRequirements: jobRequirementService.getJobRequirements.bind(jobRequirementService),
+  createJobRequirement: jobRequirementService.createJobRequirement.bind(jobRequirementService),
+  applyForJobRequirement: jobRequirementService.applyForJobRequirement.bind(jobRequirementService),
 
   // Blogs
   getBlogs: blogService.getBlogs.bind(blogService),

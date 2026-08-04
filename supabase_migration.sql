@@ -526,9 +526,24 @@ CREATE TABLE IF NOT EXISTS public.model_bookings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
+CREATE TABLE IF NOT EXISTS public.job_requirements (
+    id TEXT PRIMARY KEY,
+    client_id TEXT NOT NULL,
+    company_name TEXT NOT NULL,
+    category TEXT DEFAULT 'Fashion Models',
+    requirements TEXT NOT NULL,
+    location TEXT DEFAULT 'Mumbai',
+    shoot_date TEXT,
+    budget TEXT NOT NULL,
+    contact_email TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
 CREATE POLICY "Allow write on client_bookings" ON public.client_bookings FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow write on admin_bookings" ON public.admin_bookings FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow write on model_bookings" ON public.model_bookings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow write on job_requirements" ON public.job_requirements FOR ALL USING (true) WITH CHECK (true);
 
 -- Automatic PostgreSQL Trigger Function to sync role-specific bookings
 CREATE OR REPLACE FUNCTION public.sync_role_bookings_trigger()

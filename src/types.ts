@@ -246,6 +246,20 @@ export interface Post {
   likedByMe?: boolean;
 }
 
+export interface JobRequirement {
+  id: string;
+  clientId: string;
+  companyName: string;
+  category: string;
+  requirements: string;
+  location: string;
+  shootDate?: string;
+  budget: string;
+  contactEmail?: string;
+  status: 'active' | 'closed';
+  createdAt: string;
+}
+
 // Pricing configuration derived securely from environment variables
 export const PREMIUM_UNLOCK_AMOUNT = Number(
   (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.VITE_PREMIUM_UNLOCK_AMOUNT) ||

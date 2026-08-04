@@ -43,8 +43,21 @@ export default function AgentDashboard({
   const [selectedModelId, setSelectedModelId] = useState<string>(defaultModel?.id || '');
 
   // Navigation tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'profile' | 'payouts' | 'ai-studio'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'job-board' | 'bookings' | 'profile' | 'payouts' | 'ai-studio'>('overview');
   const [bookingSubFilter, setBookingSubFilter] = useState<'assigned' | 'accepted' | 'completed' | 'all'>('assigned');
+  const [clientJobs, setClientJobs] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const jobs = await dbService.getJobRequirements();
+        setClientJobs(jobs);
+      } catch (err) {
+        console.warn('Failed to load client jobs in AgentDashboard:', err);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   // Keep selected model in sync with logged-in user if they are a model
   useEffect(() => {
@@ -356,6 +369,7 @@ export default function AgentDashboard({
         <div className="flex items-center gap-2 border-b border-neutral-800 pb-2 overflow-x-auto scrollbar-none select-none">
           {[
             { id: 'overview', label: 'Overview', icon: Activity, count: null },
+            { id: 'job-board', label: 'Casting Job Board', icon: Briefcase, count: clientJobs.length },
             { id: 'bookings', label: 'Campaign Bookings', icon: Calendar, count: assignedBookings.length > 0 ? `🚨 ${assignedBookings.length} Action Needed` : approvedBookings.length },
             { id: 'profile', label: 'Edit Profile & Portfolio', icon: Settings, count: null },
             { id: 'payouts', label: 'Earnings & Payouts', icon: DollarSign, count: null },
@@ -491,7 +505,71 @@ export default function AgentDashboard({
           </div>
         )}
 
-        {/* TAB 2: CAMPAIGN BOOKINGS */}
+        {/* TAB 2: CASTING JOB BOARD */}
+        {activeTab === 'job-board' && (
+          <div className="space-y-6 animate-fadeIn text-left">
+            <div className="bg-neutral-900/80 border border-neutral-800 p-6 rounded-2xl space-y-2">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-purple-400" />
+                Live Client Casting Requirements ({clientJobs.length})
+              </h3>
+              <p className="text-xs text-neutral-400">
+                Browse project specifications posted directly by production houses, brands, and agencies. Click <strong>Apply for Casting</strong> to send a direct message with your portfolio link.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {clientJobs.map((job) => (
+                <div key={job.id} className="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 space-y-4 shadow-xl flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-purple-400 font-mono tracking-wider">{job.category}</span>
+                        <h4 className="text-base font-black text-white mt-0.5">{job.companyName}</h4>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono font-bold shrink-0">
+                        {job.budget}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      {job.requirements}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-3 border-t border-neutral-800">
+                    <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+                      <span>Location: <strong className="text-neutral-200">{job.location}</strong></span>
+                      <span>Date: <strong className="text-neutral-200">{job.shootDate || 'Immediate'}</strong></span>
+                    </div>
+
+                    <button
+                      onClick={async () => {
+                        try {
+                          await dbService.applyForJobRequirement(job, activeModel);
+                          triggerToast(
+                            'Application Sent!',
+                            `Your profile and direct message have been sent to ${job.companyName}.`,
+                            'success'
+                          );
+                        } catch (err) {
+                          console.error('Application failed:', err);
+                          triggerToast('Error', 'Failed to send application.', 'error');
+                        }
+                      }}
+                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                      <span>Apply for Casting</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: CAMPAIGN BOOKINGS */}
         {activeTab === 'bookings' && (
           <div className="space-y-6 animate-fadeIn">
             

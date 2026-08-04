@@ -16,7 +16,11 @@ import CategoryGrid from '../components/home/CategoryGrid';
 import TestimonialSlider from '../components/home/TestimonialSlider';
 import ModelCard from '../components/common/ModelCard';
 import ModelCardSkeleton from '../components/common/ModelCardSkeleton';
+import JobRequirementModal from '../components/common/JobRequirementModal';
 import { HOME_CATEGORY_DESCRIPTIONS } from '../constants';
+import { dbService } from '../services/db';
+import { JobRequirement } from '../types';
+import { Briefcase, Send, MapPin, Calendar, DollarSign, Building } from 'lucide-react';
 
 export default function HomePage() {
   const { isAuthenticated, clientId, currentRole, setAuthTabHint } = useAuth();
@@ -37,6 +41,48 @@ export default function HomePage() {
   const { handleOpenBookingWizard } = useBookings();
   const { triggerToast, setFocusedModelId, unlockedProfiles, setCurrentTab } = useApp();
   const { setTargetModelForPremium, setShowPremiumModal } = useBooking();
+
+  const [showJobModal, setShowJobModal] = React.useState(false);
+  const [jobRequirements, setJobRequirements] = React.useState<JobRequirement[]>([]);
+
+  const fetchJobRequirements = React.useCallback(async () => {
+    try {
+      const jobs = await dbService.getJobRequirements();
+      setJobRequirements(jobs);
+    } catch (err) {
+      console.warn('Failed to load job requirements:', err);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchJobRequirements();
+  }, [fetchJobRequirements]);
+
+  const handleApplyToJob = async (job: JobRequirement) => {
+    if (!isAuthenticated) {
+      setAuthTabHint('login');
+      triggerToast('Login Required', 'Please log in to apply for client casting requirements.', 'info');
+      return;
+    }
+
+    const currentModel = models.find(m => m.userId === clientId || m.id === clientId || m.email?.toLowerCase() === clientId?.toLowerCase());
+    if (!currentModel) {
+      triggerToast('Model Profile Required', 'Only registered models can apply for casting requirements. Please complete your model profile.', 'info');
+      return;
+    }
+
+    try {
+      await dbService.applyForJobRequirement(job, currentModel);
+      triggerToast(
+        'Application Sent!',
+        `Your application & portfolio link have been sent directly to ${job.companyName}.`,
+        'success'
+      );
+    } catch (err) {
+      console.error('Failed to apply:', err);
+      triggerToast('Error', 'Failed to send application.', 'error');
+    }
+  };
 
   const handleOpenEliteModal = () => {
     const elite = (models && models.length > 0) ? (models.find(m => m.approved && m.rating >= 4.8) || models.find(m => m.approved) || models[0]) : null;
@@ -64,9 +110,9 @@ export default function HomePage() {
           setSearchBudgetLimit(filters.maxBudget);
           setCurrentTab('models');
         }}
-        onBrowseClick={handleOpenEliteModal}
+        onBrowseClick={() => setShowJobModal(true)}
         onBecomeModelClick={() => setCurrentTab('become-model')}
-        onHireClick={handleOpenEliteModal}
+        onHireClick={() => setShowJobModal(true)}
       />
       
       <CategoryGrid
@@ -226,8 +272,82 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Live Casting Requirements & Job Board Section */}
+      <section id="homepage-job-board" className="py-20 bg-neutral-900 text-white px-4 sm:px-6 lg:px-8 border-b border-neutral-800">
+        <div className="mx-auto max-w-7xl space-y-8 text-left">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-purple-400 font-mono">Real-Time Client Board</span>
+              <h3 className="font-sans text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2 mt-1">
+                <Briefcase className="h-6 w-6 text-purple-400" />
+                <span>Live Casting Requirements</span>
+              </h3>
+              <p className="text-xs text-neutral-400 mt-1.5 max-w-2xl leading-relaxed">
+                Explore recent campaign requests posted directly by brands and production agencies across India. Verified models can apply with one click.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowJobModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:brightness-110 text-white text-xs font-black uppercase tracking-wider rounded-full shadow-lg transition cursor-pointer self-start md:self-end flex items-center gap-2"
+            >
+              <span>+ Post New Requirement</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {jobRequirements.slice(0, 6).map((job) => (
+              <div key={job.id} className="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 space-y-4 shadow-xl hover:border-purple-500/50 transition">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-purple-400 font-mono tracking-wider">{job.category}</span>
+                    <h4 className="text-base font-black text-white mt-0.5">{job.companyName}</h4>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-mono font-bold">
+                    {job.budget}
+                  </span>
+                </div>
+
+                <p className="text-xs text-neutral-300 line-clamp-3 leading-relaxed font-normal">
+                  {job.requirements}
+                </p>
+
+                <div className="pt-2 flex items-center justify-between text-[11px] text-neutral-400 border-t border-neutral-800/80">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>{job.location}</span>
+                  </span>
+                  <span className="flex items-center gap-1 font-mono">
+                    <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>{job.shootDate || 'Immediate'}</span>
+                  </span>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => handleApplyToJob(job)}
+                    className="w-full py-2 bg-neutral-900 hover:bg-purple-600 text-neutral-200 hover:text-white border border-neutral-800 hover:border-purple-500 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Apply for Casting</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Verified Agency Testimonial Slider */}
       <TestimonialSlider />
+
+      {/* Job Requirement Modal Form */}
+      <JobRequirementModal
+        isOpen={showJobModal}
+        onClose={() => setShowJobModal(false)}
+        triggerToast={triggerToast}
+        onSuccess={() => fetchJobRequirements()}
+      />
     </div>
   );
 }

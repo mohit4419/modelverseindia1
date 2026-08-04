@@ -423,6 +423,21 @@ CREATE TRIGGER on_booking_upsert
   AFTER INSERT OR UPDATE ON public.bookings
   FOR EACH ROW EXECUTE FUNCTION public.sync_role_bookings_trigger();
 
+-- 5B. Create 'job_requirements' table for Casting Job Board
+CREATE TABLE IF NOT EXISTS public.job_requirements (
+    id TEXT PRIMARY KEY,
+    client_id TEXT NOT NULL,
+    company_name TEXT NOT NULL,
+    category TEXT DEFAULT 'Fashion Models',
+    requirements TEXT NOT NULL,
+    location TEXT DEFAULT 'Mumbai',
+    shoot_date TEXT,
+    budget TEXT NOT NULL,
+    contact_email TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
 -- 6. Create 'favorites' table
 CREATE TABLE IF NOT EXISTS public.favorites (
     id TEXT PRIMARY KEY,
