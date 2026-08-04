@@ -303,14 +303,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   const handleAdminApproveModel = async (modelId: string) => {
     const updatedModels = models.map(m => {
-      if (m.id === modelId) {
-        return { ...m, approved: true, rejected: false };
+      if (m.id === modelId || m.userId === modelId) {
+        return { ...m, approved: true, rejected: false, status: 'active' as const };
       }
       return m;
     });
     setModels(updatedModels);
     
-    const target = updatedModels.find(m => m.id === modelId);
+    const target = updatedModels.find(m => m.id === modelId || m.userId === modelId);
     if (target) {
       try {
         await dbService.saveModel(target);
@@ -321,6 +321,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
           entityId: modelId,
           entityType: 'model'
         });
+        triggerToast('Profile Approved', `Model profile "${target.name}" has been approved and is now live on frontend.`, 'success');
       } catch (err) {
         console.error('Failed to save approved model:', err);
       }
@@ -329,14 +330,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   const handleAdminRejectModel = async (modelId: string) => {
     const updatedModels = models.map(m => {
-      if (m.id === modelId) {
-        return { ...m, approved: false, rejected: true };
+      if (m.id === modelId || m.userId === modelId) {
+        return { ...m, approved: false, rejected: true, status: 'rejected' as const };
       }
       return m;
     });
     setModels(updatedModels);
     
-    const target = updatedModels.find(m => m.id === modelId);
+    const target = updatedModels.find(m => m.id === modelId || m.userId === modelId);
     if (target) {
       try {
         await dbService.saveModel(target);
@@ -347,6 +348,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
           entityId: modelId,
           entityType: 'model'
         });
+        triggerToast('Profile Rejected', `Model profile "${target.name}" has been rejected and removed from frontend.`, 'info');
       } catch (err) {
         console.error('Failed to save rejected model:', err);
       }
@@ -356,11 +358,32 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const handleAdminSuspendUser = async (userId: string) => {
     try {
       const users = await dbService.getUsers();
-      const user = users.find(u => u.id === userId);
+      const user = users.find(u => u.id === userId || u.email === userId);
       if (user) {
-        const username = user.name;
+        const username = user.name || user.email;
         const currentStatus = user.status;
         const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+        user.status = newStatus;
+        await dbService.saveUser(user);
+
+        // Also update any matching model profile
+        const updatedModels = models.map(m => {
+          if (m.userId === userId || m.id === userId || m.email?.toLowerCase() === user.email?.toLowerCase()) {
+            return {
+              ...m,
+              status: newStatus as any,
+              approved: newStatus === 'active',
+              rejected: newStatus === 'suspended'
+            };
+          }
+          return m;
+        });
+        setModels(updatedModels);
+
+        const targetModel = updatedModels.find(m => m.userId === userId || m.id === userId || m.email?.toLowerCase() === user.email?.toLowerCase());
+        if (targetModel) {
+          await dbService.saveModel(targetModel);
+        }
 
         await dbService.addAuditLog({
           action: 'User Account Moderation',
@@ -369,9 +392,15 @@ export function BookingProvider({ children }: { children: ReactNode }) {
           entityId: userId,
           entityType: 'user'
         });
+
+        triggerToast(
+          newStatus === 'suspended' ? 'Account Suspended' : 'Account Reactivated',
+          `User "${username}" has been ${newStatus}. ${newStatus === 'suspended' ? 'Profile cards hidden from frontend.' : 'Profile restored.'}`,
+          newStatus === 'suspended' ? 'info' : 'success'
+        );
       }
     } catch (err) {
-      console.error('Failed to add user suspend log:', err);
+      console.error('Failed to suspend user:', err);
     }
   };
 

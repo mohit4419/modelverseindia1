@@ -280,7 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Filtered Models Calculation
   const filteredModels = (() => {
     const filtered = models.filter((m) => {
-      if (currentRole !== 'admin' && m.approved === false) return false;
+      if (currentRole !== 'admin' && (m.approved === false || m.rejected === true || (m as any).status === 'suspended' || (m as any).status === 'rejected')) return false;
       if (currentRole !== 'admin' && currentRole !== 'model' && m.archived) return false;
 
       if (searchQuery) {

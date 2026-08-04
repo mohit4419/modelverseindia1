@@ -177,8 +177,8 @@ export const modelService = {
         } else {
           const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
           const newPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
-          const existingTime = new Date((existing as any).updated_at || existing.createdAt || 0).getTime();
-          const newTime = new Date((m as any).updated_at || m.createdAt || 0).getTime();
+          const existingTime = new Date((existing as any).updated_at || (existing as any).createdAt || 0).getTime();
+          const newTime = new Date((m as any).updated_at || (m as any).createdAt || 0).getTime();
 
           // Overwrite with newer model or profile with updated portfolio photos
           if (newTime >= existingTime || (newPhotos >= existingPhotos && newPhotos > 0)) {
