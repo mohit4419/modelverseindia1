@@ -57,6 +57,8 @@ export default function AgentDashboard({
       }
     };
     fetchJobs();
+    const timer = setInterval(fetchJobs, 3000);
+    return () => clearInterval(timer);
   }, []);
 
   // Keep selected model in sync with logged-in user if they are a model
@@ -369,7 +371,7 @@ export default function AgentDashboard({
         <div className="flex items-center gap-2 border-b border-neutral-800 pb-2 overflow-x-auto scrollbar-none select-none">
           {[
             { id: 'overview', label: 'Overview', icon: Activity, count: null },
-            { id: 'job-board', label: 'Casting Job Board', icon: Briefcase, count: clientJobs.length },
+            { id: 'job-board', label: 'Live Client Casting Requirements', icon: Briefcase, count: clientJobs.length },
             { id: 'bookings', label: 'Campaign Bookings', icon: Calendar, count: assignedBookings.length > 0 ? `🚨 ${assignedBookings.length} Action Needed` : approvedBookings.length },
             { id: 'profile', label: 'Edit Profile & Portfolio', icon: Settings, count: null },
             { id: 'payouts', label: 'Earnings & Payouts', icon: DollarSign, count: null },
@@ -425,6 +427,27 @@ export default function AgentDashboard({
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl transition cursor-pointer whitespace-nowrap shadow-md"
                 >
                   Review Assigned Proposals ({assignedBookings.length}) &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* Live Client Casting Requirements Alert Banner */}
+            {clientJobs.length > 0 && (
+              <div className="bg-gradient-to-r from-pink-950/40 via-purple-900/20 to-neutral-900 border border-purple-500/30 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                  <Briefcase className="w-6 h-6 text-pink-400 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-bold text-purple-200">
+                      {clientJobs.length} Live Client Casting Requirement{clientJobs.length > 1 ? 's' : ''} Active!
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">Explore active brand casting calls and submit your portfolio directly to clients.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab('job-board')}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl transition cursor-pointer whitespace-nowrap shadow-md"
+                >
+                  View Casting Calls ({clientJobs.length}) &rarr;
                 </button>
               </div>
             )}
