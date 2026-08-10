@@ -14,6 +14,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Fashion Models',
     icon: Camera,
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-pink-900 via-rose-950 to-neutral-950',
     description: 'High fashion couture, runway collections, designer campaigns',
     count: '150+ Models'
@@ -21,6 +22,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Commercial Models',
     icon: Zap,
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-purple-900 via-indigo-950 to-neutral-950',
     description: 'Print ads, skin cosmetics, television branding, catalogs',
     count: '240+ Models'
@@ -28,6 +30,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Fitness Models',
     icon: Activity,
+    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-emerald-900 via-teal-950 to-neutral-950',
     description: 'Athletic wear, active health tools, gym campaigns',
     count: '80+ Models'
@@ -35,6 +38,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Influencers',
     icon: Users,
+    image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-amber-900 via-orange-950 to-neutral-950',
     description: 'Social status ambassadors, high profile lifestyle stars',
     count: '180+ Talents'
@@ -42,6 +46,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'UGC Creators',
     icon: UserCheck,
+    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-cyan-900 via-blue-950 to-neutral-950',
     description: 'Self-produced high retention organic video curators',
     count: '120+ Creators'
@@ -49,6 +54,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Actors',
     icon: Film,
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-red-900 via-rose-950 to-neutral-950',
     description: 'Screen actors, OTT series actors, theatre artists',
     count: '95+ Actors'
@@ -56,6 +62,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Event Hosts',
     icon: Mic,
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-violet-900 via-purple-950 to-neutral-950',
     description: 'Corporate master of ceremonies, high-end automotive expos',
     count: '60+ Presenters'
@@ -63,6 +70,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Promotional Models',
     icon: Megaphone,
+    image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-fuchsia-900 via-pink-950 to-neutral-950',
     description: 'Product launches, convention representatives, tech fairs',
     count: '110+ Profiles'
@@ -70,6 +78,7 @@ const CATEGORY_ITEMS = [
   {
     name: 'Brand Ambassadors',
     icon: Stars,
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=800&auto=format&fit=crop',
     gradient: 'from-[#FF5722] via-[#FF6F00] to-neutral-950',
     description: 'Corporate figures, exclusive campaign faces, runway icons',
     count: '45+ Faces'
@@ -105,11 +114,16 @@ export default function CategoryGrid({ onSelectCategory }: CategoryGridProps) {
                 onClick={() => onSelectCategory(cat.name)}
                 className="group relative h-72 overflow-hidden rounded-3xl cursor-pointer border border-black/5 dark:border-white/10 shadow-sm hover:shadow-xl hover:scale-101 transform duration-300 bg-white dark:bg-neutral-900"
               >
-                {/* Background Gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-90 transition-transform duration-500 group-hover:scale-105`} />
+                {/* Background Unsplash Image */}
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
 
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent transition-opacity duration-300" />
+                {/* Dark Gradient Overlay for text contrast */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/30 group-hover:from-black/95 group-hover:via-black/65 transition-colors duration-300" />
 
                 {/* Category Metadata content layout */}
                 <div className="absolute inset-0 p-6 flex flex-col justify-end text-white text-left z-10">
