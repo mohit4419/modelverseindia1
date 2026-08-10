@@ -329,34 +329,50 @@ export function extractPortfolioFromRow(row: any): string[] {
 
 export function fromSupabaseModelRow(row: any): Model {
   if (!row) return row;
-  const extra = row.measurements || {};
+  const extra = typeof row.measurements === 'object' && row.measurements ? row.measurements : {};
   const extractedPortfolio = extractPortfolioFromRow(row);
 
+  const realId = row.id || extra.originalId || extra.id;
+  const realUserId = row.userId || row.user_id || row.userid || extra.originalUserId || extra.userId || realId;
+
+  const isApproved = row.approved !== undefined && row.approved !== null 
+    ? Boolean(row.approved) 
+    : (extra.approved !== undefined ? Boolean(extra.approved) : true);
+
+  const isRejected = row.rejected !== undefined && row.rejected !== null 
+    ? Boolean(row.rejected) 
+    : (extra.rejected !== undefined ? Boolean(extra.rejected) : false);
+
+  const isArchived = row.archived !== undefined && row.archived !== null
+    ? Boolean(row.archived)
+    : (extra.archived !== undefined ? Boolean(extra.archived) : false);
+
   return {
-    id: extra.originalId || row.id,
-    userId: extra.originalUserId || row.userId || row.user_id || row.userid,
-    name: row.name || 'Anonymous Model',
-    gender: row.gender || 'female',
+    id: String(realId),
+    userId: String(realUserId),
+    name: row.name || extra.name || 'Anonymous Model',
+    gender: row.gender || extra.gender || 'female',
     age: typeof row.age === 'number' ? row.age : (parseInt(String(row.age), 10) || 24),
-    height: extra.heightOriginal || (row.height ? `${row.height} cm` : "5'9\""),
-    city: row.city || 'Mumbai',
-    state: row.state || 'Maharashtra',
+    height: extra.heightOriginal || (row.height ? (typeof row.height === 'number' ? `${row.height} cm` : String(row.height)) : "5'9\""),
+    city: row.city || extra.city || 'Mumbai',
+    state: row.state || extra.state || 'Maharashtra',
     languages: Array.isArray(row.languages) ? row.languages : (typeof row.languages === 'string' ? row.languages.split(',').map((s: string) => s.trim()) : ['English', 'Hindi']),
-    experience: row.experience || '2-5 years',
-    category: extra.category || row.category || 'Fashion Models',
+    experience: row.experience || extra.experience || '2-5 years',
+    category: row.category || extra.category || 'Fashion Models',
     portfolio: extractedPortfolio,
-    videoUrl: row.videoUrl || row.video_url,
-    availabilityStatus: row.availabilityStatus || row.availability_status || 'Available',
-    selfieVerified: extra.selfieVerified !== undefined ? extra.selfieVerified : (row.selfieVerified !== undefined ? row.selfieVerified : true),
-    selfieUrl: extra.selfieUrl || row.selfieUrl,
-    approved: extra.approved !== undefined ? extra.approved : (row.approved !== undefined ? row.approved : true),
-    rejected: extra.rejected !== undefined ? extra.rejected : (row.rejected !== undefined ? row.rejected : false),
-    startingPrice: row.starting_price || row.startingPrice || 15000,
+    videoUrl: row.videoUrl || row.video_url || extra.videoUrl,
+    availabilityStatus: row.availabilityStatus || row.availability_status || extra.availabilityStatus || 'Available',
+    selfieVerified: row.selfie_verified !== undefined ? Boolean(row.selfie_verified) : (extra.selfieVerified !== undefined ? Boolean(extra.selfieVerified) : true),
+    selfieUrl: extra.selfieUrl || row.selfieUrl || row.selfie_url,
+    approved: isApproved,
+    rejected: isRejected,
+    archived: isArchived,
+    startingPrice: Number(row.starting_price || row.startingPrice || extra.startingPrice) || 15000,
     rating: row.rating !== undefined ? Number(row.rating) : 5.0,
     reviewsCount: row.reviews_count !== undefined ? Number(row.reviews_count) : 0,
-    biography: row.biography || '',
-    phone: row.phone,
-    email: row.email,
+    biography: row.biography || extra.biography || '',
+    phone: row.phone || extra.phone || '',
+    email: row.email || extra.email || '',
     govIdUrl: extra.govIdUrl || row.govIdUrl,
     pdfUrl: extra.pdfUrl || row.pdfUrl,
     pdfName: extra.pdfName || row.pdfName,
@@ -371,22 +387,9 @@ export function sanitizeValue(value: any, keyName?: string): any {
   return value;
 }
 
-const DUMMY_MODEL_IDS = new Set(['m1', 'm2', 'm3', 'm4', 'm5', 'm6']);
-const DUMMY_MODEL_NAMES = new Set([
-  'priya sharma', 
-  'kabir mehra', 
-  'anjali rao', 
-  'vikram singh', 
-  'rhea kapoor', 
-  'divya nair', 
-  'pooja hegde',
-  'priya sharma (model)'
-]);
-
 export function isDummyModel(model: any): boolean {
   if (!model) return true;
-  if (model.id && DUMMY_MODEL_IDS.has(String(model.id).trim())) return true;
-  if (model.name && DUMMY_MODEL_NAMES.has(String(model.name).toLowerCase().trim())) return true;
+  if (!model.id && !model.name) return true;
   return false;
 }
 

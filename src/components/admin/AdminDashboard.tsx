@@ -51,7 +51,7 @@ export default function AdminDashboard({
   const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(false);
 
   // Model Moderation state
-  const [talentFilter, setTalentFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'suspended'>('pending');
+  const [talentFilter, setTalentFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'suspended'>('all');
   const [talentSearch, setTalentSearch] = useState<string>('');
   const [selectedModelForView, setSelectedModelForView] = useState<Model | null>(null);
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);

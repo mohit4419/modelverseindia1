@@ -108,10 +108,25 @@ function fromSupabaseModelRow(row: any): Model {
     portfolioList = [extra.portfolio];
   }
 
+  const realId = row.id || extra.originalId || extra.id;
+  const realUserId = row.userId || row.user_id || row.userid || extra.originalUserId || extra.userId || realId;
+
+  const isApproved = row.approved !== undefined && row.approved !== null
+    ? Boolean(row.approved)
+    : (extra.approved !== undefined ? Boolean(extra.approved) : true);
+
+  const isRejected = row.rejected !== undefined && row.rejected !== null
+    ? Boolean(row.rejected)
+    : (extra.rejected !== undefined ? Boolean(extra.rejected) : false);
+
+  const isArchived = row.archived !== undefined && row.archived !== null
+    ? Boolean(row.archived)
+    : (extra.archived !== undefined ? Boolean(extra.archived) : false);
+
   return {
-    id: extra.originalId || row.id,
-    userId: extra.originalUserId || row.userId || row.user_id || row.userid,
-    name: row.name,
+    id: String(realId),
+    userId: String(realUserId),
+    name: row.name || extra.name || 'Anonymous Model',
     gender: row.gender || 'female',
     age: row.age || 24,
     height: extra.heightOriginal || (row.height ? `${row.height} cm` : "5'9\""),
@@ -119,17 +134,17 @@ function fromSupabaseModelRow(row: any): Model {
     state: row.state || 'Maharashtra',
     languages: Array.isArray(row.languages) ? row.languages : ['English', 'Hindi'],
     experience: row.experience || '2-5 years',
-    category: extra.category || row.category || 'Fashion Models',
+    category: row.category || extra.category || 'Fashion Models',
     portfolio: portfolioList,
-    portfolioCaptions: Array.isArray(row.portfolioCaptions) ? row.portfolioCaptions : extra.portfolioCaptions,
+    portfolioCaptions: Array.isArray(row.portfolioCaptions) ? row.portfolioCaptions : extra.portfolioCategories,
     portfolioCategories: Array.isArray(row.portfolioCategories) ? row.portfolioCategories : extra.portfolioCategories,
     videoUrl: row.videoUrl || row.video_url,
     availabilityStatus: row.availabilityStatus || row.availability_status || 'Available',
     selfieVerified: extra.selfieVerified !== undefined ? extra.selfieVerified : true,
     selfieUrl: extra.selfieUrl || row.selfieUrl,
-    approved: extra.approved !== undefined ? extra.approved : true,
-    rejected: extra.rejected !== undefined ? extra.rejected : false,
-    archived: extra.archived !== undefined ? Boolean(extra.archived) : Boolean(row.archived),
+    approved: isApproved,
+    rejected: isRejected,
+    archived: isArchived,
     startingPrice: row.starting_price || row.startingPrice || 15000,
     rating: row.rating !== undefined ? Number(row.rating) : 5.0,
     reviewsCount: row.reviews_count !== undefined ? Number(row.reviews_count) : 0,
@@ -167,9 +182,9 @@ export class ModelRepository {
 
     if (dbModels.length > 0) {
       // Primary Source of Truth: Database models from Supabase
-      // Deduplicate by userId (or id), keeping the latest updated profile with photos
+      // Deduplicate by distinct model id
       dbModels.forEach((m) => {
-        const key = m.userId || m.id;
+        const key = m.id || m.userId;
         const existing = mergedMap.get(key);
         if (!existing) {
           mergedMap.set(key, m);
@@ -189,8 +204,8 @@ export class ModelRepository {
 
     // Fallback ONLY when database has 0 models
     const localModels = getLocalModels();
-    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.userId || m.id, m));
-    localModels.forEach((m) => mergedMap.set(m.userId || m.id, m));
+    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.id || m.userId, m));
+    localModels.forEach((m) => mergedMap.set(m.id || m.userId, m));
 
     return Array.from(mergedMap.values());
   }
@@ -228,19 +243,12 @@ export class ModelRepository {
   }
 
   async save(model: Model): Promise<Model> {
-    // Check if model already exists by id, userId, or email to prevent duplicate model creation
+    // Only update existing model if exact model ID matches
     const localModels = getLocalModels();
-    const existingIdx = localModels.findIndex(
-      (m) =>
-        m.id === model.id ||
-        (model.userId && String(m.userId) === String(model.userId)) ||
-        (model.email && m.email && m.email.toLowerCase() === model.email.toLowerCase())
-    );
+    const existingIdx = localModels.findIndex((m) => m.id && model.id && m.id === model.id);
 
     if (existingIdx >= 0) {
-      // Reuse existing model ID to update existing profile instead of duplicating
       const existing = localModels[existingIdx];
-      model.id = existing.id;
       localModels[existingIdx] = { ...existing, ...model, id: existing.id };
     } else {
       localModels.push(model);

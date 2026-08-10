@@ -166,12 +166,12 @@ export const modelService = {
     const mergedMap = new Map<string, Model>();
 
     if (databaseModels.length > 0) {
-      // Real database models exist in public.models: Strictly fetch and deduplicate database records ONLY
+      // Real database models exist in public.models: Strictly fetch database records without dropping distinct models
       databaseModels.filter(m => !isDummyModel(m)).forEach(m => {
-        const userKey = m.userId || m.id;
-        const existing = mergedMap.get(userKey);
+        const modelKey = m.id || m.userId;
+        const existing = mergedMap.get(modelKey);
         if (!existing) {
-          mergedMap.set(userKey, m);
+          mergedMap.set(modelKey, m);
         } else {
           const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
           const newPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
@@ -179,7 +179,7 @@ export const modelService = {
           const newTime = new Date((m as any).updated_at || (m as any).createdAt || 0).getTime();
 
           if (newTime >= existingTime || (newPhotos >= existingPhotos && newPhotos > 0)) {
-            mergedMap.set(userKey, m);
+            mergedMap.set(modelKey, m);
           }
         }
       });

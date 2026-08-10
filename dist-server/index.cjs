@@ -3391,10 +3391,15 @@ function fromSupabaseModelRow(row) {
   } else if (typeof extra.portfolio === "string" && extra.portfolio) {
     portfolioList = [extra.portfolio];
   }
+  const realId = row.id || extra.originalId || extra.id;
+  const realUserId = row.userId || row.user_id || row.userid || extra.originalUserId || extra.userId || realId;
+  const isApproved = row.approved !== void 0 && row.approved !== null ? Boolean(row.approved) : extra.approved !== void 0 ? Boolean(extra.approved) : true;
+  const isRejected = row.rejected !== void 0 && row.rejected !== null ? Boolean(row.rejected) : extra.rejected !== void 0 ? Boolean(extra.rejected) : false;
+  const isArchived = row.archived !== void 0 && row.archived !== null ? Boolean(row.archived) : extra.archived !== void 0 ? Boolean(extra.archived) : false;
   return {
-    id: extra.originalId || row.id,
-    userId: extra.originalUserId || row.userId || row.user_id || row.userid,
-    name: row.name,
+    id: String(realId),
+    userId: String(realUserId),
+    name: row.name || extra.name || "Anonymous Model",
     gender: row.gender || "female",
     age: row.age || 24,
     height: extra.heightOriginal || (row.height ? `${row.height} cm` : `5'9"`),
@@ -3402,17 +3407,17 @@ function fromSupabaseModelRow(row) {
     state: row.state || "Maharashtra",
     languages: Array.isArray(row.languages) ? row.languages : ["English", "Hindi"],
     experience: row.experience || "2-5 years",
-    category: extra.category || row.category || "Fashion Models",
+    category: row.category || extra.category || "Fashion Models",
     portfolio: portfolioList,
-    portfolioCaptions: Array.isArray(row.portfolioCaptions) ? row.portfolioCaptions : extra.portfolioCaptions,
+    portfolioCaptions: Array.isArray(row.portfolioCaptions) ? row.portfolioCaptions : extra.portfolioCategories,
     portfolioCategories: Array.isArray(row.portfolioCategories) ? row.portfolioCategories : extra.portfolioCategories,
     videoUrl: row.videoUrl || row.video_url,
     availabilityStatus: row.availabilityStatus || row.availability_status || "Available",
     selfieVerified: extra.selfieVerified !== void 0 ? extra.selfieVerified : true,
     selfieUrl: extra.selfieUrl || row.selfieUrl,
-    approved: extra.approved !== void 0 ? extra.approved : true,
-    rejected: extra.rejected !== void 0 ? extra.rejected : false,
-    archived: extra.archived !== void 0 ? Boolean(extra.archived) : Boolean(row.archived),
+    approved: isApproved,
+    rejected: isRejected,
+    archived: isArchived,
     startingPrice: row.starting_price || row.startingPrice || 15e3,
     rating: row.rating !== void 0 ? Number(row.rating) : 5,
     reviewsCount: row.reviews_count !== void 0 ? Number(row.reviews_count) : 0,
@@ -3447,7 +3452,7 @@ var ModelRepository = class {
     const mergedMap = /* @__PURE__ */ new Map();
     if (dbModels.length > 0) {
       dbModels.forEach((m) => {
-        const key = m.userId || m.id;
+        const key = m.id || m.userId;
         const existing = mergedMap.get(key);
         if (!existing) {
           mergedMap.set(key, m);
@@ -3464,8 +3469,8 @@ var ModelRepository = class {
       return Array.from(mergedMap.values());
     }
     const localModels = getLocalModels2();
-    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.userId || m.id, m));
-    localModels.forEach((m) => mergedMap.set(m.userId || m.id, m));
+    INITIAL_SERVER_MODELS.forEach((m) => mergedMap.set(m.id || m.userId, m));
+    localModels.forEach((m) => mergedMap.set(m.id || m.userId, m));
     return Array.from(mergedMap.values());
   }
   async findById(id) {
@@ -3497,12 +3502,9 @@ var ModelRepository = class {
   }
   async save(model) {
     const localModels = getLocalModels2();
-    const existingIdx = localModels.findIndex(
-      (m) => m.id === model.id || model.userId && String(m.userId) === String(model.userId) || model.email && m.email && m.email.toLowerCase() === model.email.toLowerCase()
-    );
+    const existingIdx = localModels.findIndex((m) => m.id && model.id && m.id === model.id);
     if (existingIdx >= 0) {
       const existing = localModels[existingIdx];
-      model.id = existing.id;
       localModels[existingIdx] = { ...existing, ...model, id: existing.id };
     } else {
       localModels.push(model);
@@ -3662,11 +3664,13 @@ var ModelController = class {
         const bodyAny = req.body;
         modelData.userId = bodyAny?.userId || bodyAny?.user_id || bodyAny?.userid || req.user?.id || "u_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
       }
-      const existingModelProfile = await modelService.getModelByUserId(modelData.userId, modelData.email);
-      if (existingModelProfile) {
-        modelData.id = existingModelProfile.id;
-      } else if (!modelData.id) {
-        modelData.id = "m_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+      if (!modelData.id) {
+        const existingProfile = await modelService.getModelByUserId(modelData.userId);
+        if (existingProfile) {
+          modelData.id = existingProfile.id;
+        } else {
+          modelData.id = "m_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+        }
       }
       if (modelData.approved === void 0) {
         modelData.approved = true;

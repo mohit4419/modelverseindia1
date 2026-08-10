@@ -578,15 +578,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       ? String(existingUserId).trim() 
       : 'u_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
-    // Check if models state has an existing model for this user ID or email to prevent duplicate model profiles
-    const existingModelInState = models.find(m =>
-      (finalUserId && String(m.userId) === String(finalUserId)) ||
-      (newModel.email && m.email && m.email.toLowerCase() === newModel.email.toLowerCase())
+    // Enforce 1 model profile per User ID to prevent duplicate models for the same user account
+    const existingForUser = models.find(m =>
+      finalUserId && String(m.userId) === String(finalUserId)
     );
 
     const pendingModel: Model = {
       ...newModel,
-      id: existingModelInState ? existingModelInState.id : newModel.id,
+      id: newModel.id || (existingForUser ? existingForUser.id : ('m_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7))),
       userId: finalUserId,
       approved: newModel.approved !== undefined ? newModel.approved : true,
       rejected: false

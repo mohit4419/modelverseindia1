@@ -61,12 +61,14 @@ export class ModelController {
         modelData.userId = bodyAny?.userId || bodyAny?.user_id || bodyAny?.userid || (req as any).user?.id || ('u_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7));
       }
 
-      // Security Check: Enforce 1 model profile per User ID / Email
-      const existingModelProfile = await modelService.getModelByUserId(modelData.userId, modelData.email);
-      if (existingModelProfile) {
-        modelData.id = existingModelProfile.id;
-      } else if (!modelData.id) {
-        modelData.id = 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      // 1 model profile per User ID deduplication check
+      if (!modelData.id) {
+        const existingProfile = await modelService.getModelByUserId(modelData.userId);
+        if (existingProfile) {
+          modelData.id = existingProfile.id;
+        } else {
+          modelData.id = 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+        }
       }
 
       // Default registration settings
