@@ -279,8 +279,8 @@ export class ModelRepository {
           2500
         );
         if (error && (error.message?.includes('user_id') || error.message?.includes('userId') || error.message?.includes('schema cache'))) {
-          const altRow = { ...row, user_id: row.userId || row.user_id };
-          delete altRow.userId;
+          const { userId, ...rest } = row;
+          const altRow: Record<string, any> = { ...rest, user_id: userId || row.user_id };
           const { error: altErr } = await withTimeout(
             supabaseAdmin.from('models').upsert(altRow),
             2500

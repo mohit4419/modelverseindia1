@@ -260,8 +260,8 @@ export const modelService = {
         }
         let { error } = await supabase.from('models').upsert(row);
         if (error && (error.message?.includes('user_id') || error.message?.includes('userId') || error.message?.includes('schema cache'))) {
-          const altRow = { ...row, user_id: row.userId || row.user_id };
-          delete altRow.userId;
+          const { userId, ...rest } = row;
+          const altRow: Record<string, any> = { ...rest, user_id: userId || row.user_id };
           const { error: altErr } = await supabase.from('models').upsert(altRow);
           if (!altErr) error = null;
         }
@@ -270,8 +270,8 @@ export const modelService = {
           const baseRow = await mapModelToBaseSupabaseRow(savedModel);
           let { error: baseErr } = await supabase.from('models').upsert(baseRow);
           if (baseErr && (baseErr.message?.includes('user_id') || baseErr.message?.includes('userId') || baseErr.message?.includes('schema cache'))) {
-            const altBaseRow = { ...baseRow, user_id: baseRow.userId || baseRow.user_id };
-            delete altBaseRow.userId;
+            const { userId: baseUserId, ...baseRest } = baseRow;
+            const altBaseRow: Record<string, any> = { ...baseRest, user_id: baseUserId || baseRow.user_id };
             const { error: altBaseErr } = await supabase.from('models').upsert(altBaseRow);
             if (!altBaseErr) baseErr = null;
           }
@@ -362,8 +362,8 @@ export const modelService = {
         }
         let { error } = await supabase.from('models').upsert(row);
         if (error && (error.message?.includes('user_id') || error.message?.includes('userId') || error.message?.includes('schema cache'))) {
-          const altRow = { ...row, user_id: row.userId || row.user_id };
-          delete altRow.userId;
+          const { userId, ...rest } = row as any;
+          const altRow: Record<string, any> = { ...rest, user_id: userId || row.user_id };
           const { error: altErr } = await supabase.from('models').upsert(altRow);
           if (!altErr) error = null;
         }
@@ -372,8 +372,8 @@ export const modelService = {
           const baseRow = await mapModelToBaseSupabaseRow(savedModel);
           let { error: baseErr } = await supabase.from('models').upsert(baseRow);
           if (baseErr && (baseErr.message?.includes('user_id') || baseErr.message?.includes('userId') || baseErr.message?.includes('schema cache'))) {
-            const altBaseRow = { ...baseRow, user_id: baseRow.userId || baseRow.user_id };
-            delete altBaseRow.userId;
+            const { userId: baseUserId, ...baseRest } = baseRow as any;
+            const altBaseRow: Record<string, any> = { ...baseRest, user_id: baseUserId || baseRow.user_id };
             const { error: altBaseErr } = await supabase.from('models').upsert(altBaseRow);
             if (!altBaseErr) baseErr = null;
           }
