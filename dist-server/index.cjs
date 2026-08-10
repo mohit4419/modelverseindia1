@@ -86,7 +86,7 @@ async function requireSupabaseAuth(req, res, next) {
     return res.status(401).json({ error: "Unauthorized: Token not provided" });
   }
   if (!isSupabaseConfigured || !supabaseAdmin) {
-    return res.status(503).json({ error: "Service Unavailable: Supabase server is not configured" });
+    return res.status(401).json({ error: "Unauthorized: Supabase server authentication is not configured" });
   }
   try {
     const { data: { user }, error } = await withTimeout(supabaseAdmin.auth.getUser(token), 3e3);
@@ -530,7 +530,7 @@ router.post("/supabase/verify-token", async (req, res) => {
     return res.status(400).json({ error: "Token is required" });
   }
   if (!isSupabaseConfigured || !supabaseAdmin) {
-    return res.status(503).json({ error: "Supabase server-side client is not initialized" });
+    return res.status(400).json({ error: "Supabase server-side client is not initialized" });
   }
   try {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
@@ -550,7 +550,7 @@ router.get("/supabase/profile", requireSupabaseAuth, (req, res) => {
 });
 router.get("/supabase/users", requireSupabaseAuth, async (req, res) => {
   if (!isSupabaseConfigured || !supabaseAdmin) {
-    return res.status(503).json({ error: "Supabase server-side client is not initialized" });
+    return res.status(400).json({ error: "Supabase server-side client is not initialized" });
   }
   try {
     const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();

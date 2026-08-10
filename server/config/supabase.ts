@@ -67,7 +67,7 @@ export async function requireSupabaseAuth(req: AuthenticatedRequest, res: Respon
   }
 
   if (!isSupabaseConfigured || !supabaseAdmin) {
-    return res.status(503).json({ error: 'Service Unavailable: Supabase server is not configured' });
+    return res.status(401).json({ error: 'Unauthorized: Supabase server authentication is not configured' });
   }
 
   try {

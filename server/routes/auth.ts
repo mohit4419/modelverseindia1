@@ -248,7 +248,7 @@ router.post('/supabase/verify-token', async (req: Request, res: Response) => {
   }
 
   if (!isSupabaseConfigured || !supabaseAdmin) {
-    return res.status(503).json({ error: 'Supabase server-side client is not initialized' });
+    return res.status(400).json({ error: 'Supabase server-side client is not initialized' });
   }
 
   try {
@@ -271,7 +271,7 @@ router.get('/supabase/profile', requireSupabaseAuth as any, (req: AuthenticatedR
 
 router.get('/supabase/users', requireSupabaseAuth as any, async (req: AuthenticatedRequest, res: Response) => {
   if (!isSupabaseConfigured || !supabaseAdmin) {
-    return res.status(503).json({ error: 'Supabase server-side client is not initialized' });
+    return res.status(400).json({ error: 'Supabase server-side client is not initialized' });
   }
 
   try {
