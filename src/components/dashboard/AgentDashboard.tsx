@@ -37,10 +37,15 @@ export default function AgentDashboard({
 }: AgentDashboardProps) {
   const { setCurrentTab } = useApp();
 
-  // Find registered model or default to first model
+  // Find registered model strictly matching logged-in user
   const currentUser = dbService.getCurrentSessionUser();
-  const defaultModel = (currentUser && models.find(m => m.userId === currentUser.id || m.email?.toLowerCase() === currentUser.email?.toLowerCase())) || models[0];
-  const [selectedModelId, setSelectedModelId] = useState<string>(defaultModel?.id || '');
+  const myModel = currentUser ? models.find(m => 
+    (m.userId && currentUser.id && String(m.userId) === String(currentUser.id)) ||
+    (m.email && currentUser.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
+  ) : undefined;
+
+  const defaultModel = myModel || (!currentUser ? models[0] : undefined);
+  const [selectedModelId, setSelectedModelId] = useState<string>(myModel?.id || defaultModel?.id || '');
 
   // Navigation tab state
   const [activeTab, setActiveTab] = useState<'overview' | 'job-board' | 'bookings' | 'profile' | 'payouts' | 'ai-studio'>('overview');
@@ -61,19 +66,22 @@ export default function AgentDashboard({
     return () => clearInterval(timer);
   }, []);
 
-  // Keep selected model in sync with logged-in user if they are a model
+  // Keep selected model strictly in sync with logged-in user
   useEffect(() => {
     const user = dbService.getCurrentSessionUser();
-    if (user && user.role === 'model') {
-      const myModel = models.find(m => m.userId === user.id || m.email?.toLowerCase() === user.email?.toLowerCase());
-      if (myModel && myModel.id !== selectedModelId) {
-        setSelectedModelId(myModel.id);
+    if (user) {
+      const myM = models.find(m => 
+        (m.userId && user.id && String(m.userId) === String(user.id)) ||
+        (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase())
+      );
+      if (myM && myM.id !== selectedModelId) {
+        setSelectedModelId(myM.id);
       }
     }
   }, [models, selectedModelId]);
 
   // Active Model instance
-  const activeModel = models.find(m => m.id === selectedModelId);
+  const activeModel = myModel || models.find(m => m.id === selectedModelId);
 
   // Profile Edit state
   const [name, setName] = useState('');
@@ -301,6 +309,29 @@ export default function AgentDashboard({
       console.error('PDF generation error:', err);
     }
   };
+
+  if (!activeModel) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 p-8 flex flex-col items-center justify-center text-center">
+        <div className="max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 space-y-5 shadow-2xl">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 text-[#EA3838] flex items-center justify-center mx-auto">
+            <UserIcon className="h-8 w-8 text-[#EA3838]" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Model Profile Not Registered</h2>
+          <p className="text-xs text-neutral-400 leading-relaxed">
+            There is no registered model profile for your user account ({currentUser?.email || currentUser?.id || 'guest'}). Complete the casting registration form to activate your dashboard.
+          </p>
+          <button
+            type="button"
+            onClick={() => setCurrentTab('become-model')}
+            className="w-full py-3 rounded-full bg-[#EA3838] text-white font-bold text-xs hover:bg-red-600 transition cursor-pointer"
+          >
+            Complete Model Registration
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 p-4 sm:p-6 lg:p-8 font-sans">

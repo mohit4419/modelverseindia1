@@ -39,6 +39,7 @@ export function useSearch(initialModels?: Model[]) {
   }, [searchTerm]);
 
   const filteredModels = results.filter((model) => {
+    if (model.archived) return false;
     const matchesCity = selectedCity ? model.city?.toLowerCase() === selectedCity.toLowerCase() : true;
     const matchesCategory = selectedCategory ? model.category?.toLowerCase() === selectedCategory.toLowerCase() : true;
     return matchesCity && matchesCategory;

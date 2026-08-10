@@ -2338,6 +2338,20 @@ router6.get("/sitemap.xml", async (req, res) => {
     return res.status(500).send("Internal Server Error generating Sitemap");
   }
 });
+router6.get("/ads.txt", (req, res) => {
+  try {
+    const adsTxtPath = import_path4.default.join(process.cwd(), "public", "ads.txt");
+    if (import_fs4.default.existsSync(adsTxtPath)) {
+      res.header("Content-Type", "text/plain; charset=utf-8");
+      res.header("Cache-Control", "public, max-age=86400");
+      return res.sendFile(adsTxtPath);
+    }
+  } catch (e) {
+    console.warn("Error sending ads.txt file:", e);
+  }
+  res.header("Content-Type", "text/plain; charset=utf-8");
+  return res.send("google.com, pub-2960926541753229, DIRECT, f08c47fec0942fa0\n");
+});
 var sitemap_default = router6;
 
 // server/routes/health.ts
@@ -3311,16 +3325,14 @@ function saveLocalModels2(models) {
   }
 }
 function toSupabaseModelRow(model) {
-  const isUuid = (val) => val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
-  const row = {};
-  if (isUuid(model.id)) {
-    row.id = model.id;
-  }
-  if (isUuid(model.userId)) {
-    row.userId = model.userId;
-    row.user_id = model.userId;
-    row.userid = model.userId;
-  }
+  const finalId = model.id || "m_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  const finalUserId = model.userId || "u_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  const row = {
+    id: finalId,
+    userId: finalUserId,
+    user_id: finalUserId,
+    userid: finalUserId
+  };
   row.name = model.name || "Anonymous Model";
   row.gender = model.gender || "female";
   row.age = typeof model.age === "number" ? model.age : parseInt(String(model.age), 10) || 24;
@@ -3364,7 +3376,8 @@ function toSupabaseModelRow(model) {
     pdfName: model.pdfName,
     heightOriginal: model.height,
     originalId: model.id,
-    originalUserId: model.userId
+    originalUserId: model.userId,
+    archived: Boolean(model.archived)
   };
   return row;
 }
@@ -3401,6 +3414,7 @@ function fromSupabaseModelRow(row) {
     selfieUrl: extra.selfieUrl || row.selfieUrl,
     approved: extra.approved !== void 0 ? extra.approved : true,
     rejected: extra.rejected !== void 0 ? extra.rejected : false,
+    archived: extra.archived !== void 0 ? Boolean(extra.archived) : Boolean(row.archived),
     startingPrice: row.starting_price || row.startingPrice || 15e3,
     rating: row.rating !== void 0 ? Number(row.rating) : 5,
     reviewsCount: row.reviews_count !== void 0 ? Number(row.reviews_count) : 0,
@@ -3499,6 +3513,20 @@ var ModelRepository = class {
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const row = toSupabaseModelRow(model);
+        if (row.userId) {
+          try {
+            await withTimeout(
+              supabaseAdmin.from("users").upsert({
+                id: row.userId,
+                email: (model.email || `${row.userId}@modelverse.in`).toLowerCase(),
+                phone_number: model.phone || null,
+                created_at: (/* @__PURE__ */ new Date()).toISOString()
+              }),
+              2e3
+            );
+          } catch (uErr) {
+          }
+        }
         const { error } = await withTimeout(
           supabaseAdmin.from("models").upsert(row),
           2500

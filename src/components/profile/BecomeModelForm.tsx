@@ -821,7 +821,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       case 2:
         return !!(height && weight && bust && waist && hips);
       case 8:
-        return !!portfolioLink1;
+        return !!(portfolioLink1 && portfolioLink2 && portfolioLink3);
       case 11:
         return !!biography;
       case 15:
@@ -1569,7 +1569,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
                     </p>
                     <p className="text-[10px] font-bold text-[#EA3838] mb-3 flex items-center gap-1.5">
                       <AlertCircle className="h-3.5 w-3.5" />
-                      Portfolio Image 1 is mandatory. You must upload at least one image to proceed.
+                      All 3 Portfolio Images are mandatory. You must upload/provide 3 high-resolution casting photos to proceed.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -1578,6 +1578,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
                         <label className="block text-xs font-bold text-[#EA3838]">Portfolio Image 1 * (Mandatory)</label>
                         <input
                           type="text"
+                          required
                           placeholder="Image URL or Base64"
                           value={portfolioLink1}
                           onChange={(e) => setPortfolioLink1(e.target.value)}
@@ -1610,9 +1611,10 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
 
                       {/* Slot 2 */}
                       <div className="space-y-2">
-                        <label className="block text-xs font-bold text-zinc-300">Portfolio Image 2</label>
+                        <label className="block text-xs font-bold text-[#EA3838]">Portfolio Image 2 * (Mandatory)</label>
                         <input
                           type="text"
+                          required
                           placeholder="Image URL or Base64"
                           value={portfolioLink2}
                           onChange={(e) => setPortfolioLink2(e.target.value)}
@@ -1645,9 +1647,10 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
 
                       {/* Slot 3 */}
                       <div className="space-y-2">
-                        <label className="block text-xs font-bold text-zinc-300">Portfolio Image 3</label>
+                        <label className="block text-xs font-bold text-[#EA3838]">Portfolio Image 3 * (Mandatory)</label>
                         <input
                           type="text"
+                          required
                           placeholder="Image URL or Base64"
                           value={portfolioLink3}
                           onChange={(e) => setPortfolioLink3(e.target.value)}

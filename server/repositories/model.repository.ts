@@ -32,18 +32,15 @@ function saveLocalModels(models: Model[]) {
 }
 
 function toSupabaseModelRow(model: Model): Record<string, any> {
-  const isUuid = (val?: string) => val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+  const finalId = model.id || ('m_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7));
+  const finalUserId = model.userId || ('u_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7));
 
-  const row: Record<string, any> = {};
-
-  if (isUuid(model.id)) {
-    row.id = model.id;
-  }
-  if (isUuid(model.userId)) {
-    row.userId = model.userId;
-    row.user_id = model.userId;
-    row.userid = model.userId;
-  }
+  const row: Record<string, any> = {
+    id: finalId,
+    userId: finalUserId,
+    user_id: finalUserId,
+    userid: finalUserId,
+  };
 
   row.name = model.name || 'Anonymous Model';
   row.gender = model.gender || 'female';
@@ -92,7 +89,8 @@ function toSupabaseModelRow(model: Model): Record<string, any> {
     pdfName: model.pdfName,
     heightOriginal: model.height,
     originalId: model.id,
-    originalUserId: model.userId
+    originalUserId: model.userId,
+    archived: Boolean(model.archived)
   };
 
   return row;
@@ -133,6 +131,7 @@ function fromSupabaseModelRow(row: any): Model {
     selfieUrl: extra.selfieUrl || row.selfieUrl,
     approved: extra.approved !== undefined ? extra.approved : true,
     rejected: extra.rejected !== undefined ? extra.rejected : false,
+    archived: extra.archived !== undefined ? Boolean(extra.archived) : Boolean(row.archived),
     startingPrice: row.starting_price || row.startingPrice || 15000,
     rating: row.rating !== undefined ? Number(row.rating) : 5.0,
     reviewsCount: row.reviews_count !== undefined ? Number(row.reviews_count) : 0,
@@ -254,6 +253,21 @@ export class ModelRepository {
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const row = toSupabaseModelRow(model);
+        if (row.userId) {
+          try {
+            await withTimeout(
+              supabaseAdmin.from('users').upsert({
+                id: row.userId,
+                email: (model.email || `${row.userId}@modelverse.in`).toLowerCase(),
+                phone_number: model.phone || null,
+                created_at: new Date().toISOString()
+              }),
+              2000
+            );
+          } catch (uErr) {
+            // Ignore if users table schema varies
+          }
+        }
         const { error } = await withTimeout(
           supabaseAdmin.from('models').upsert(row),
           2500

@@ -110,4 +110,19 @@ router.get('/sitemap.xml', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/ads.txt', (req: Request, res: Response) => {
+  try {
+    const adsTxtPath = path.join(process.cwd(), 'public', 'ads.txt');
+    if (fs.existsSync(adsTxtPath)) {
+      res.header('Content-Type', 'text/plain; charset=utf-8');
+      res.header('Cache-Control', 'public, max-age=86400');
+      return res.sendFile(adsTxtPath);
+    }
+  } catch (e) {
+    console.warn('Error sending ads.txt file:', e);
+  }
+  res.header('Content-Type', 'text/plain; charset=utf-8');
+  return res.send('google.com, pub-2960926541753229, DIRECT, f08c47fec0942fa0\n');
+});
+
 export default router;

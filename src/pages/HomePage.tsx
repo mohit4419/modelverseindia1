@@ -193,7 +193,7 @@ export default function HomePage() {
           {/* Grid of filtered models */}
           {(() => {
             const filteredHomeModels = models.filter((m) => {
-              if (m.approved === false || m.rejected === true || (m as any).status === 'suspended' || (m as any).status === 'rejected') return false;
+              if (m.approved === false || m.rejected === true || (m as any).status === 'suspended' || (m as any).status === 'rejected' || m.archived) return false;
               if (activeHomeCategory !== 'all' && m.category?.toLowerCase() !== activeHomeCategory.toLowerCase()) return false;
               return true;
             });

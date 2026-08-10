@@ -186,24 +186,37 @@ export const modelService = {
           }
         }
       });
-    } else {
-      // Fallback ONLY when database returns 0 models (offline or uninitialized DB)
-      let localModels: Model[] = SEED_MODELS;
-      try {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          const local = localStorage.getItem('mvi_models');
-          if (local) {
-            const parsed = JSON.parse(local);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              localModels = parsed;
-            }
+    }
+
+    // Always merge local models if they exist in localStorage (to prevent losing freshly registered models)
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const local = localStorage.getItem('mvi_models');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            parsed.filter(m => !isDummyModel(m)).forEach(m => {
+              const userKey = m.userId || m.id;
+              if (!mergedMap.has(userKey)) {
+                mergedMap.set(userKey, m);
+              } else {
+                const existing = mergedMap.get(userKey)!;
+                const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
+                const localPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
+                if (localPhotos > existingPhotos && localPhotos > 0) {
+                  mergedMap.set(userKey, { ...existing, ...m });
+                }
+              }
+            });
           }
         }
-      } catch (e) {
-        console.warn('LocalStorage read note:', e);
       }
+    } catch (e) {
+      console.warn('LocalStorage read note:', e);
+    }
 
-      localModels.filter(m => !isDummyModel(m)).forEach(m => {
+    if (mergedMap.size === 0) {
+      SEED_MODELS.filter(m => !isDummyModel(m)).forEach(m => {
         const userKey = m.userId || m.id;
         mergedMap.set(userKey, m);
       });
@@ -217,6 +230,7 @@ export const modelService = {
         category: m.category || 'Fashion Models',
         portfolio: extractPortfolioFromRow(m),
         startingPrice: m.startingPrice || 15000,
+        archived: Boolean(m.archived),
         available: m.available !== undefined ? m.available : (m.availabilityStatus === 'Available')
       }));
 
@@ -311,6 +325,9 @@ export const modelService = {
       savedModel.id = existing.id;
     }
 
+    let apiSaved = false;
+    let apiErrorMsg = '';
+
     // 1. Try Express backend API FIRST if available
     try {
       const response = await fetch('/api/v2/models/register', {
@@ -318,16 +335,21 @@ export const modelService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(savedModel)
       });
-      if (response.ok) {
-        const result = await response.json();
-        if (result && result.data) {
+      const result = await response.json().catch(() => null);
+      if (response.ok && result && result.success) {
+        if (result.data) {
           savedModel = result.data;
         }
+        apiSaved = true;
+      } else {
+        apiErrorMsg = result?.error || `HTTP ${response.status}`;
       }
-    } catch (e) {
-      console.warn('Express server model registration note (proceeding with direct database save):', e);
+    } catch (e: any) {
+      console.warn('Express server model registration note:', e);
+      apiErrorMsg = e?.message || 'Network error';
     }
 
+    let supabaseSaved = false;
     // 2. Direct Supabase Database Write with fallback for schema differences
     if (isSupabaseAvailable && supabase) {
       try {
@@ -342,14 +364,23 @@ export const modelService = {
           console.warn('Supabase models table full registration note, trying base compatibility row:', error.message);
           const baseRow = await mapModelToBaseSupabaseRow(savedModel);
           const { error: baseErr } = await supabase.from('models').upsert(baseRow);
-          if (baseErr) console.warn('Supabase base model registration note:', baseErr.message);
-          else console.log(`Successfully registered model "${savedModel.name}" (${savedModel.id}) via base compatibility row!`);
+          if (baseErr) {
+            console.warn('Supabase base model registration note:', baseErr.message);
+          } else {
+            supabaseSaved = true;
+            console.log(`Successfully registered model "${savedModel.name}" (${savedModel.id}) via base compatibility row!`);
+          }
         } else {
+          supabaseSaved = true;
           console.log(`Successfully registered model "${savedModel.name}" (${savedModel.id}) in Supabase models table!`);
         }
       } catch (e) {
         console.warn('Supabase registerModel error:', e);
       }
+    }
+
+    if (!apiSaved && !supabaseSaved && isSupabaseAvailable) {
+      throw new Error(`Failed to save model profile to database: ${apiErrorMsg || 'Database error'}`);
     }
 
     // 3. LocalStorage Cache
