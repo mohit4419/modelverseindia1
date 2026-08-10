@@ -44,8 +44,6 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
   return removeUndefined({
     id: finalUuid,
     userId: validUserId,
-    user_id: validUserId,
-    userid: validUserId,
     name: model.name,
     gender: model.gender || 'female',
     age: Number(model.age) || 23,
@@ -63,11 +61,13 @@ async function mapModelToSupabaseRow(model: Model): Promise<Record<string, any>>
     email: model.email || '',
     phone: model.phone || '',
     portfolio: portfolioArr,
-    portfolioCaptions: Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [],
-    portfolioCategories: Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [],
     measurements: {
       ...(typeof model.measurements === 'object' ? model.measurements : {}),
       portfolio: portfolioArr,
+      portfolioCaptions: Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [],
+      portfolioCategories: Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [],
+      videoUrl: model.videoUrl,
+      availabilityStatus: model.availabilityStatus,
       originalId: model.id,
       originalUserId: model.userId,
       heightOriginal: model.height,
@@ -85,8 +85,6 @@ async function mapModelToBaseSupabaseRow(model: Model): Promise<Record<string, a
   return removeUndefined({
     id: finalUuid,
     userId: validUserId,
-    user_id: validUserId,
-    userid: validUserId,
     name: model.name,
     gender: model.gender || 'female',
     age: Number(model.age) || 23,

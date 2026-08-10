@@ -3329,9 +3329,7 @@ function toSupabaseModelRow(model) {
   const finalUserId = model.userId || "u_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
   const row = {
     id: finalId,
-    userId: finalUserId,
-    user_id: finalUserId,
-    userid: finalUserId
+    userId: finalUserId
   };
   row.name = model.name || "Anonymous Model";
   row.gender = model.gender || "female";
@@ -3355,15 +3353,15 @@ function toSupabaseModelRow(model) {
   row.email = model.email || void 0;
   row.languages = Array.isArray(model.languages) ? model.languages : [];
   row.experience = model.experience || "";
-  row.videoUrl = model.videoUrl || void 0;
-  row.availabilityStatus = model.availabilityStatus || "Available";
   row.portfolio = Array.isArray(model.portfolio) ? model.portfolio : [];
-  row.portfolioCaptions = Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [];
-  row.portfolioCategories = Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [];
   row.measurements = {
     ...model.measurements || {},
     category: model.category,
     portfolio: model.portfolio,
+    portfolioCaptions: Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [],
+    portfolioCategories: Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [],
+    videoUrl: model.videoUrl,
+    availabilityStatus: model.availabilityStatus,
     agencyInfo: model.agencyInfo,
     additionalDetails: model.additionalDetails,
     socialLinks: model.socialLinks,

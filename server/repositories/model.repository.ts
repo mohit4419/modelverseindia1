@@ -38,8 +38,6 @@ function toSupabaseModelRow(model: Model): Record<string, any> {
   const row: Record<string, any> = {
     id: finalId,
     userId: finalUserId,
-    user_id: finalUserId,
-    userid: finalUserId,
   };
 
   row.name = model.name || 'Anonymous Model';
@@ -66,17 +64,17 @@ function toSupabaseModelRow(model: Model): Record<string, any> {
   row.email = model.email || undefined;
   row.languages = Array.isArray(model.languages) ? model.languages : [];
   row.experience = model.experience || '';
-  row.videoUrl = model.videoUrl || undefined;
-  row.availabilityStatus = model.availabilityStatus || 'Available';
   row.portfolio = Array.isArray(model.portfolio) ? model.portfolio : [];
-  row.portfolioCaptions = Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [];
-  row.portfolioCategories = Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [];
 
   // Store rich metadata in measurements JSONB
   row.measurements = {
     ...(model.measurements || {}),
     category: model.category,
     portfolio: model.portfolio,
+    portfolioCaptions: Array.isArray(model.portfolioCaptions) ? model.portfolioCaptions : [],
+    portfolioCategories: Array.isArray(model.portfolioCategories) ? model.portfolioCategories : [],
+    videoUrl: model.videoUrl,
+    availabilityStatus: model.availabilityStatus,
     agencyInfo: model.agencyInfo,
     additionalDetails: model.additionalDetails,
     socialLinks: model.socialLinks,
