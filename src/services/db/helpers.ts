@@ -139,7 +139,35 @@ export async function ensureModelExistsInDb(
     const localModels: Model[] = local ? JSON.parse(local) : seedModels;
     const existing = localModels.find(m => m.id === modelId) || seedModels.find(m => m.id === modelId);
     if (existing) {
-      await supabase.from('models').upsert(removeUndefined(existing));
+      const validUserId = await getValidUserIdForModel(existing.userId);
+      const portfolioArr = Array.isArray(existing.portfolio) ? existing.portfolio.filter(Boolean) : [];
+      const baseRow = removeUndefined({
+        id: isUUID(existing.id) ? existing.id : `10000000-1000-4000-8000-${Date.now().toString(16).padStart(12, '0').slice(-12)}`,
+        userId: validUserId,
+        name: existing.name || 'Model',
+        gender: existing.gender || 'female',
+        age: Number(existing.age) || 23,
+        height: typeof existing.height === 'number' ? existing.height : 173,
+        city: existing.city || 'Mumbai',
+        state: existing.state || 'Maharashtra',
+        category: existing.category || 'Fashion Models',
+        portfolio: portfolioArr,
+        measurements: {
+          ...(typeof existing.measurements === 'object' ? existing.measurements : {}),
+          portfolio: portfolioArr,
+          portfolioCaptions: Array.isArray(existing.portfolioCaptions) ? existing.portfolioCaptions : [],
+          portfolioCategories: Array.isArray(existing.portfolioCategories) ? existing.portfolioCategories : [],
+          originalId: existing.id,
+          originalUserId: existing.userId
+        },
+        updated_at: new Date().toISOString()
+      });
+      let { error: uErr } = await supabase.from('models').upsert(baseRow);
+      if (uErr && (uErr.message?.includes('user_id') || uErr.message?.includes('userId') || uErr.message?.includes('schema cache'))) {
+        const altBaseRow = { ...baseRow, user_id: baseRow.userId };
+        delete altBaseRow.userId;
+        await supabase.from('models').upsert(altBaseRow);
+      }
     }
   } catch (err) {
     console.warn(`[Self-healing] Failed to ensure model ${modelId} exists in Supabase:`, err);

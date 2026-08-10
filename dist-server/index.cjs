@@ -3525,10 +3525,19 @@ var ModelRepository = class {
           } catch (uErr) {
           }
         }
-        const { error } = await withTimeout(
+        let { error } = await withTimeout(
           supabaseAdmin.from("models").upsert(row),
           2500
         );
+        if (error && (error.message?.includes("user_id") || error.message?.includes("userId") || error.message?.includes("schema cache"))) {
+          const altRow = { ...row, user_id: row.userId || row.user_id };
+          delete altRow.userId;
+          const { error: altErr } = await withTimeout(
+            supabaseAdmin.from("models").upsert(altRow),
+            2500
+          );
+          if (!altErr) error = null;
+        }
         if (error) {
           console.warn(`Supabase upsert warning for model ${model.id}:`, error.message || error);
         } else {

@@ -250,16 +250,26 @@ export const modelService = {
     if (isSupabaseAvailable && supabase) {
       try {
         const row = await mapModelToSupabaseRow(savedModel);
-        if (row.userId) {
-          await ensureUserExistsInDb(row.userId, savedModel.name, savedModel.email);
+        if (row.userId || row.user_id) {
+          await ensureUserExistsInDb(row.userId || row.user_id, savedModel.name, savedModel.email);
         }
-        const { error } = await supabase
-          .from('models')
-          .upsert(row);
+        let { error } = await supabase.from('models').upsert(row);
+        if (error && (error.message?.includes('user_id') || error.message?.includes('userId') || error.message?.includes('schema cache'))) {
+          const altRow = { ...row, user_id: row.userId || row.user_id };
+          delete altRow.userId;
+          const { error: altErr } = await supabase.from('models').upsert(altRow);
+          if (!altErr) error = null;
+        }
         if (error) {
           console.warn('Supabase models table full upsert note, trying base compatibility row:', error.message);
           const baseRow = await mapModelToBaseSupabaseRow(savedModel);
-          const { error: baseErr } = await supabase.from('models').upsert(baseRow);
+          let { error: baseErr } = await supabase.from('models').upsert(baseRow);
+          if (baseErr && (baseErr.message?.includes('user_id') || baseErr.message?.includes('userId') || baseErr.message?.includes('schema cache'))) {
+            const altBaseRow = { ...baseRow, user_id: baseRow.userId || baseRow.user_id };
+            delete altBaseRow.userId;
+            const { error: altBaseErr } = await supabase.from('models').upsert(altBaseRow);
+            if (!altBaseErr) baseErr = null;
+          }
           if (baseErr) console.warn('Supabase base model upsert note:', baseErr.message);
           else console.log(`Successfully saved model "${savedModel.name}" (${savedModel.id}) via base compatibility row!`);
         } else {
@@ -342,16 +352,26 @@ export const modelService = {
     if (isSupabaseAvailable && supabase) {
       try {
         const row = await mapModelToSupabaseRow(savedModel);
-        if (row.userId) {
-          await ensureUserExistsInDb(row.userId, savedModel.name, savedModel.email);
+        if (row.userId || row.user_id) {
+          await ensureUserExistsInDb(row.userId || row.user_id, savedModel.name, savedModel.email);
         }
-        const { error } = await supabase
-          .from('models')
-          .upsert(row);
+        let { error } = await supabase.from('models').upsert(row);
+        if (error && (error.message?.includes('user_id') || error.message?.includes('userId') || error.message?.includes('schema cache'))) {
+          const altRow = { ...row, user_id: row.userId || row.user_id };
+          delete altRow.userId;
+          const { error: altErr } = await supabase.from('models').upsert(altRow);
+          if (!altErr) error = null;
+        }
         if (error) {
           console.warn('Supabase models table full registration note, trying base compatibility row:', error.message);
           const baseRow = await mapModelToBaseSupabaseRow(savedModel);
-          const { error: baseErr } = await supabase.from('models').upsert(baseRow);
+          let { error: baseErr } = await supabase.from('models').upsert(baseRow);
+          if (baseErr && (baseErr.message?.includes('user_id') || baseErr.message?.includes('userId') || baseErr.message?.includes('schema cache'))) {
+            const altBaseRow = { ...baseRow, user_id: baseRow.userId || baseRow.user_id };
+            delete altBaseRow.userId;
+            const { error: altBaseErr } = await supabase.from('models').upsert(altBaseRow);
+            if (!altBaseErr) baseErr = null;
+          }
           if (baseErr) {
             console.warn('Supabase base model registration note:', baseErr.message);
           } else {
