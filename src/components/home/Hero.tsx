@@ -155,15 +155,23 @@ export default function Hero({ onSearch, onBrowseClick, onBecomeModelClick, onHi
               <span className="font-mono text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Explore Internally:</span>
               <button
                 type="button"
+                onClick={() => handleScrollTo('homepage-client-castings')}
+                className="rounded-full bg-purple-600/10 hover:bg-purple-600 hover:text-white px-3.5 py-1.5 text-purple-600 dark:text-purple-400 font-bold tracking-tight transition shadow-sm cursor-pointer border border-purple-500/20 flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-pink-500" />
+                <span>Client Castings</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => handleScrollTo('homepage-categories')}
-                className="rounded-full bg-neutral-200/50 hover:bg-neutral-100 hover:text-black px-3.5 py-1.5 text-neutral-600 font-bold tracking-tight transition shadow-sm cursor-pointer"
+                className="rounded-full bg-neutral-200/50 hover:bg-neutral-100 hover:text-black dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-300 px-3.5 py-1.5 text-neutral-600 font-bold tracking-tight transition shadow-sm cursor-pointer"
               >
                 Categories Grid
               </button>
               <button
                 type="button"
                 onClick={() => handleScrollTo('homepage-trending')}
-                className="rounded-full bg-neutral-200/50 hover:bg-neutral-100 hover:text-black px-3.5 py-1.5 text-neutral-600 font-bold tracking-tight transition shadow-sm cursor-pointer"
+                className="rounded-full bg-neutral-200/50 hover:bg-neutral-100 hover:text-black dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-300 px-3.5 py-1.5 text-neutral-600 font-bold tracking-tight transition shadow-sm cursor-pointer"
               >
                 Trending Talent
               </button>

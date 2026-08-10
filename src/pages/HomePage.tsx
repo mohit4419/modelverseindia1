@@ -12,6 +12,7 @@ import { useApp } from '../context/AppContext';
 import { useBooking } from '../context/BookingContext';
 
 import Hero from '../components/home/Hero';
+import ClientCastingCallsSection from '../components/home/ClientCastingCallsSection';
 import CategoryGrid from '../components/home/CategoryGrid';
 import TestimonialSlider from '../components/home/TestimonialSlider';
 import ModelCard from '../components/common/ModelCard';
@@ -44,13 +45,17 @@ export default function HomePage() {
 
   const [showJobModal, setShowJobModal] = React.useState(false);
   const [jobRequirements, setJobRequirements] = React.useState<JobRequirement[]>([]);
+  const [isLoadingJobs, setIsLoadingJobs] = React.useState(true);
 
   const fetchJobRequirements = React.useCallback(async () => {
+    setIsLoadingJobs(true);
     try {
       const jobs = await dbService.getJobRequirements();
       setJobRequirements(jobs);
     } catch (err) {
       console.warn('Failed to load job requirements:', err);
+    } finally {
+      setIsLoadingJobs(false);
     }
   }, []);
 
@@ -113,6 +118,14 @@ export default function HomePage() {
         onBrowseClick={() => setShowJobModal(true)}
         onBecomeModelClick={() => setCurrentTab('become-model')}
         onHireClick={() => setShowJobModal(true)}
+      />
+
+      {/* Client Casting Calls & Job Requirements Section */}
+      <ClientCastingCallsSection
+        jobRequirements={jobRequirements}
+        onApply={handleApplyToJob}
+        onPostRequirementClick={() => setShowJobModal(true)}
+        isLoading={isLoadingJobs}
       />
       
       <CategoryGrid
