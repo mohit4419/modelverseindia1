@@ -464,16 +464,16 @@ export default function Filters({
           <div className="flex items-center space-x-2">
             <input
               type="range"
-              min="18"
-              max="40"
+              min="14"
+              max="70"
               value={ageRange[0]}
               onChange={(e) => setAgeRange([Number(e.target.value), ageRange[1]])}
               className="w-full h-1 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
             />
             <input
               type="range"
-              min="18"
-              max="40"
+              min="14"
+              max="70"
               value={ageRange[1]}
               onChange={(e) => setAgeRange([ageRange[0], Number(e.target.value)])}
               className="w-full h-1 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-pink-600"
@@ -528,17 +528,17 @@ export default function Filters({
           </div>
           <input
             type="range"
-            min="10000"
-            max="100000"
+            min="5000"
+            max="500000"
             step="5000"
             value={budgetLimit}
             onChange={(e) => setBudgetLimit(Number(e.target.value))}
             className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
           />
           <div className="flex justify-between font-mono text-[9px] text-neutral-400 dark:text-neutral-500 mt-1">
-            <span>₹10K</span>
-            <span>₹50K</span>
-            <span>₹100K+</span>
+            <span>₹5K</span>
+            <span>₹250K</span>
+            <span>₹500K+</span>
           </div>
         </div>
 

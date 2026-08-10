@@ -142,7 +142,7 @@ export const modelService = {
       if (response.ok) {
         const result = await response.json();
         if (result.success && Array.isArray(result.data)) {
-          backendModels = result.data as Model[];
+          backendModels = result.data.map(fromSupabaseModelRow);
         }
       }
     } catch (e) {
@@ -161,29 +161,34 @@ export const modelService = {
       }
     }
 
-    // Determine primary database models
-    const databaseModels = backendModels.length > 0 ? backendModels : dbModels;
+    // Merge both backend and direct Supabase models to guarantee no database record is lost
     const mergedMap = new Map<string, Model>();
 
-    if (databaseModels.length > 0) {
-      // Real database models exist in public.models: Strictly fetch database records without dropping distinct models
-      databaseModels.filter(m => !isDummyModel(m)).forEach(m => {
-        const modelKey = m.id || m.userId;
-        const existing = mergedMap.get(modelKey);
-        if (!existing) {
-          mergedMap.set(modelKey, m);
-        } else {
-          const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
-          const newPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
-          const existingTime = new Date((existing as any).updated_at || (existing as any).createdAt || 0).getTime();
-          const newTime = new Date((m as any).updated_at || (m as any).createdAt || 0).getTime();
+    // First populate from direct Supabase fetch
+    dbModels.filter(m => !isDummyModel(m)).forEach(m => {
+      const modelKey = m.id || m.userId;
+      mergedMap.set(modelKey, m);
+    });
 
-          if (newTime >= existingTime || (newPhotos >= existingPhotos && newPhotos > 0)) {
-            mergedMap.set(modelKey, m);
-          }
+    // Next merge backend API models
+    backendModels.filter(m => !isDummyModel(m)).forEach(m => {
+      const modelKey = m.id || m.userId;
+      const existing = mergedMap.get(modelKey);
+      if (!existing) {
+        mergedMap.set(modelKey, m);
+      } else {
+        const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
+        const newPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
+        const existingTime = new Date((existing as any).updated_at || (existing as any).createdAt || 0).getTime();
+        const newTime = new Date((m as any).updated_at || (m as any).createdAt || 0).getTime();
+
+        if (newTime >= existingTime || (newPhotos >= existingPhotos && newPhotos > 0)) {
+          mergedMap.set(modelKey, m);
         }
-      });
-    } else {
+      }
+    });
+
+    if (mergedMap.size === 0) {
       // Fallback ONLY when database returns 0 models (offline or uninitialized DB)
       try {
         if (typeof window !== 'undefined' && window.localStorage) {

@@ -117,10 +117,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [searchLocation, setSearchLocation] = useState('');
   const [searchCategory, setSearchCategory] = useState('');
   const [searchGender, setSearchGender] = useState('');
-  const [searchAgeRange, setSearchAgeRange] = useState<[number, number]>([18, 40]);
+  const [searchAgeRange, setSearchAgeRange] = useState<[number, number]>([14, 70]);
   const [searchHeightClass, setSearchHeightClass] = useState('');
   const [searchExperience, setSearchExperience] = useState('');
-  const [searchBudgetLimit, setSearchBudgetLimit] = useState(100000);
+  const [searchBudgetLimit, setSearchBudgetLimit] = useState(500000);
   const [searchOnlyVerified, setSearchOnlyVerified] = useState(false);
   const [searchAvailableOnly, setSearchAvailableOnly] = useState(false);
   const [searchRadius, setSearchRadius] = useState<number>(Infinity);
@@ -240,10 +240,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSearchLocation('');
     setSearchCategory('');
     setSearchGender('');
-    setSearchAgeRange([18, 40]);
+    setSearchAgeRange([14, 70]);
     setSearchHeightClass('');
     setSearchExperience('');
-    setSearchBudgetLimit(100000);
+    setSearchBudgetLimit(500000);
     setSearchOnlyVerified(false);
     setSearchAvailableOnly(false);
     setSearchRadius(Infinity);

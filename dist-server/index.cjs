@@ -2067,7 +2067,7 @@ router5.get("/models", async (req, res) => {
     let dbModels = [];
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
-        const { data, error } = await withTimeout(supabaseAdmin.from("models").select("*"), 2500);
+        const { data, error } = await withTimeout(supabaseAdmin.from("models").select("*"), 5e3);
         if (!error && data) {
           dbModels = data;
         }
