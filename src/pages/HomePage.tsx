@@ -61,6 +61,18 @@ export default function HomePage() {
 
   React.useEffect(() => {
     fetchJobRequirements();
+    const interval = setInterval(fetchJobRequirements, 4000);
+    const handleCreated = () => fetchJobRequirements();
+    window.addEventListener('mvi_job_requirement_created', handleCreated);
+    window.addEventListener('storage', handleCreated);
+    window.addEventListener('focus', handleCreated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('mvi_job_requirement_created', handleCreated);
+      window.removeEventListener('storage', handleCreated);
+      window.removeEventListener('focus', handleCreated);
+    };
   }, [fetchJobRequirements]);
 
   const handleApplyToJob = async (job: JobRequirement) => {

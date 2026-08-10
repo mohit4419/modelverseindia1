@@ -192,6 +192,16 @@ export const jobRequirementService = {
       }
     }
 
+    // 4. Broadcast live update event to all active views & listeners
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('mvi_job_requirement_created', { detail: newJob }));
+        window.dispatchEvent(new Event('storage'));
+      } catch (e) {
+        // Event dispatch note
+      }
+    }
+
     return newJob;
   },
 
