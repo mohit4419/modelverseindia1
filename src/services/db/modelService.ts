@@ -168,7 +168,7 @@ export const modelService = {
     const mergedMap = new Map<string, Model>();
 
     if (databaseModels.length > 0) {
-      // Real database models exist: Strictly deduplicate by userId (or id), keeping latest updated model profile
+      // Real database models exist in public.models: Strictly fetch and deduplicate database records ONLY
       databaseModels.filter(m => !isDummyModel(m)).forEach(m => {
         const userKey = m.userId || m.id;
         const existing = mergedMap.get(userKey);
@@ -180,46 +180,36 @@ export const modelService = {
           const existingTime = new Date((existing as any).updated_at || (existing as any).createdAt || 0).getTime();
           const newTime = new Date((m as any).updated_at || (m as any).createdAt || 0).getTime();
 
-          // Overwrite with newer model or profile with updated portfolio photos
           if (newTime >= existingTime || (newPhotos >= existingPhotos && newPhotos > 0)) {
             mergedMap.set(userKey, m);
           }
         }
       });
-    }
-
-    // Always merge local models if they exist in localStorage (to prevent losing freshly registered models)
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const local = localStorage.getItem('mvi_models');
-        if (local) {
-          const parsed = JSON.parse(local);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            parsed.filter(m => !isDummyModel(m)).forEach(m => {
-              const userKey = m.userId || m.id;
-              if (!mergedMap.has(userKey)) {
+    } else {
+      // Fallback ONLY when database returns 0 models (offline or uninitialized DB)
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const local = localStorage.getItem('mvi_models');
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              parsed.filter(m => !isDummyModel(m)).forEach(m => {
+                const userKey = m.userId || m.id;
                 mergedMap.set(userKey, m);
-              } else {
-                const existing = mergedMap.get(userKey)!;
-                const existingPhotos = Array.isArray(existing.portfolio) ? existing.portfolio.length : 0;
-                const localPhotos = Array.isArray(m.portfolio) ? m.portfolio.length : 0;
-                if (localPhotos > existingPhotos && localPhotos > 0) {
-                  mergedMap.set(userKey, { ...existing, ...m });
-                }
-              }
-            });
+              });
+            }
           }
         }
+      } catch (e) {
+        console.warn('LocalStorage read note:', e);
       }
-    } catch (e) {
-      console.warn('LocalStorage read note:', e);
-    }
 
-    if (mergedMap.size === 0) {
-      SEED_MODELS.filter(m => !isDummyModel(m)).forEach(m => {
-        const userKey = m.userId || m.id;
-        mergedMap.set(userKey, m);
-      });
+      if (mergedMap.size === 0) {
+        SEED_MODELS.filter(m => !isDummyModel(m)).forEach(m => {
+          const userKey = m.userId || m.id;
+          mergedMap.set(userKey, m);
+        });
+      }
     }
 
     const finalModels = Array.from(mergedMap.values())
