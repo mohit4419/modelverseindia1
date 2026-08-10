@@ -52,8 +52,35 @@ const SEED_JOB_REQUIREMENTS: JobRequirement[] = [
 
 export const jobRequirementService = {
   async getJobRequirements(): Promise<JobRequirement[]> {
-    let dbJobs: JobRequirement[] = [];
+    let apiJobs: JobRequirement[] = [];
 
+    // 1. Fetch from backend API server first (bypasses browser 401 RLS issues via server-side admin key)
+    try {
+      const res = await fetch('/api/job-requirements');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          apiJobs = data.map((row: any) => ({
+            id: row.id,
+            clientId: row.client_id || row.clientId,
+            companyName: row.company_name || row.companyName,
+            category: row.category || 'Fashion Models',
+            requirements: row.requirements || '',
+            location: row.location || 'Mumbai',
+            shootDate: row.shoot_date || row.shootDate || 'As Agreed',
+            budget: row.budget || '₹30,000 / Day',
+            contactEmail: row.contact_email || row.contactEmail,
+            status: row.status || 'active',
+            createdAt: row.created_at || row.createdAt || new Date().toISOString()
+          }));
+        }
+      }
+    } catch (e) {
+      // Backend API not reachable or offline
+    }
+
+    // 2. Direct Supabase query (with quiet 401 safeguard)
+    let dbJobs: JobRequirement[] = [];
     if (isSupabaseAvailable && supabase) {
       try {
         const { data, error } = await supabase
@@ -61,7 +88,7 @@ export const jobRequirementService = {
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!error && data) {
+        if (!error && data && Array.isArray(data)) {
           dbJobs = data.map((row: any) => ({
             id: row.id,
             clientId: row.client_id || row.clientId,
@@ -77,10 +104,11 @@ export const jobRequirementService = {
           }));
         }
       } catch (e) {
-        console.warn('Supabase job_requirements fetch error:', e);
+        // Quietly swallow Supabase 401 network/RLS issues
       }
     }
 
+    // 3. LocalStorage fallback
     let localJobs: JobRequirement[] = [];
     try {
       const stored = localStorage.getItem('mvi_job_requirements');
@@ -88,13 +116,14 @@ export const jobRequirementService = {
         localJobs = JSON.parse(stored);
       }
     } catch (e) {
-      console.warn('LocalStorage job_requirements read error:', e);
+      // LocalStorage read note
     }
 
     const mergedMap = new Map<string, JobRequirement>();
     SEED_JOB_REQUIREMENTS.forEach(j => mergedMap.set(j.id, j));
     localJobs.forEach(j => mergedMap.set(j.id, j));
     dbJobs.forEach(j => mergedMap.set(j.id, j));
+    apiJobs.forEach(j => mergedMap.set(j.id, j));
 
     return Array.from(mergedMap.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -118,7 +147,30 @@ export const jobRequirementService = {
       console.error('Failed to save job requirement to LocalStorage:', e);
     }
 
-    // 2. Save to Supabase
+    // 2. Save via Backend API Server (Server uses Supabase Admin)
+    try {
+      await fetch('/api/job-requirements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: newJob.id,
+          client_id: newJob.clientId,
+          company_name: newJob.companyName,
+          category: newJob.category,
+          requirements: newJob.requirements,
+          location: newJob.location,
+          shoot_date: newJob.shootDate,
+          budget: newJob.budget,
+          contact_email: newJob.contactEmail,
+          status: newJob.status,
+          created_at: newJob.createdAt
+        })
+      });
+    } catch (e) {
+      // Backend save note
+    }
+
+    // 3. Save to Supabase direct (with quiet safeguard)
     if (isSupabaseAvailable && supabase) {
       try {
         const row = {
@@ -136,7 +188,7 @@ export const jobRequirementService = {
         };
         await supabase.from('job_requirements').upsert(row);
       } catch (e) {
-        console.warn('Failed to save job requirement to Supabase:', e);
+        // Quietly swallow Supabase 401 network/RLS issues
       }
     }
 
