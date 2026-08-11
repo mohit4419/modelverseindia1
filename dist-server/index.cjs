@@ -154,14 +154,14 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 var import_http = __toESM(require("http"), 1);
-var import_path20 = __toESM(require("path"), 1);
-var import_express28 = __toESM(require("express"), 1);
+var import_path21 = __toESM(require("path"), 1);
+var import_express29 = __toESM(require("express"), 1);
 var import_ws2 = require("ws");
 var import_vite = require("vite");
 init_env();
 
 // server/app.ts
-var import_express27 = __toESM(require("express"), 1);
+var import_express28 = __toESM(require("express"), 1);
 var import_morgan = __toESM(require("morgan"), 1);
 
 // server/middleware/security.ts
@@ -3532,8 +3532,8 @@ var ModelRepository = class {
           2500
         );
         if (error && (error.message?.includes("user_id") || error.message?.includes("userId") || error.message?.includes("schema cache"))) {
-          const altRow = { ...row, user_id: row.userId || row.user_id };
-          delete altRow.userId;
+          const { userId, ...rest } = row;
+          const altRow = { ...rest, user_id: userId || row.user_id };
           const { error: altErr } = await withTimeout(
             supabaseAdmin.from("models").upsert(altRow),
             2500
@@ -5184,16 +5184,41 @@ var import_fs11 = __toESM(require("fs"), 1);
 var import_path11 = __toESM(require("path"), 1);
 
 // server/config/cloudinary.ts
+var import_cloudinary = require("cloudinary");
+var cloudName = process.env.CLOUDINARY_CLOUD_NAME || "";
+var apiKey = process.env.CLOUDINARY_API_KEY || "";
+var apiSecret = process.env.CLOUDINARY_API_SECRET || "";
+var cloudinaryUrl = process.env.CLOUDINARY_URL || "";
+if (cloudinaryUrl && cloudinaryUrl.startsWith("cloudinary://")) {
+  try {
+    const urlClean = cloudinaryUrl.replace("cloudinary://", "");
+    const [credentials, cloud] = urlClean.split("@");
+    if (credentials && cloud) {
+      const [key, secret] = credentials.split(":");
+      if (key && key !== "<your_api_key>") apiKey = apiKey || key;
+      if (secret && secret !== "<your_api_secret>") apiSecret = apiSecret || secret;
+      if (cloud) cloudName = cloudName || cloud;
+    }
+  } catch (e) {
+    console.error("Error parsing CLOUDINARY_URL:", e);
+  }
+}
 var CLOUDINARY_CONFIG = {
-  cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
-  apiKey: process.env.CLOUDINARY_API_KEY || "",
-  apiSecret: process.env.CLOUDINARY_API_SECRET || ""
+  cloudName,
+  apiKey,
+  apiSecret
 };
-var isCloudinaryConfigured = !!(CLOUDINARY_CONFIG.cloudName && CLOUDINARY_CONFIG.apiKey && CLOUDINARY_CONFIG.apiSecret);
+var isCloudinaryConfigured = !!(CLOUDINARY_CONFIG.cloudName && CLOUDINARY_CONFIG.apiKey && CLOUDINARY_CONFIG.apiSecret && CLOUDINARY_CONFIG.apiKey !== "<your_api_key>" && CLOUDINARY_CONFIG.apiSecret !== "<your_api_secret>");
 if (isCloudinaryConfigured) {
-  console.log("Cloudinary successfully configured for server-side media assets.");
+  import_cloudinary.v2.config({
+    cloud_name: CLOUDINARY_CONFIG.cloudName,
+    api_key: CLOUDINARY_CONFIG.apiKey,
+    api_secret: CLOUDINARY_CONFIG.apiSecret,
+    secure: true
+  });
+  console.log(`[Cloudinary] Successfully configured Cloudinary for cloud "${CLOUDINARY_CONFIG.cloudName}".`);
 } else {
-  console.warn("Cloudinary environment keys are missing; falling back to local storage media engine.");
+  console.warn("[Cloudinary] Keys missing or set to placeholders; using secondary storage fallbacks.");
 }
 
 // server/services/storage.service.ts
@@ -5237,6 +5262,35 @@ var StorageService = class {
     const sanitizedFolder = VALID_FOLDERS.includes(folder) ? folder : "temp";
     const fileExtension = import_path11.default.extname(originalName) || ".bin";
     const fileName = `upload_${Date.now()}_${Math.floor(Math.random() * 1e5)}${fileExtension}`;
+    if (isCloudinaryConfigured) {
+      try {
+        console.log(`[StorageService] Uploading "${originalName}" to Cloudinary under folder "modelverse/${sanitizedFolder}"...`);
+        const result = await new Promise((resolve, reject) => {
+          const stream = import_cloudinary.v2.uploader.upload_stream(
+            {
+              folder: `modelverse/${sanitizedFolder}`,
+              resource_type: mimeType.startsWith("video/") ? "video" : "auto",
+              use_filename: true,
+              unique_filename: true
+            },
+            (error, res) => {
+              if (error || !res) {
+                return reject(error || new Error("Cloudinary upload returned empty response"));
+              }
+              resolve({
+                url: res.secure_url,
+                publicId: res.public_id
+              });
+            }
+          );
+          stream.end(fileBuffer);
+        });
+        console.log(`[StorageService] Successfully uploaded asset to Cloudinary: ${result.url}`);
+        return result;
+      } catch (err) {
+        console.error("[StorageService] Cloudinary upload error, falling back to secondary storage:", err?.message || err);
+      }
+    }
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         console.log(`Supabase is configured. Attempting upload for ${originalName} under folder ${sanitizedFolder}...`);
@@ -5274,13 +5328,6 @@ var StorageService = class {
         console.info(`[StorageService] Supabase Storage upload unavailable (${err?.message || "Connection error"}). Falling back to local storage.`);
       }
     }
-    if (isCloudinaryConfigured) {
-      try {
-        console.log(`Cloudinary is configured. Mocking Cloudinary secure upload stream for ${originalName} under folder ${sanitizedFolder}...`);
-      } catch (err) {
-        console.error("Cloudinary direct upload failed, falling back to local storage:", err);
-      }
-    }
     const pubDestDir = import_path11.default.join(this.uploadDir, sanitizedFolder);
     const pubFilePath = import_path11.default.join(pubDestDir, fileName);
     const rootDestDir = import_path11.default.join(this.rootStorageDir, sanitizedFolder);
@@ -5304,6 +5351,15 @@ var StorageService = class {
       const parts = publicId.split(":");
       storageType = parts[0];
       realPath = parts.slice(1).join(":");
+    }
+    if (isCloudinaryConfigured && (realPath.startsWith("modelverse/") || storageType === "cloudinary")) {
+      try {
+        await import_cloudinary.v2.uploader.destroy(realPath);
+        console.log(`Deleted asset from Cloudinary: ${realPath}`);
+        return true;
+      } catch (e) {
+        console.error(`Failed to delete asset from Cloudinary: ${realPath}`, e);
+      }
     }
     if (storageType === "storage" && isSupabaseConfigured && supabaseAdmin) {
       try {
@@ -7405,18 +7461,260 @@ router26.patch("/blogs/:id", BlogController.saveBlog);
 router26.delete("/blogs/:id", BlogController.deleteBlog);
 var blogs_routes_default = router26;
 
+// server/routes/jobs.routes.ts
+var import_express27 = require("express");
+
+// server/repositories/jobRequirement.repository.ts
+var import_fs20 = __toESM(require("fs"), 1);
+var import_path20 = __toESM(require("path"), 1);
+init_supabase();
+var LOCAL_JOBS_FILE = import_path20.default.join(process.cwd(), "local_jobs.json");
+var SEED_JOBS = [
+  {
+    id: "job_seed_1",
+    client_id: "c_test",
+    company_name: "Lakme Fashion Week Couture",
+    category: "Fashion Models",
+    requirements: `Seeking 5 experienced runway female models for high-fashion designer showcase in Mumbai. Height requirement: 5'8"+.`,
+    location: "Mumbai, Maharashtra",
+    shoot_date: "15th Aug 2026",
+    budget: "\u20B965,000 / Day",
+    contact_email: "casting@lakmefashion.in",
+    status: "active",
+    created_at: new Date(Date.now() - 36e5 * 24).toISOString()
+  },
+  {
+    id: "job_seed_2",
+    client_id: "c_test",
+    company_name: "FabIndia Ethnic Summer Campaign",
+    category: "Commercial Models",
+    requirements: "Looking for male & female models for traditional ethnic wear print shoot and social media video reels.",
+    location: "New Delhi",
+    shoot_date: "22nd Aug 2026",
+    budget: "\u20B945,000 / Day",
+    contact_email: "shoot@fabindia.com",
+    status: "active",
+    created_at: new Date(Date.now() - 36e5 * 12).toISOString()
+  },
+  {
+    id: "job_seed_3",
+    client_id: "c_test",
+    company_name: "Nykaa Beauty Product Launch",
+    category: "UGC Creators",
+    requirements: "Required UGC skincare creators for unboxing, voiceover review, and Instagram reel content.",
+    location: "Remote / All India",
+    shoot_date: "Immediate",
+    budget: "\u20B925,000 / Reel",
+    contact_email: "creators@nykaa.com",
+    status: "active",
+    created_at: new Date(Date.now() - 36e5 * 4).toISOString()
+  }
+];
+function getLocalJobs() {
+  try {
+    if (import_fs20.default.existsSync(LOCAL_JOBS_FILE)) {
+      return JSON.parse(import_fs20.default.readFileSync(LOCAL_JOBS_FILE, "utf8"));
+    }
+  } catch (e) {
+    console.error("[JobRequirementRepo] Error reading local jobs file:", e);
+  }
+  return [];
+}
+function saveLocalJobs(jobs) {
+  try {
+    import_fs20.default.writeFileSync(LOCAL_JOBS_FILE, JSON.stringify(jobs, null, 2), "utf8");
+  } catch (e) {
+    console.error("[JobRequirementRepo] Error writing local jobs file:", e);
+  }
+}
+function normalizeRow(raw) {
+  return {
+    id: raw.id || `job_${Date.now()}`,
+    client_id: raw.client_id || raw.clientId || "c_unknown",
+    company_name: raw.company_name || raw.companyName || "Unknown Brand",
+    category: raw.category || "Fashion Models",
+    requirements: raw.requirements || "",
+    location: raw.location || "Mumbai",
+    shoot_date: raw.shoot_date || raw.shootDate || "As Agreed",
+    budget: raw.budget || "\u20B930,000 / Day",
+    contact_email: raw.contact_email || raw.contactEmail || "",
+    status: raw.status || "active",
+    created_at: raw.created_at || raw.createdAt || (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+var tableEnsured = false;
+async function ensureTable() {
+  if (tableEnsured || !isSupabaseConfigured || !supabaseAdmin) return;
+  try {
+    const { error } = await withTimeout(
+      supabaseAdmin.from("job_requirements").select("id").limit(1),
+      3e3
+    );
+    if (error && (error.code === "42P01" || error.message?.includes("does not exist"))) {
+      console.log("[JobRequirementRepo] job_requirements table not found, creating via SQL...");
+      const { error: sqlErr } = await withTimeout(
+        supabaseAdmin.rpc("exec_sql", {
+          query: `
+            CREATE TABLE IF NOT EXISTS public.job_requirements (
+              id            TEXT PRIMARY KEY,
+              client_id     TEXT,
+              company_name  TEXT NOT NULL,
+              category      TEXT DEFAULT 'Fashion Models',
+              requirements  TEXT NOT NULL,
+              location      TEXT DEFAULT 'Mumbai',
+              shoot_date    TEXT DEFAULT 'As Agreed',
+              budget        TEXT NOT NULL,
+              contact_email TEXT,
+              status        TEXT DEFAULT 'active',
+              created_at    TIMESTAMPTZ DEFAULT now()
+            );
+            ALTER TABLE public.job_requirements ENABLE ROW LEVEL SECURITY;
+            CREATE POLICY IF NOT EXISTS "service_role_all" ON public.job_requirements FOR ALL USING (true);
+          `
+        }),
+        5e3
+      );
+      if (sqlErr) {
+        console.warn("[JobRequirementRepo] Could not auto-create table via RPC:", sqlErr.message);
+      } else {
+        console.log("[JobRequirementRepo] job_requirements table created successfully.");
+      }
+    }
+    tableEnsured = true;
+  } catch (e) {
+    console.warn("[JobRequirementRepo] ensureTable probe failed:", e.message || e);
+  }
+}
+async function flushLocalToSupabase() {
+  if (!isSupabaseConfigured || !supabaseAdmin) return;
+  const localJobs = getLocalJobs();
+  if (localJobs.length === 0) return;
+  try {
+    const rows = localJobs.map(normalizeRow);
+    await withTimeout(
+      supabaseAdmin.from("job_requirements").upsert(rows, { onConflict: "id" }),
+      5e3
+    );
+    console.log(`[JobRequirementRepo] Flushed ${rows.length} local job(s) to Supabase.`);
+  } catch (e) {
+    console.warn("[JobRequirementRepo] Flush to Supabase warning:", e.message || e);
+  }
+}
+var JobRequirementRepository = class {
+  /**
+   * Return all active job requirements.
+   * Priority: Supabase DB > local file > seed data.
+   */
+  async findAll() {
+    await ensureTable();
+    let dbJobs = [];
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const { data, error } = await withTimeout(
+          supabaseAdmin.from("job_requirements").select("*").order("created_at", { ascending: false }),
+          4e3
+        );
+        if (!error && data && Array.isArray(data)) {
+          dbJobs = data.map(normalizeRow);
+        } else if (error) {
+          console.warn("[JobRequirementRepo] Supabase fetch warning:", error.message);
+        }
+      } catch (e) {
+        console.warn("[JobRequirementRepo] Supabase fetch exception:", e.message || e);
+      }
+      if (dbJobs.length > 0) {
+        flushLocalToSupabase().catch(() => {
+        });
+      }
+    }
+    const localJobs = getLocalJobs().map(normalizeRow);
+    const mergedMap = /* @__PURE__ */ new Map();
+    SEED_JOBS.forEach((j) => mergedMap.set(j.id, j));
+    localJobs.forEach((j) => mergedMap.set(j.id, j));
+    dbJobs.forEach((j) => mergedMap.set(j.id, j));
+    return Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }
+  /**
+   * Persist a new job requirement to Supabase AND the local write-ahead log.
+   * The Supabase write uses the service-role admin key so RLS is bypassed.
+   */
+  async save(rawJob) {
+    await ensureTable();
+    const job = normalizeRow(rawJob);
+    const localJobs = getLocalJobs();
+    const idx = localJobs.findIndex((j) => j.id === job.id);
+    if (idx >= 0) {
+      localJobs[idx] = job;
+    } else {
+      localJobs.unshift(job);
+    }
+    saveLocalJobs(localJobs);
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const { error } = await withTimeout(
+          supabaseAdmin.from("job_requirements").upsert(job, { onConflict: "id" }),
+          4e3
+        );
+        if (error) {
+          console.warn("[JobRequirementRepo] Supabase upsert warning:", error.message);
+        } else {
+          console.log(`[JobRequirementRepo] Job "${job.company_name}" (${job.id}) saved to Supabase.`);
+        }
+      } catch (e) {
+        console.warn("[JobRequirementRepo] Supabase upsert exception:", e.message || e);
+      }
+    }
+    return job;
+  }
+};
+
+// server/routes/jobs.routes.ts
+var router27 = (0, import_express27.Router)();
+var repository = new JobRequirementRepository();
+var handleGet = async (_req, res) => {
+  try {
+    const jobs = await repository.findAll();
+    res.json(jobs);
+  } catch (error) {
+    console.error("Failed to fetch job requirements:", error);
+    res.status(500).json({ error: "Failed to fetch job requirements" });
+  }
+};
+var handlePost = async (req, res) => {
+  try {
+    const jobData = req.body;
+    if (!jobData || !jobData.requirements) {
+      return res.status(400).json({ error: "Job requirements description is required" });
+    }
+    const saved = await repository.save(jobData);
+    res.status(201).json(saved);
+  } catch (error) {
+    console.error("Failed to create job requirement:", error);
+    res.status(500).json({ error: "Failed to create job requirement" });
+  }
+};
+router27.get("/", handleGet);
+router27.get("/job-requirements", handleGet);
+router27.get("/jobs", handleGet);
+router27.post("/", handlePost);
+router27.post("/job-requirements", handlePost);
+router27.post("/jobs", handlePost);
+var jobs_routes_default = router27;
+
 // server/app.ts
-var app = (0, import_express27.default)();
+var app = (0, import_express28.default)();
 app.set("trust proxy", true);
 app.use((0, import_morgan.default)("combined"));
 setupSecurityMiddlewares(app);
-app.use(import_express27.default.json({
+app.use(import_express28.default.json({
   limit: "50mb",
-  verify: (req, res, buf) => {
+  verify: (req, _res, buf) => {
     req.rawBody = buf;
   }
 }));
-app.use(import_express27.default.urlencoded({ limit: "50mb", extended: true }));
+app.use(import_express28.default.urlencoded({ limit: "50mb", extended: true }));
 app.use(requestDebugLogger);
 app.use("/api/v2", auth_routes_default);
 app.use("/api/v2", models_routes_default);
@@ -7437,6 +7735,7 @@ app.use("/api/v2", analytics_routes_default);
 app.use("/api/v2", subscriptions_routes_default);
 app.use("/api/v2", reports_routes_default);
 app.use("/api/v2", blogs_routes_default);
+app.use("/api/v2", jobs_routes_default);
 app.use("/api", auth_routes_default);
 app.use("/api", models_routes_default);
 app.use("/api", bookings_routes_default);
@@ -7456,6 +7755,7 @@ app.use("/api", analytics_routes_default);
 app.use("/api", subscriptions_routes_default);
 app.use("/api", reports_routes_default);
 app.use("/api", blogs_routes_default);
+app.use("/api", jobs_routes_default);
 app.use("/api", auth_default);
 app.use("/api", payment_default);
 app.use("/api", chat_default);
@@ -7610,7 +7910,7 @@ wss.on("error", (err) => {
   console.error("WebSocket Server error:", err);
 });
 async function startServer() {
-  app.use("/uploads", import_express28.default.static(import_path20.default.join(process.cwd(), "public", "uploads")));
+  app.use("/uploads", import_express29.default.static(import_path21.default.join(process.cwd(), "public", "uploads")));
   if (ENV.NODE_ENV !== "production") {
     const vite = await (0, import_vite.createServer)({
       server: {
@@ -7623,10 +7923,10 @@ async function startServer() {
     app.use(vite.middlewares);
     console.log("Vite middleware mounted in Development mode.");
   } else {
-    const distPath = import_path20.default.join(process.cwd(), "dist");
-    app.use(import_express28.default.static(distPath));
+    const distPath = import_path21.default.join(process.cwd(), "dist");
+    app.use(import_express29.default.static(distPath));
     app.get(/^(?!\/api).*/, (req, res) => {
-      res.sendFile(import_path20.default.join(distPath, "index.html"));
+      res.sendFile(import_path21.default.join(distPath, "index.html"));
     });
     console.log("Serving production build assets from /dist.");
   }
@@ -7671,5 +7971,13 @@ startServer().catch((err) => {
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ */
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Server-side repository for job_requirements.
+ * Supabase (via admin/service-role key) is the central persistent store.
+ * A local JSON file acts as a write-ahead log and offline fallback only.
  */
 //# sourceMappingURL=index.cjs.map

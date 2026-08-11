@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Calendar, Star, Users, MapPin, Sparkles, UploadCloud, CheckCircle2, ShieldCheck, Loader2, AlertCircle, Laptop, FolderOpen, HardDrive, FileText, Check, X, RotateCcw, RotateCw, ZoomIn, ZoomOut, Sliders, Lock, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Model } from '../../types';
+import { uploadService } from '../../services/upload.service';
+
 
 interface AnimatedTypingProp {
   text: string;
@@ -567,7 +569,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
     setIsApplyingCrop(true);
 
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       const canvas = document.createElement('canvas');
       const targetWidth = 500;
       const targetHeight = 667; // 3:4 aspect ratio
@@ -602,6 +604,23 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
 
         const croppedBase64 = canvas.toDataURL('image/jpeg', 0.78);
 
+        // Upload to server/Cloudinary immediately
+        let finalUrl = croppedBase64;
+        try {
+          const folder = editingImage.key.startsWith('port') ? 'portfolio-images' : 'avatars';
+          const uploadRes = await uploadService.uploadFile({
+            fileData: croppedBase64,
+            fileName: `cropped_${Date.now()}.jpg`,
+            mimeType: 'image/jpeg',
+            folder
+          });
+          if (uploadRes && uploadRes.url) {
+            finalUrl = uploadRes.url;
+          }
+        } catch (uploadErr) {
+          console.warn('Direct upload note during crop, using fallback:', uploadErr);
+        }
+
         // Client-side compression statistics calculation
         const originalBytes = editingImage.src.length * 0.75;
         const compressedBytes = croppedBase64.length * 0.75;
@@ -618,13 +637,14 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
           }
         }));
 
-        editingImage.callback(croppedBase64);
+        editingImage.callback(finalUrl);
       }
       setIsApplyingCrop(false);
       setEditingImage(null);
     };
     img.src = editingImage.src;
   };
+
 
   // AI Evaluation benchmark score
   const handleAiEvaluation = async () => {
@@ -671,7 +691,7 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
   };
 
   // Validation & Submit
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name || !phone || !email || !city || !state) {
@@ -698,11 +718,48 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       return;
     }
 
-    const portfolioUrls = [
-      portfolioLink1,
-      portfolioLink2,
-      portfolioLink3,
-    ].filter(Boolean);
+    setIsSubmitting(true);
+
+    const uploadBase64IfNeeded = async (dataUrl: string, folder: string) => {
+      if (dataUrl && dataUrl.startsWith('data:image/')) {
+        try {
+          const res = await uploadService.uploadFile({
+            fileData: dataUrl,
+            fileName: `model_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`,
+            mimeType: 'image/jpeg',
+            folder
+          });
+          if (res && res.url) return res.url;
+        } catch (err) {
+          console.error('Failed to upload image during submission:', err);
+        }
+      }
+      return dataUrl;
+    };
+
+    let p1 = portfolioLink1;
+    let p2 = portfolioLink2;
+    let p3 = portfolioLink3;
+    let verifiedSelfie = selfieInput;
+    let verifiedGovId = govIdInput;
+
+    try {
+      p1 = await uploadBase64IfNeeded(p1, 'portfolio-images');
+      p2 = await uploadBase64IfNeeded(p2, 'portfolio-images');
+      p3 = await uploadBase64IfNeeded(p3, 'portfolio-images');
+      verifiedSelfie = await uploadBase64IfNeeded(verifiedSelfie, 'avatars');
+      verifiedGovId = await uploadBase64IfNeeded(verifiedGovId, 'verification-documents');
+
+      setPortfolioLink1(p1);
+      setPortfolioLink2(p2);
+      setPortfolioLink3(p3);
+      setSelfieInput(verifiedSelfie);
+      setGovIdInput(verifiedGovId);
+    } catch (uploadErr) {
+      console.warn('Image upload error during model submission:', uploadErr);
+    }
+
+    const portfolioUrls = [p1, p2, p3].filter(Boolean);
 
     // Build the additional details JSON package matching the 15 sections
     const additionalDetails = {
@@ -766,10 +823,10 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       videoUrl: videoLink || undefined,
       availabilityStatus,
       selfieVerified: initialModel ? initialModel.selfieVerified : true,
-      selfieUrl: selfieInput,
+      selfieUrl: verifiedSelfie,
       approved: true, // Auto-approve to show immediately on registered model dashboard, homepage, and categories
       rejected: false,
-      govIdUrl: govIdInput,
+      govIdUrl: verifiedGovId,
       pdfUrl: pdfFileUrl || undefined,
       pdfName: pdfFileName || undefined,
       startingPrice: Number(startingPrice) || (category === 'Fashion Models' ? 30000 : 15000),
@@ -799,18 +856,15 @@ export default function BecomeModelForm({ onRegisterSubmit, userId, onViewCatego
       }
     };
 
-    setIsSubmitting(true);
-    (async () => {
-      try {
-        await onRegisterSubmit(newModel);
-        setRegistrationSuccess(true);
-      } catch (err: any) {
-        console.error('Registration submit error:', err);
-        alert(`Failed to save model on server: ${err?.message || 'Server error'}`);
-      } finally {
-        setIsSubmitting(false);
-      }
-    })();
+    try {
+      await onRegisterSubmit(newModel);
+      setRegistrationSuccess(true);
+    } catch (err: any) {
+      console.error('Registration submit error:', err);
+      alert(`Failed to save model on server: ${err?.message || 'Server error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Helper validation status

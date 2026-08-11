@@ -4,7 +4,7 @@
  */
 
 export const uploadApi = {
-  async uploadFile(payload: { fileData: string; fileName?: string; mimeType?: string }): Promise<{ url: string; publicId: string }> {
+  async uploadFile(payload: { fileData: string; fileName?: string; mimeType?: string; folder?: string }): Promise<{ url: string; publicId: string }> {
     const response = await fetch('/api/v2/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -17,3 +17,4 @@ export const uploadApi = {
     return result;
   }
 };
+

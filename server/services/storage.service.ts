@@ -5,7 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { CLOUDINARY_CONFIG, isCloudinaryConfigured } from '../config/cloudinary';
+import { CLOUDINARY_CONFIG, isCloudinaryConfigured, cloudinary } from '../config/cloudinary';
 import { supabaseAdmin, isSupabaseConfigured } from '../config/supabase';
 
 const VALID_FOLDERS = [
@@ -58,7 +58,39 @@ export class StorageService {
     const fileExtension = path.extname(originalName) || '.bin';
     const fileName = `upload_${Date.now()}_${Math.floor(Math.random() * 100000)}${fileExtension}`;
 
-    // 1. Check if Supabase Storage is configured and attempt upload
+    // 1. Primary Engine: Cloudinary Cloud Media Upload
+    if (isCloudinaryConfigured) {
+      try {
+        console.log(`[StorageService] Uploading "${originalName}" to Cloudinary under folder "modelverse/${sanitizedFolder}"...`);
+        const result = await new Promise<{ url: string; publicId: string }>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: `modelverse/${sanitizedFolder}`,
+              resource_type: mimeType.startsWith('video/') ? 'video' : 'auto',
+              use_filename: true,
+              unique_filename: true,
+            },
+            (error, res) => {
+              if (error || !res) {
+                return reject(error || new Error('Cloudinary upload returned empty response'));
+              }
+              resolve({
+                url: res.secure_url,
+                publicId: res.public_id,
+              });
+            }
+          );
+          stream.end(fileBuffer);
+        });
+
+        console.log(`[StorageService] Successfully uploaded asset to Cloudinary: ${result.url}`);
+        return result;
+      } catch (err: any) {
+        console.error('[StorageService] Cloudinary upload error, falling back to secondary storage:', err?.message || err);
+      }
+    }
+
+    // 2. Secondary Engine: Supabase Storage
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         console.log(`Supabase is configured. Attempting upload for ${originalName} under folder ${sanitizedFolder}...`);
@@ -112,28 +144,16 @@ export class StorageService {
       }
     }
 
-    if (isCloudinaryConfigured) {
-      try {
-        console.log(`Cloudinary is configured. Mocking Cloudinary secure upload stream for ${originalName} under folder ${sanitizedFolder}...`);
-      } catch (err) {
-        console.error('Cloudinary direct upload failed, falling back to local storage:', err);
-      }
-    }
-
-    // Default Local storage upload fallback
-    // Path inside public uploads (for web serving)
+    // 3. Fallback Local workspace storage upload
     const pubDestDir = path.join(this.uploadDir, sanitizedFolder);
     const pubFilePath = path.join(pubDestDir, fileName);
 
-    // Path inside root storage/ directory (for secure backend archives)
     const rootDestDir = path.join(this.rootStorageDir, sanitizedFolder);
     const rootFilePath = path.join(rootDestDir, fileName);
 
-    // Ensure folders exist (extra safety)
     if (!fs.existsSync(pubDestDir)) fs.mkdirSync(pubDestDir, { recursive: true });
     if (!fs.existsSync(rootDestDir)) fs.mkdirSync(rootDestDir, { recursive: true });
 
-    // Write to both places to ensure they are synchronized
     fs.writeFileSync(pubFilePath, fileBuffer);
     fs.writeFileSync(rootFilePath, fileBuffer);
 
@@ -158,6 +178,17 @@ export class StorageService {
       storageType = parts[0];
       realPath = parts.slice(1).join(':');
     }
+
+    if (isCloudinaryConfigured && (realPath.startsWith('modelverse/') || storageType === 'cloudinary')) {
+      try {
+        await cloudinary.uploader.destroy(realPath);
+        console.log(`Deleted asset from Cloudinary: ${realPath}`);
+        return true;
+      } catch (e) {
+        console.error(`Failed to delete asset from Cloudinary: ${realPath}`, e);
+      }
+    }
+
 
     if (storageType === 'storage' && isSupabaseConfigured && supabaseAdmin) {
       try {

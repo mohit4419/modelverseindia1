@@ -5,7 +5,7 @@ export function useUpload() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const uploadFile = async (payload: { fileData: string; fileName?: string; mimeType?: string }): Promise<string> => {
+  const uploadFile = async (payload: { fileData: string; fileName?: string; mimeType?: string; folder?: string }): Promise<string> => {
     setUploading(true);
     setError(null);
     try {
@@ -21,3 +21,4 @@ export function useUpload() {
 
   return { uploadFile, uploading, error };
 }
+
