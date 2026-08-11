@@ -416,10 +416,10 @@ export default function AuthView({
           resolvedRole = 'model';
         } else if (searchKey === 'client@modelverse.in' || searchKey.replace(/[\s+]/g, '') === '9876543210' || searchKey.replace(/[\s+]/g, '') === '919876543210') {
           resolvedRole = 'client';
+        } else if (user && (user.role === 'model' || user.role === 'client' || user.role === 'admin')) {
+          resolvedRole = user.role;
         } else if (isRegisteredModel) {
           resolvedRole = 'model';
-        } else if (user && (user.role === 'model' || user.role === 'admin' || user.role === 'client')) {
-          resolvedRole = user.role;
         } else if (credInfo && credInfo.role) {
           resolvedRole = credInfo.role as UserRole;
         }

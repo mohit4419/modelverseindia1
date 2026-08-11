@@ -7,7 +7,7 @@ import { supabase } from '../../supabaseClient';
 import { User, UserRole } from '../../types';
 import { isSupabaseAvailable } from './helpers';
 import { SEED_USERS } from './seedData';
-import { saveUser } from './userService';
+import { saveUser, getUsers } from './userService';
 
 export const authService = {
   onAuthStateChanged(callback: (user: any) => void) {
@@ -77,22 +77,36 @@ export const authService = {
     const emailKey = email.toLowerCase().trim();
     if (isSupabaseAvailable && supabase) {
       try {
-        const { data, error } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
           .eq('email', emailKey)
           .maybeSingle();
-        if (!error && data) {
-          return { ...data, id: data.id || emailKey } as User;
+
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', emailKey)
+          .maybeSingle();
+
+        if (userData || profileData) {
+          return {
+            id: userData?.id || profileData?.id || emailKey,
+            name: userData?.full_name || profileData?.name || emailKey.split('@')[0],
+            email: emailKey,
+            phone: userData?.phone || profileData?.phone || '',
+            role: userData?.role || profileData?.role || 'client',
+            status: userData?.status || profileData?.status || 'active',
+            avatarUrl: profileData?.avatarUrl || profileData?.avatar_url,
+            createdAt: userData?.created_at || profileData?.created_at || new Date().toISOString()
+          } as User;
         }
       } catch (e) {
         console.error('Supabase query user by email failed', e);
       }
     }
-    // Fallback to local storage or seed data
-    const local = localStorage.getItem('mvi_users');
-    const localUsers: User[] = local ? JSON.parse(local) : SEED_USERS;
-    return localUsers.find(u => u.email.toLowerCase() === emailKey) || null;
+    const all = await getUsers();
+    return all.find(u => u.email && u.email.toLowerCase() === emailKey) || null;
   },
 
   async signInWithEmailAndPassword(email: string, password: string): Promise<{ user: any; error?: any }> {

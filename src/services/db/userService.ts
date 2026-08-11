@@ -40,8 +40,8 @@ export async function getUsers(): Promise<User[]> {
             createdAt: u.created_at || new Date().toISOString()
           };
           if (existingIdx >= 0) {
-            // Keep role if users table defines a specific role
-            if (u.role && u.role !== 'client') {
+            // Unconditionally update role if public.users table defines a role
+            if (u.role) {
               dbUsers[existingIdx].role = u.role;
             }
           } else {
@@ -87,16 +87,25 @@ export async function getUsers(): Promise<User[]> {
   const local = localStorage.getItem('mvi_users');
   const localUsers: User[] = local ? JSON.parse(local) : SEED_USERS;
 
+  // Key map by both ID and lowercase email so DB records from public.users override stale local entries
   const mergedMap = new Map<string, User>();
-  SEED_USERS.forEach(u => mergedMap.set(u.id, u));
-  localUsers.forEach(u => mergedMap.set(u.id, u));
-  dbUsers.forEach(u => mergedMap.set(u.id, u));
+  
+  const addOrUpdateUser = (u: User) => {
+    if (u.id) mergedMap.set(u.id, u);
+    if (u.email) mergedMap.set(u.email.toLowerCase(), u);
+  };
 
-  const allList = Array.from(mergedMap.values()).map(u => {
-    // If user's email or userId exists in models table, their true role is 'model'
+  SEED_USERS.forEach(addOrUpdateUser);
+  localUsers.forEach(addOrUpdateUser);
+  dbUsers.forEach(addOrUpdateUser);
+
+  const uniqueUsers = Array.from(new Set(mergedMap.values()));
+  const allList = uniqueUsers.map(u => {
+    // If user's email or userId exists in models table or role in public.users is model, their true role is 'model'
     if (
       (u.email && modelEmails.has(u.email.toLowerCase())) ||
-      (u.id && modelUserIds.has(u.id))
+      (u.id && modelUserIds.has(u.id)) ||
+      u.role === 'model'
     ) {
       return { ...u, role: 'model' as const };
     }
@@ -111,7 +120,7 @@ export async function saveUser(user: User): Promise<void> {
     const users = await getUsers();
     const idx = users.findIndex(u => u.id === user.id || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
     if (idx >= 0) {
-      users[idx] = user;
+      users[idx] = { ...users[idx], ...user };
     } else {
       users.push(user);
     }
@@ -120,11 +129,14 @@ export async function saveUser(user: User): Promise<void> {
     console.error('Local storage saveUser failed:', localErr);
   }
 
-  if (isSupabaseAvailable && supabase && isUUID(user.id)) {
+  if (isSupabaseAvailable && supabase) {
     try {
+      const validUuid = isUUID(user.id) ? user.id : (user.email ? `10000000-1000-4000-8000-${Math.abs(user.email.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)).toString(16).padStart(12, '0')}` : `10000000-1000-4000-8000-${Date.now().toString(16).padStart(12, '0').slice(-12)}`);
+
       const userRow = {
         ...user,
-        created_at: (user as any).createdAt || (user as any).created_at
+        id: validUuid,
+        created_at: (user as any).createdAt || (user as any).created_at || new Date().toISOString()
       };
       delete (userRow as any).createdAt;
 
@@ -137,7 +149,7 @@ export async function saveUser(user: User): Promise<void> {
       await supabase
         .from('users')
         .upsert(removeUndefined({
-          id: user.id,
+          id: validUuid,
           full_name: user.name,
           email: user.email?.toLowerCase(),
           phone: user.phone,

@@ -987,7 +987,7 @@ export default function AICreativeStudio({ userEmail, triggerToast }: AICreative
                         style={{ scale: isVoiceActive ? 1 + audioLevel * 0.4 : 1 }}
                         className={`h-28 w-28 rounded-full flex items-center justify-center transition-shadow shadow-lg ${
                           isVoiceActive 
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-purple-550/30 ring-8 ring-purple-550/10' 
+                            ? 'bg-linear-to-r from-purple-500 to-pink-500 shadow-purple-550/30 ring-8 ring-purple-550/10' 
                             : 'bg-neutral-800 border border-neutral-700 shadow-black/40'
                         }`}
                       >
