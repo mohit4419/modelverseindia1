@@ -2448,17 +2448,38 @@ var UserRepository = class {
           2500
         );
         if (!error && data) {
+          let role = data.role || "client";
+          const { data: modelData } = await supabaseAdmin.from("models").select("id").or(`id.eq.${id},userId.eq.${id},user_id.eq.${id}`).maybeSingle();
+          if (modelData) role = "model";
           return {
             id: data.id,
             name: data.name,
             email: data.email,
-            role: data.role,
+            role,
             phone: data.phone,
             status: data.status,
             avatarUrl: data.avatarUrl,
             favorites: data.favorites,
             createdAt: data.createdAt,
             updatedAt: data.updated_at
+          };
+        }
+        const { data: uData } = await withTimeout(
+          supabaseAdmin.from("users").select("*").eq("id", id).maybeSingle(),
+          2500
+        );
+        if (uData) {
+          let role = uData.role || "client";
+          const { data: modelData } = await supabaseAdmin.from("models").select("id").or(`id.eq.${id},userId.eq.${id},user_id.eq.${id}`).maybeSingle();
+          if (modelData) role = "model";
+          return {
+            id: uData.id,
+            name: uData.full_name || uData.email?.split("@")[0],
+            email: uData.email,
+            role,
+            phone: uData.phone_number,
+            status: uData.status || "active",
+            createdAt: uData.created_at
           };
         }
       } catch (e) {
@@ -2566,6 +2587,18 @@ var UserRepository = class {
           2500
         );
         if (error) throw error;
+        await withTimeout(
+          supabaseAdmin.from("users").upsert({
+            id: profile.id,
+            full_name: profile.name,
+            email: profile.email?.toLowerCase(),
+            phone: profile.phone,
+            role: profile.role || "client",
+            status: profile.status || "active",
+            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          }),
+          2500
+        ).catch((uErr) => console.warn("Supabase public.users upsert note:", uErr?.message || uErr));
       } catch (e) {
         console.error("Supabase save profile failed:", e);
       }

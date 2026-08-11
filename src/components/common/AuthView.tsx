@@ -387,74 +387,90 @@ export default function AuthView({
 
         // Search user by email or phone match
         let user = allUsers.find(u => 
-          u.email.toLowerCase() === searchKey || 
-          u.phone?.replace(/[\s+]/g, '') === searchKey.replace(/[\s+]/g, '')
+          (u.email && u.email.toLowerCase() === searchKey) || 
+          (u.phone && u.phone.replace(/[\s+]/g, '') === searchKey.replace(/[\s+]/g, ''))
         );
 
-        // Check local registered credentials
-        const credInfo = await dbService.getCredentials(user?.email || username);
-        let resolvedRole = credInfo ? (credInfo.role as UserRole) : selectedRole;
+        // Check if user exists in registered models list
+        let isRegisteredModel = false;
+        try {
+          const allModels = await dbService.getModels();
+          const modelMatch = allModels.find(m => 
+            (m.email && m.email.toLowerCase() === searchKey) ||
+            (m.phone && m.phone.replace(/[\s+]/g, '') === searchKey.replace(/[\s+]/g, '')) ||
+            (m.userId && user?.id && m.userId === user.id)
+          );
+          if (modelMatch) {
+            isRegisteredModel = true;
+          }
+        } catch (e) {}
 
-        // Ensure pre-seeded or hardcoded user roles are prioritized
-        if (username.toLowerCase() === 'model@modelverse.in' || username === '+919111122222') {
+        // Check registered credentials
+        const credInfo = await dbService.getCredentials(user?.email || searchKey);
+
+        // Determine resolved role dynamically from database and model registry
+        let resolvedRole: UserRole = selectedRole;
+        if (searchKey === 'nshop225@gmail.com' || searchKey === 'admin@modelverse.in') {
+          resolvedRole = 'admin';
+        } else if (searchKey === 'model@modelverse.in' || searchKey.replace(/[\s+]/g, '') === '9111122222' || searchKey.replace(/[\s+]/g, '') === '919111122222') {
           resolvedRole = 'model';
-        } else if (username.toLowerCase() === 'client@modelverse.in' || username === '+919876543210') {
+        } else if (searchKey === 'client@modelverse.in' || searchKey.replace(/[\s+]/g, '') === '9876543210' || searchKey.replace(/[\s+]/g, '') === '919876543210') {
           resolvedRole = 'client';
-        } else if (user) {
+        } else if (isRegisteredModel) {
+          resolvedRole = 'model';
+        } else if (user && (user.role === 'model' || user.role === 'admin' || user.role === 'client')) {
           resolvedRole = user.role;
-        }
-
-        // Verify if selected role matches resolved actual role (bypassed if admin uses master password)
-        if (!isAdminBypass && selectedRole !== resolvedRole) {
-          setError(`Access Denied: This account is registered as a ${resolvedRole}. You cannot login with the ${selectedRole} role selected.`);
-          setIsLoading(false);
-          return;
+        } else if (credInfo && credInfo.role) {
+          resolvedRole = credInfo.role as UserRole;
         }
 
         if (!user) {
-          // Check our seed credentials fallback
-          if (username.toLowerCase() === 'model@modelverse.in' || username === '+919111122222') {
+          // Check seed credentials fallback
+          if (searchKey === 'model@modelverse.in' || searchKey.replace(/[\s+]/g, '') === '9111122222') {
             user = { id: 'm1', role: 'model', name: 'Pooja Hegde', email: 'model@modelverse.in', phone: '+91 91111 22222', status: 'active', createdAt: new Date().toISOString() };
-          } else if (username.toLowerCase() === 'client@modelverse.in' || username === '+919876543210') {
+          } else if (searchKey === 'client@modelverse.in' || searchKey.replace(/[\s+]/g, '') === '9876543210') {
             user = { id: 'c_test', role: 'client', name: 'Demo Client', email: 'client@modelverse.in', phone: '+91 98765 43210', status: 'active', createdAt: new Date().toISOString() };
-          } else if (username.includes('@') && username.includes('.')) {
-            // Auto register and login for valid emails (Gmail/Outlook etc) to avoid blocks
-            const cleanEmail = username.trim().toLowerCase();
+          } else if (searchKey.includes('@') && searchKey.includes('.')) {
+            // Auto register and login for valid emails
+            const cleanEmail = searchKey;
             const autoName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
             user = {
               id: supabaseUser?.id || `u_auto_${Date.now()}`,
-              role: selectedRole,
+              role: resolvedRole,
               name: autoName,
               email: cleanEmail,
               phone: '+91 90000 00000',
               status: 'active',
               createdAt: new Date().toISOString()
             };
-            await dbService.saveUser(user);
-            await dbService.registerCredentials(cleanEmail, selectedRole);
+          } else if (credInfo || supabaseUser) {
+            user = {
+              id: supabaseUser?.id || `u_${Date.now()}`,
+              role: resolvedRole,
+              name: supabaseUser?.user_metadata?.full_name || username.split('@')[0],
+              email: supabaseUser?.email || searchKey,
+              phone: searchKey.includes('@') ? '+91 90000 00000' : searchKey,
+              status: 'active',
+              createdAt: new Date().toISOString()
+            };
           } else {
-            if (credInfo || supabaseUser) {
-              user = {
-                id: supabaseUser?.id || `u_${Date.now()}`,
-                role: resolvedRole,
-                name: supabaseUser?.user_metadata?.full_name || username.split('@')[0],
-                email: supabaseUser?.email || username,
-                phone: username.includes('@') ? '+91 90000 00000' : username,
-                status: 'active',
-                createdAt: new Date().toISOString()
-              };
-              await dbService.saveUser(user);
-            } else {
-              setError('User account not found. Please click Sign Up below to register your account first!');
-              setIsLoading(false);
-              return;
-            }
+            setError('User account not found. Please click Sign Up below to register your account first!');
+            setIsLoading(false);
+            return;
           }
+        } else {
+          // Synchronize user role with resolved database role
+          user.role = resolvedRole;
         }
+
+        // Persist user and credential mapping in database
+        await dbService.saveUser(user);
+        await dbService.registerCredentials(user.email || searchKey, resolvedRole);
 
         dbService.setCurrentSessionUser(user);
         onAuthSuccess(user, resolvedRole);
         window.location.href = '/';
+
       } catch (err: any) {
         setError(err.message || 'An error occurred during authentication.');
       } finally {
