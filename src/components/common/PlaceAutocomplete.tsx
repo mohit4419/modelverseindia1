@@ -103,13 +103,13 @@ function PlaceAutocompleteInput({ onPlaceSelect, placeholder, initialValue }: Pl
 export default function PlaceAutocomplete(props: PlaceAutocompleteProps) {
   if (!hasValidKey) {
     return (
-      <div className="rounded-2xl border border-pink-200 dark:border-pink-900/40 bg-pink-50/50 dark:bg-pink-950/10 p-4 space-y-3">
-        <div className="flex items-start space-x-2.5">
+      <div className="rounded-2xl border border-pink-200 dark:border-pink-900/40 bg-pink-50/50 dark:bg-pink-950/10 p-4 space-y-3 overflow-hidden">
+        <div className="flex items-start space-x-2.5 min-w-0">
           <KeyRound className="h-5 w-5 text-pink-600 dark:text-pink-400 shrink-0 mt-0.5" />
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0 overflow-hidden">
             <h4 className="text-xs font-black uppercase tracking-wider text-pink-700 dark:text-pink-400">Google Maps Key Required</h4>
-            <p className="text-[10px] leading-relaxed text-pink-600 dark:text-pink-300 font-medium">
-              Enable high-fidelity radius-based matching. Type <code>GOOGLE_MAPS_PLATFORM_KEY</code> under <strong>Settings (⚙️) &rarr; Secrets</strong> to unlock live autocompletion!
+            <p className="text-[10px] leading-relaxed text-pink-600 dark:text-pink-300 font-medium break-words">
+              Enable high-fidelity radius-based matching. Type <code className="break-all">GOOGLE_MAPS_PLATFORM_KEY</code> under <strong>Settings (⚙️) &rarr; Secrets</strong> to unlock live autocompletion!
             </p>
           </div>
         </div>

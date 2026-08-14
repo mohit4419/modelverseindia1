@@ -206,6 +206,7 @@ export default function AdminDashboard({
   // Bookings statistics
   const pendingBookings = bookings.filter(b => b.status === 'pending');
 
+  const newLocal = "bg-linear-to-r from-amber-950/40 via-amber-900/20 to-neutral-900 border border-amber-500/30 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 p-4 sm:p-6 lg:p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -213,7 +214,7 @@ export default function AdminDashboard({
         {/* Header Banner */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-neutral-900/90 border border-neutral-800 p-6 rounded-2xl shadow-xl backdrop-blur-md">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-tr from-purple-600 to-pink-600 rounded-xl text-white shadow-lg shadow-purple-500/20">
+            <div className="p-3 bg-linear-to-tr from-purple-600 to-pink-600 rounded-xl text-white shadow-lg shadow-purple-500/20">
               <Shield className="w-7 h-7" />
             </div>
             <div>
@@ -350,7 +351,7 @@ export default function AdminDashboard({
 
             {/* Pending Approvals Notice Banner */}
             {pendingModels.length > 0 && (
-              <div className="bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-neutral-900 border border-amber-500/30 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className={newLocal}>
                 <div className="flex items-center gap-3">
                   <AlertCircle className="w-6 h-6 text-amber-400 shrink-0" />
                   <div>

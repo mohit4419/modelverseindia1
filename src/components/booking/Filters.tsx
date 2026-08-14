@@ -222,7 +222,7 @@ export default function Filters({
   const experiences = ['Fresh Face', '2-5 years', '5+ years'];
 
   return (
-    <div id="models-catalog-filters" className="rounded-3xl border border-neutral-150 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-md text-left text-neutral-800 dark:text-neutral-100">
+    <div id="models-catalog-filters" className="rounded-3xl border border-neutral-150 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-md text-left text-neutral-800 dark:text-neutral-100 overflow-hidden">
       <div className="flex items-center justify-between border-b border-neutral-100 dark:border-white/5 pb-4">
         <div className="flex items-center space-x-2 text-neutral-800 dark:text-neutral-100">
           <SlidersHorizontal className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400 animate-pulse" />
@@ -240,7 +240,7 @@ export default function Filters({
       <div className="mt-5 space-y-6">
         
         {/* Saved Searches & Presets */}
-        <div id="saved-searches-section" className="rounded-2xl border border-neutral-150 dark:border-white/10 bg-neutral-50/50 dark:bg-neutral-950/40 p-4 space-y-3.5">
+        <div id="saved-searches-section" className="rounded-2xl border border-neutral-150 dark:border-white/10 bg-neutral-50/50 dark:bg-neutral-950/40 p-4 space-y-3.5 overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest font-mono">Saved Casting Presets</span>
             <span className="text-[9px] font-bold text-purple-600 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full font-mono">
@@ -274,7 +274,7 @@ export default function Filters({
           )}
 
           {/* Form to save current query */}
-          <div className="flex space-x-2 pt-1 border-t border-neutral-100/50 dark:border-white/5">
+          <div className="flex space-x-2 pt-1 border-t border-neutral-100/50 dark:border-white/5 overflow-hidden">
             <input
               type="text"
               placeholder="e.g. Mumbai UGC Creators"
@@ -322,7 +322,7 @@ export default function Filters({
         </div>
 
         {/* Project Location Search Radius */}
-        <div className="rounded-2xl border border-dashed border-purple-250 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/10 p-4">
+        <div className="rounded-2xl border border-dashed border-purple-250 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/10 p-4 overflow-hidden">
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-purple-100 dark:border-white/5">
             <div className="flex items-center space-x-1.5">
               <MapPin className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
