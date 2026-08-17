@@ -58,8 +58,19 @@ async function startServer() {
     // Serve static frontend assets
     app.use(express.static(distPath));
 
-    // SPA fallback (exclude /api routes from falling back to index.html)
-    app.get(/^(?!\/api).*/, (req, res) => {
+    // Explicitly serve critical root-level static files that crawlers/bots need
+    app.get('/ads.txt', (req, res) => {
+      res.type('text/plain').sendFile(path.join(distPath, 'ads.txt'));
+    });
+    app.get('/robots.txt', (req, res) => {
+      res.type('text/plain').sendFile(path.join(distPath, 'robots.txt'));
+    });
+    app.get('/sitemap.xml', (req, res) => {
+      res.type('application/xml').sendFile(path.join(distPath, 'sitemap.xml'));
+    });
+
+    // SPA fallback (exclude /api routes and known static files from falling back to index.html)
+    app.get(/^(?!\/api|\/ads\.txt|\/robots\.txt|\/sitemap\.xml).*/, (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
 
